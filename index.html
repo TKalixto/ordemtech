@@ -121,23 +121,16 @@
       <button data-close-modal="new-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
     <form id="new-order-form" class="p-5 space-y-4">
-      <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome da peça</label>
-        <input id="order-piece-name" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Ex: Flange de suporte">
-      </div>
-      <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição / especificações</label>
-        <textarea id="order-description" rows="3" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Material, espessura, tolerâncias, observações..."></textarea>
-      </div>
       <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label>
-          <input id="order-quantity" type="number" min="1" value="1" required class="w-full mt-1 px-3 py-2 rounded">
-        </div>
-        <div>
-          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label>
-          <input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded">
-        </div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="order-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      </div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="order-piece-name" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Ex: Flange de suporte"></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="order-material" required class="w-full mt-1 px-3 py-2 rounded"></select></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 rounded" placeholder="Tolerâncias, acabamento, observações..."></textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label><input id="order-quantity" type="number" min="1" value="1" required class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
       <div>
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Anexo (desenho / PDF / DXF) — opcional</label>
@@ -196,14 +189,13 @@
       <button data-close-modal="edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
     <form id="edit-order-form" class="p-5 space-y-4">
-      <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome da peça</label>
-        <input id="eo-piece" required class="w-full mt-1 px-3 py-2 rounded">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
-      <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição / especificações</label>
-        <textarea id="eo-desc" rows="3" required class="w-full mt-1 px-3 py-2 rounded"></textarea>
-      </div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="eo-piece" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="eo-material" class="w-full mt-1 px-3 py-2 rounded"></select></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label>
@@ -311,6 +303,7 @@ function normalizeOrder(row){
     status: row.status,
     currentStepIndex: row.current_step_index,
     currentMachine: row.current_machine,
+    osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent,
     createdAt: row.created_at,
     routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
       .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
@@ -353,6 +346,16 @@ function statsHTML(s){
     `<div class="card rounded p-3"><p class="text-xs" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
 }
 // Rodapé dos cartões: contagem de arquivos + recebimento (+ editar/excluir para o ADM)
+function metaLine(o){
+  const bits = [o.osNumber && `O.S. ${o.osNumber}`, o.project && `Projeto: ${o.project}`, o.material && `Material: ${o.material}`].filter(Boolean);
+  const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2" style="background:#F2A93B33;color:var(--amber)">🔥 URGENTE</span>` : '';
+  return (bits.length || o.urgent) ? `<p class="text-xs mt-2" style="color:var(--muted)">${urg}${bits.join(' · ')}</p>` : '';
+}
+function lateFinal(o){
+  if(o.status === 'concluido'){ const l = o.routing[o.routing.length - 1]; return !!(l && l.finishedAt && new Date(l.finishedAt) > new Date(o.deadline + 'T23:59:59')); }
+  return isLate(o);
+}
+function fmtMin(m){ return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; }
 function cardFooterHTML(o, mode){
   const rec = receiptOf(o);
   let right = '';
@@ -362,7 +365,8 @@ function cardFooterHTML(o, mode){
     else right = `<span class="px-2 py-1 rounded" style="background:#F2A93B22;color:var(--amber)">Aguardando confirmação de recebimento</span>`;
   }
   const adm = mode === 'adm'
-    ? `<button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
+    ? `<button data-urgent="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
+       <button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
        <button data-del-order="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
   return `<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
     <span>📎 ${reqFilesOf(o).length} arquivo(s) enviado(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
@@ -431,7 +435,8 @@ function openDetailModal(order){
       </div>
       <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
     </div>
-    <p class="text-sm">${order.description}</p>
+    ${metaLine(order)}
+    <p class="text-sm">${order.description || ''}</p>
     ${receiptHTML(order)}
     <div>
       <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Roteiro de produção</p>
@@ -581,7 +586,7 @@ function renderSolicitante(container = $('main-content')){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
-        ${cardFooterHTML(o, 'sol')}
+        ${metaLine(o)}${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
@@ -605,7 +610,8 @@ $('new-order-form').addEventListener('submit', async (e)=>{
       deadline: $('order-deadline').value,
       requester_id: currentUser.id,
       requester_name: currentUser.name,
-      status: 'aguardando_analise'
+      status: 'aguardando_analise',
+      os_number: $('order-os').value.trim(), project: $('order-project').value.trim(), material: $('order-material').value
     }).select().single();
     if(error) throw error;
 
@@ -636,6 +642,7 @@ function renderAdmin(){
       <button data-tab="fila" class="admin-tab px-4 py-2 text-sm font-medium border-b-2" style="border-color:var(--blue)">Fila de Triagem</button>
       <button data-tab="todos" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--muted)">Todos os Pedidos</button>
       <button data-tab="usuarios" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Usuários</button>
+      <button data-tab="graficos" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Gráficos</button>
       <button data-tab="resumo" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Resumo por Solicitante</button>
       <button data-tab="relatorio" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Relatório Excel</button>
       <button data-tab="solicitante" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Solicitante</button>
@@ -651,6 +658,7 @@ function renderAdmin(){
       if(btn.dataset.tab === 'todos') renderAdminTodos();
       if(btn.dataset.tab === 'usuarios') renderAdminUsuarios();
       if(btn.dataset.tab === 'resumo') renderAdminResumo();
+      if(btn.dataset.tab === 'graficos') renderAdminGraficos();
       if(btn.dataset.tab === 'relatorio') renderAdminRelatorio();
       if(btn.dataset.tab === 'solicitante') renderSolicitante($('admin-tab-content'));
       if(btn.dataset.tab === 'operador') renderOperador($('admin-tab-content'));
@@ -693,7 +701,7 @@ function openTriagemModal(order){
       <div>
         <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
         <p class="text-sm" style="color:var(--muted)">Solicitante: ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
-        <p class="text-sm mt-2">${order.description}</p>
+        ${metaLine(order)}<p class="text-sm mt-2">${order.description || ''}</p>
       </div>
       <div>
         <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos do solicitante</p>
@@ -710,6 +718,7 @@ function openTriagemModal(order){
         </div>
         <div id="routing-list" class="space-y-2"></div>
       </div>
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="triagem-urgent" type="checkbox" ${order.urgent ? 'checked' : ''} style="width:16px;height:16px"> 🔥 Marcar como URGENTE (destaque na fila do operador)</label>
       <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
       <button id="btn-aprovar" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
     `;
@@ -723,7 +732,7 @@ function openTriagemModal(order){
       $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Enviando...';
       try{
         await sb.from('orders').update({
-          status: 'em_producao', current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
+          status: 'em_producao', urgent: $('triagem-urgent').checked, current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
         }).eq('id', order.id);
 
         const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
@@ -767,20 +776,43 @@ function openTriagemModal(order){
 
 function renderAdminTodos(){
   clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="todos-list" class="space-y-3"></div>`;
-  liveRefresh('admin-todos', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
-    if(error){ console.error(error); return; }
-    const orders = data.map(normalizeOrder);
-    const list = $('todos-list');
-    if(orders.length === 0){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido cadastrado.</div>`; return; }
+  const fld = 'px-3 py-2 rounded text-sm';
+  $('admin-tab-content').innerHTML = `
+    <div class="card rounded p-3 mb-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-center">
+      <input id="f-q" placeholder="Buscar peça, O.S., projeto, solicitante..." class="col-span-2 ${fld}">
+      <select id="f-status" class="${fld}">
+        <option value="">Todos os status</option><option value="aguardando_analise">Aguardando análise</option>
+        <option value="em_producao">Em produção</option><option value="concluido">Concluído</option><option value="atrasado">Atrasados</option>
+      </select>
+      <input id="f-from" type="date" title="Criado a partir de" class="${fld}">
+      <input id="f-to" type="date" title="Criado até" class="${fld}">
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="f-urg" type="checkbox" style="width:16px;height:16px"> Só urgentes</label>
+    </div>
+    <p id="f-count" class="text-xs mb-2" style="color:var(--muted)"></p>
+    <div id="todos-list" class="space-y-3"></div>`;
+  let all = [];
+  const draw = ()=>{
+    const list = $('todos-list'); if(!list) return;
+    const q = $('f-q').value.trim().toLowerCase(), st = $('f-status').value, urg = $('f-urg').checked;
+    const from = $('f-from').value ? new Date($('f-from').value + 'T00:00:00') : null;
+    const to = $('f-to').value ? new Date($('f-to').value + 'T23:59:59') : null;
+    const orders = all.filter(o=>{
+      if(q && ![o.pieceName, o.osNumber, o.project, o.material, o.requesterName, o.description].join(' ').toLowerCase().includes(q)) return false;
+      if(st === 'atrasado' ? !isLate(o) : (st && o.status !== st)) return false;
+      if(urg && !o.urgent) return false;
+      const c = new Date(o.createdAt);
+      return !(from && c < from) && !(to && c > to);
+    });
+    $('f-count').textContent = `${orders.length} de ${all.length} pedido(s)`;
+    if(orders.length === 0){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
             <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            ${metaLine(o)}
           </div>
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
@@ -788,15 +820,15 @@ function renderAdminTodos(){
         ${cardFooterHTML(o, 'adm')}
       </div>`;
     }).join('');
-    list.querySelectorAll('[data-order-id]').forEach(el=>{
-      el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
-    });
-    list.querySelectorAll('[data-edit-order]').forEach(b=> b.addEventListener('click', (ev)=>{
-      ev.stopPropagation(); openEditOrderModal(orders.find(o=>o.id===b.dataset.editOrder));
-    }));
-    list.querySelectorAll('[data-del-order]').forEach(b=> b.addEventListener('click', (ev)=>{
-      ev.stopPropagation(); deleteOrder(orders.find(o=>o.id===b.dataset.delOrder));
-    }));
+    const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
+    list.querySelectorAll('[data-order-id]').forEach(el=> el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId))));
+    by('data-edit-order', openEditOrderModal); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
+  };
+  ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
+  liveRefresh('admin-todos', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    all = data.map(normalizeOrder); draw();
   });
 }
 
@@ -893,6 +925,7 @@ function renderOperador(container = $('main-content')){
     const orders = data.map(normalizeOrder);
     const list = $('operador-list');
     if(!list) return;
+    orders.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)); // urgentes primeiro (ordem por prazo mantida)
     if(orders.length === 0){
       list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
       return;
@@ -900,7 +933,7 @@ function renderOperador(container = $('main-content')){
     list.innerHTML = orders.map(o=>{
       const step = o.routing[o.currentStepIndex];
       const late = isLate(o);
-      return `<div class="card rounded p-4 tag" style="border-left-color:${late?'var(--red)':'var(--blue)'}">
+      return `<div class="card rounded p-4 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:#F2A93B12;':''}">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
@@ -910,7 +943,7 @@ function renderOperador(container = $('main-content')){
             ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
           </span>
         </div>
-        <p class="text-sm mt-2">${o.description}</p>
+        ${metaLine(o)}<p class="text-sm mt-2">${o.description || ''}</p>
         <div class="mt-3">${stepperHTML(o)}</div>
         <div class="mt-3">${attachmentsHTML(o)}</div>
         <div class="mt-3 flex gap-2">
@@ -992,15 +1025,20 @@ async function confirmReceipt(order){
 /* --- Admin: editar / excluir pedido --- */
 function openEditOrderModal(order){
   $('eo-piece').value = order.pieceName; $('eo-desc').value = order.description;
+  $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || ''; $('eo-material').value = order.material || '';
   $('eo-qty').value = order.quantity; $('eo-deadline').value = order.deadline;
   $('edit-order-error').classList.add('hidden');
   $('edit-order-form').onsubmit = async (e)=>{
     e.preventDefault();
     const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
-    const v = { piece_name: $('eo-piece').value.trim(), description: $('eo-desc').value.trim(),
+    const v = { os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(), material: $('eo-material').value,
+                piece_name: $('eo-piece').value.trim(), description: $('eo-desc').value.trim(),
                 quantity: Number($('eo-qty').value), deadline: $('eo-deadline').value };
     const ch = [];
     if(v.piece_name !== order.pieceName) ch.push(`nome "${order.pieceName}" → "${v.piece_name}"`);
+    if(v.os_number !== (order.osNumber || '')) ch.push(`O.S. → ${v.os_number}`);
+    if(v.project !== (order.project || '')) ch.push(`projeto → ${v.project}`);
+    if(v.material !== (order.material || '')) ch.push(`material → ${v.material || '—'}`);
     if(v.quantity !== order.quantity) ch.push(`quantidade ${order.quantity} → ${v.quantity}`);
     if(v.deadline !== order.deadline) ch.push(`prazo ${fmtDate(order.deadline)} → ${fmtDate(v.deadline)}`);
     if(v.description !== order.description) ch.push('descrição alterada');
@@ -1105,7 +1143,7 @@ async function exportMonthly(ym){
     const atrasado = fim ? new Date(fim) > new Date(o.deadline + 'T23:59:59') : isLate(o);
     const rec = receiptOf(o);
     return {
-      'Peça': o.pieceName, 'Descrição': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
+      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Material': o.material || '', 'Urgente': o.urgent ? 'Sim' : 'Não', 'Peça': o.pieceName, 'Observações': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
       'Criado em': fmtDateTime(o.createdAt), 'Prazo': fmtDate(o.deadline), 'Status': statusInfo(o).label,
       'Roteiro': o.routing.map(r => r.machine).join(' → '), 'Concluído em': fim ? fmtDateTime(fim) : '',
       'Atrasado': atrasado ? 'Sim' : 'Não', 'Recebimento confirmado': rec ? 'Sim' : (o.status === 'concluido' ? 'Pendente' : ''),
@@ -1137,6 +1175,62 @@ async function exportMonthly(ym){
   XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
   XLSX.writeFile(wb, `relatorio-pedidos-${ym}.xlsx`);
   return orders.length;
+}
+
+/* --- Materiais (listas dos formulários) --- */
+const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm", "Chapa Aço Carbono #14 = 2mm",
+  "Chapa Aço Carbono (1/8\") = 3,18mm (Xadrez)", "Chapa Aço Carbono (3/16\") = 4,76mm", "Chapa Aço Carbono (1/4\") = 6,35mm",
+  "Chapa Aço Carbono (5/16\") = 7,94mm", "Chapa Aço Carbono (3/8\") = 9,53mm", "Chapa Aço Carbono (1/2\") = 12,70mm",
+  "Chapa Aço Carbono (5/8\") = 15,88mm", "Chapa Inox #18 = 1.2mm", "Chapa Inox = 3mm", "Chapa Alumínio = 3mm"];
+['order-material', 'eo-material'].forEach(id=>{
+  $(id).innerHTML = `<option value="">${id === 'eo-material' ? '— sem material —' : 'Selecione o material...'}</option>` +
+    MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
+});
+
+/* --- Prioridade --- */
+async function toggleUrgent(o){
+  const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
+  if(error || !data || !data.length){ alert('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão') + ' (a coluna "urgent" já foi criada no banco?)'); return; }
+  await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
+}
+
+/* --- Gráficos (ADM) --- */
+function barsHTML(rows, fmt = v => v){
+  const max = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
+  return rows.map(r => {
+    const tot = r.segs.reduce((a, s) => a + s.v, 0);
+    return `<div class="flex items-center gap-3 mb-2">
+      <span class="w-32 shrink-0 text-xs" style="color:var(--muted)">${r.label}</span>
+      <div class="flex-1 flex h-5 rounded overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
+      <span class="w-20 text-xs text-right">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
+  }).join('');
+}
+function renderAdminGraficos(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="gr" class="grid gap-4 lg:grid-cols-2"></div>`;
+  liveRefresh('admin-graficos', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    if(error){ console.error(error); return; }
+    if(!$('gr')) return;
+    const orders = data.map(normalizeOrder);
+    const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const now = new Date(), months = [];
+    for(let i = 5; i >= 0; i--){ const x = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ key: key(x), label: `${String(x.getMonth() + 1).padStart(2, '0')}/${x.getFullYear()}` }); }
+    const inMonth = m => orders.filter(o => key(new Date(o.createdAt)) === m.key);
+    const porMes = months.map(m => ({ label: m.label, segs: [{ v: inMonth(m).length, color: 'var(--blue)', name: 'Pedidos' }] }));
+    const atrasos = months.map(m => { const l = inMonth(m), late = l.filter(lateFinal).length;
+      return { label: m.label, segs: [{ v: l.length - late, color: 'var(--green)', name: 'No prazo' }, { v: late, color: 'var(--red)', name: 'Atrasados' }], text: `${late} de ${l.length}` }; });
+    const acc = {};
+    orders.forEach(o => o.routing.forEach(r => { if(r.startedAt && r.finishedAt) (acc[r.machine] = acc[r.machine] || []).push((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000); }));
+    const tempo = MACHINES.map(m => { const a = acc[m] || [], avg = a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+      return { label: m, segs: [{ v: avg, color: 'var(--amber)', name: 'Média' }], text: a.length ? fmtMin(avg) : '—' }; });
+    const box = (t, sub, body) => `<div class="card rounded p-4"><p class="font-display font-600">${t}</p><p class="text-xs mb-4" style="color:var(--muted)">${sub}</p>${body}</div>`;
+    const abertos = orders.filter(o => o.status !== 'concluido' && isLate(o)).length;
+    $('gr').innerHTML =
+      box('Pedidos por mês', 'Últimos 6 meses (data de criação)', barsHTML(porMes)) +
+      box('Tempo médio por máquina', 'Duração das etapas concluídas (início → fim)', barsHTML(tempo)) +
+      box('Atrasos por mês', `<span style="color:var(--green)">■</span> no prazo &nbsp;<span style="color:var(--red)">■</span> atrasados · ${abertos} pedido(s) em aberto com prazo vencido agora`, barsHTML(atrasos));
+  });
 }
 </script>
 </body>
