@@ -179,8 +179,8 @@
         </select>
       </div>
       <div id="eu-machine-wrap">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Máquina / setor</label>
-        <select id="eu-machine" class="w-full mt-1 px-3 py-2 rounded"></select>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Máquinas / setores (marque uma ou mais)</label>
+        <div id="eu-machines" class="mt-2 space-y-2"></div>
       </div>
       <p id="edit-user-error" class="text-sm hidden" style="color:var(--red)"></p>
       <button type="submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar</button>
@@ -404,7 +404,7 @@ async function handleSession(session){
     sb.auth.signOut();
     return;
   }
-  currentUser = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, machine: profile.machine };
+  currentUser = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, machines: profile.machines || [] };
 
   $('login-screen').classList.add('hidden');
   if(currentUser.role === 'pendente'){
@@ -414,7 +414,7 @@ async function handleSession(session){
   $('pending-screen').classList.add('hidden');
   $('app-shell').classList.remove('hidden');
   $('user-name').textContent = currentUser.name;
-  $('role-badge').textContent = roleLabel(currentUser.role) + (currentUser.machine ? ` · ${currentUser.machine}` : '');
+  $('role-badge').textContent = roleLabel(currentUser.role) + (currentUser.machines.length ? ` · ${currentUser.machines.join(', ')}` : '');
   routeToDashboard();
 }
 
@@ -443,8 +443,9 @@ function liveRefresh(channelName, fetchFn){
 /* =========================================================================
    4) PAINEL — SOLICITANTE
    ========================================================================= */
-function renderSolicitante(){
-  $('main-content').innerHTML = `
+function renderSolicitante(container = $('main-content')){
+  clearChannels();
+  container.innerHTML = `
     <div class="flex items-center justify-between mb-5">
       <div>
         <h2 class="font-display font-700 text-xl">Meus Pedidos</h2>
@@ -524,10 +525,12 @@ $('new-order-form').addEventListener('submit', async (e)=>{
    ========================================================================= */
 function renderAdmin(){
   $('main-content').innerHTML = `
-    <div class="flex items-center gap-2 mb-5 border-b" style="border-color:var(--line)">
+    <div class="flex items-center gap-2 mb-5 border-b overflow-x-auto" style="border-color:var(--line)">
       <button data-tab="fila" class="admin-tab px-4 py-2 text-sm font-medium border-b-2" style="border-color:var(--blue)">Fila de Triagem</button>
       <button data-tab="todos" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--muted)">Todos os Pedidos</button>
-      <button data-tab="usuarios" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--muted)">Usuários</button>
+      <button data-tab="usuarios" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Usuários</button>
+      <button data-tab="solicitante" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Solicitante</button>
+      <button data-tab="operador" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Operador</button>
     </div>
     <div id="admin-tab-content"></div>
   `;
@@ -538,6 +541,8 @@ function renderAdmin(){
       if(btn.dataset.tab === 'fila') renderAdminFila();
       if(btn.dataset.tab === 'todos') renderAdminTodos();
       if(btn.dataset.tab === 'usuarios') renderAdminUsuarios();
+      if(btn.dataset.tab === 'solicitante') renderSolicitante($('admin-tab-content'));
+      if(btn.dataset.tab === 'operador') renderOperador($('admin-tab-content'));
     });
   });
   renderAdminFila();
@@ -689,7 +694,7 @@ function renderAdminUsuarios(){
           <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">${u.email}</span></p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-xs px-2 py-1 rounded" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${u.machine ? ' · '+u.machine : ''}</span>
+          <span class="text-xs px-2 py-1 rounded" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
           <button data-edit-user="${u.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">Editar</button>
         </div>
       </div>`).join('');
@@ -699,7 +704,10 @@ function renderAdminUsuarios(){
   });
 }
 
-$('eu-machine').innerHTML = MACHINES.map(m=>`<option value="${m}">${m}</option>`).join('');
+$('eu-machines').innerHTML = MACHINES.map(m=>`
+  <label class="flex items-center gap-2 text-sm cursor-pointer">
+    <input type="checkbox" name="eu-machine-check" value="${m}" style="width:16px;height:16px"> ${m}
+  </label>`).join('');
 $('eu-role').addEventListener('change', ()=>{
   $('eu-machine-wrap').classList.toggle('hidden', $('eu-role').value !== 'operador');
 });
@@ -708,13 +716,19 @@ function openEditUserModal(user){
   $('eu-name').textContent = `${user.name} — ${user.email}`;
   $('eu-role').value = user.role;
   $('eu-machine-wrap').classList.toggle('hidden', user.role !== 'operador');
-  if(user.machine) $('eu-machine').value = user.machine;
+  const mine = user.machines || [];
+  document.querySelectorAll('input[name="eu-machine-check"]').forEach(cb=>{ cb.checked = mine.includes(cb.value); });
   $('edit-user-form').onsubmit = async (e)=>{
     e.preventDefault();
     const err = $('edit-user-error'); err.classList.add('hidden');
     const role = $('eu-role').value;
-    const machine = role === 'operador' ? $('eu-machine').value : null;
-    const { error } = await sb.from('profiles').update({ role, machine }).eq('id', user.id);
+    const machines = role === 'operador'
+      ? [...document.querySelectorAll('input[name="eu-machine-check"]:checked')].map(cb=>cb.value)
+      : [];
+    if(role === 'operador' && machines.length === 0){
+      err.textContent = 'Marque ao menos uma máquina para o operador.'; err.classList.remove('hidden'); return;
+    }
+    const { error } = await sb.from('profiles').update({ role, machines }).eq('id', user.id);
     if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); return; }
     closeModal('edit-user-modal');
   };
@@ -722,28 +736,47 @@ function openEditUserModal(user){
 }
 
 /* =========================================================================
-   6) PAINEL — OPERADOR
+   6) PAINEL — OPERADOR (operador: suas máquinas | admin: todas as máquinas)
    ========================================================================= */
-function renderOperador(){
-  $('main-content').innerHTML = `
+function renderOperador(container = $('main-content')){
+  clearChannels();
+  const isAdmin = currentUser.role === 'admin';
+  const available = isAdmin ? MACHINES : (currentUser.machines || []);
+  let filter = 'todas';
+
+  container.innerHTML = `
     <div class="mb-5">
-      <h2 class="font-display font-700 text-xl">Fila da Máquina: ${currentUser.machine || '—'}</h2>
-      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução no seu setor.</p>
+      <h2 class="font-display font-700 text-xl">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
+      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}.</p>
+      <div id="op-chips" class="flex flex-wrap gap-2 mt-3"></div>
     </div>
     <div id="operador-list" class="space-y-3"></div>
   `;
-  if(!currentUser.machine){
-    $('operador-list').innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Seu usuário não tem uma máquina definida. Peça ao administrador para configurá-la.</div>`;
+  if(available.length === 0){
+    $('operador-list').innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
     return;
   }
-  liveRefresh('operador-fila', async ()=>{
+
+  function drawChips(){
+    if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
+    const opts = ['todas', ...available];
+    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3 py-1 rounded text-xs border" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'#2E6FEE22':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
+    $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
+      filter = b.dataset.chip; drawChips(); fetchOp();
+    }));
+  }
+
+  const fetchOp = async ()=>{
+    const machinesFilter = filter === 'todas' ? available : [filter];
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
-      .eq('status', 'em_producao').eq('current_machine', currentUser.machine);
+      .eq('status', 'em_producao').in('current_machine', machinesFilter)
+      .order('deadline', { ascending: true });
     if(error){ console.error(error); return; }
     const orders = data.map(normalizeOrder);
     const list = $('operador-list');
+    if(!list) return;
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila da sua máquina no momento.</div>`;
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
       return;
     }
     list.innerHTML = orders.map(o=>{
@@ -753,9 +786,9 @@ function renderOperador(){
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
           </div>
-          <span class="text-xs px-2 py-1 rounded font-medium" style="background:${step.status==='em_andamento'?'var(--blue)22':'var(--slate)22'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
+          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
             ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
           </span>
         </div>
@@ -774,29 +807,39 @@ function renderOperador(){
     list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
     list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
     list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> finishStep(orders.find(o=>o.id===b.dataset.finish))));
-  });
+  };
+
+  drawChips();
+  liveRefresh('operador-fila', fetchOp);
 }
 
 async function startStep(order){
   const step = order.routing[order.currentStepIndex];
-  await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
-  await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
+  const r1 = await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
+  if(r1.error){ alert('Erro ao iniciar etapa: ' + r1.error.message); return; }
+  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
+  if(r2.error) alert('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
 }
 
 async function finishStep(order){
   const idx = order.currentStepIndex;
   const step = order.routing[idx];
-  await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id);
-
   const nextIdx = idx + 1;
   const isLast = nextIdx >= order.routing.length;
+  const detail = `Finalizou a etapa "${order.currentMachine}".` + (isLast ? ' Pedido concluído.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
+
+  const r1 = await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id);
+  if(r1.error){ alert('Erro ao finalizar etapa: ' + r1.error.message); return; }
+
+  // Histórico ANTES de repassar o pedido (depois o operador perde acesso a ele).
+  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail));
+  if(r2.error){ alert('Erro ao registrar histórico: ' + r2.error.message); return; }
+
   const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
   if(isLast){ updates.status = 'concluido'; updates.current_machine = null; }
   else{ updates.current_machine = order.routing[nextIdx].machine; }
-  await sb.from('orders').update(updates).eq('id', order.id);
-
-  const detail = `Finalizou a etapa "${order.currentMachine}".` + (isLast ? ' Pedido concluído.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
-  await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail));
+  const r3 = await sb.from('orders').update(updates).eq('id', order.id);
+  if(r3.error){ alert('Erro ao avançar o pedido: ' + r3.error.message); }
 }
 </script>
 </body>
