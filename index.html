@@ -188,8 +188,61 @@
   </div>
 </div>
 
+<!-- ================= MODAL: EDITAR PEDIDO (Admin) ================= -->
+<div id="edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Editar Pedido</h3>
+      <button data-close-modal="edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="edit-order-form" class="p-5 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome da peça</label>
+        <input id="eo-piece" required class="w-full mt-1 px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição / especificações</label>
+        <textarea id="eo-desc" rows="3" required class="w-full mt-1 px-3 py-2 rounded"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label>
+          <input id="eo-qty" type="number" min="1" required class="w-full mt-1 px-3 py-2 rounded">
+        </div>
+        <div>
+          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label>
+          <input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded">
+        </div>
+      </div>
+      <p id="edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="edit-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MODAL: FINALIZAR ETAPA COM FOTO (Operador) ================= -->
+<div id="finish-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-md rounded max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Concluir Etapa</h3>
+      <button data-close-modal="finish-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="finish-form" class="p-5 space-y-4">
+      <p id="finish-title" class="text-sm font-medium"></p>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Foto do trabalho concluído (obrigatória)</label>
+        <input id="finish-photo" type="file" accept="image/*" capture="environment" required class="w-full mt-1 text-sm">
+        <img id="finish-preview" class="hidden mt-3 rounded max-h-56 w-full object-contain" style="background:var(--surface-2)" alt="Pré-visualização">
+      </div>
+      <p id="finish-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="finish-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--green);color:#06210f">Enviar foto e finalizar etapa</button>
+    </form>
+  </div>
+</div>
+
 <!-- ================= SUPABASE SDK ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 /* =========================================================================
@@ -270,8 +323,55 @@ function normalizeOrder(row){
 
 const ORDER_SELECT = '*, order_routing(*), order_attachments(*), order_history(*)';
 
-async function uploadFile(orderId, file){
-  const path = `${orderId}/${Date.now()}_${file.name}`;
+/* --- Fotos, arquivos, recebimento e estatísticas --- */
+function isPhoto(a){ return (a.url || '').includes('/fotos/'); }
+function photosOf(o){ return o.attachments.filter(isPhoto); }
+function reqFilesOf(o){ return o.attachments.filter(a => !isPhoto(a) && a.uploadedBy === o.requesterName); }
+function receiptOf(o){ return (o.history || []).find(h => h.action === 'recebimento'); }
+function receiptHTML(o){
+  if(o.status !== 'concluido') return '';
+  const r = receiptOf(o);
+  return r ? `<p class="text-sm" style="color:var(--green)">✔ Recebimento confirmado por ${r.byName} em ${fmtDateTime(r.at)}</p>`
+           : `<p class="text-sm" style="color:var(--amber)">Aguardando confirmação de recebimento pelo solicitante.</p>`;
+}
+function statsOf(orders){
+  const s = { total: orders.length, aguardando: 0, producao: 0, concluido: 0, recebidos: 0, atrasados: 0, arquivos: 0, fotos: 0 };
+  orders.forEach(o => {
+    if(o.status === 'aguardando_analise') s.aguardando++;
+    else if(o.status === 'em_producao') s.producao++;
+    else if(o.status === 'concluido'){ s.concluido++; if(receiptOf(o)) s.recebidos++; }
+    if(isLate(o)) s.atrasados++;
+    s.arquivos += reqFilesOf(o).length; s.fotos += photosOf(o).length;
+  });
+  return s;
+}
+function statsHTML(s){
+  const items = [['Pedidos', s.total, 'var(--text)'], ['Aguardando ADM', s.aguardando, 'var(--slate)'], ['Em produção', s.producao, 'var(--blue)'],
+    ['Concluídos', s.concluido, 'var(--green)'], ['Recebidos', s.recebidos, 'var(--green)'], ['Atrasados', s.atrasados, 'var(--red)'],
+    ['Arquivos enviados', s.arquivos, 'var(--amber)'], ['Fotos de conclusão', s.fotos, 'var(--amber)']];
+  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">` + items.map(([l, v, c]) =>
+    `<div class="card rounded p-3"><p class="text-xs" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
+}
+// Rodapé dos cartões: contagem de arquivos + recebimento (+ editar/excluir para o ADM)
+function cardFooterHTML(o, mode){
+  const rec = receiptOf(o);
+  let right = '';
+  if(o.status === 'concluido'){
+    if(rec) right = `<span class="px-2 py-1 rounded font-medium" style="background:#22C55E22;color:var(--green)">✔ Recebido em ${fmtDateTime(rec.at)}</span>`;
+    else if(mode === 'sol') right = `<button data-receive="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--green);color:#06210f">Confirmar recebimento</button>`;
+    else right = `<span class="px-2 py-1 rounded" style="background:#F2A93B22;color:var(--amber)">Aguardando confirmação de recebimento</span>`;
+  }
+  const adm = mode === 'adm'
+    ? `<button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
+       <button data-del-order="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
+  return `<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
+    <span>📎 ${reqFilesOf(o).length} arquivo(s) enviado(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
+    <div class="flex items-center gap-2 flex-wrap">${right}${adm}</div></div>`;
+}
+
+async function uploadFile(orderId, file, folder = ''){
+  const safe = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\-]+/g, '_');
+  const path = `${orderId}/${folder ? folder + '/' : ''}${Date.now()}_${safe}`;
   const { error: upErr } = await sb.storage.from('attachments').upload(path, file);
   if(upErr) throw upErr;
   const { data } = sb.storage.from('attachments').getPublicUrl(path);
@@ -316,7 +416,7 @@ function attachmentsHTML(order){
   if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
   return `<ul class="space-y-1.5">` + order.attachments.map(a => `
     <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
-      <span>📎 ${a.name} <span class="text-xs" style="color:var(--muted)">— enviado por ${a.uploadedBy}</span></span>
+      <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${a.name} <span class="text-xs" style="color:var(--muted)">— enviado por ${a.uploadedBy}</span></span>
       <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
     </li>`).join('') + `</ul>`;
 }
@@ -332,6 +432,7 @@ function openDetailModal(order){
       <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
     </div>
     <p class="text-sm">${order.description}</p>
+    ${receiptHTML(order)}
     <div>
       <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Roteiro de produção</p>
       ${stepperHTML(order)}
@@ -453,6 +554,7 @@ function renderSolicitante(container = $('main-content')){
       </div>
       <button id="btn-new-order" class="px-4 py-2 rounded font-medium" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
     </div>
+    <div id="solicitante-summary"></div>
     <div id="solicitante-list" class="space-y-3"></div>
   `;
   $('btn-new-order').addEventListener('click', ()=> openModal('new-order-modal'));
@@ -463,6 +565,7 @@ function renderSolicitante(container = $('main-content')){
     if(error){ console.error(error); return; }
     const orders = data.map(normalizeOrder);
     const list = $('solicitante-list');
+    if($('solicitante-summary')) $('solicitante-summary').innerHTML = statsHTML(statsOf(orders));
     if(orders.length === 0){
       list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido ainda. Clique em "Novo Pedido" para começar.</div>`;
       return;
@@ -478,11 +581,15 @@ function renderSolicitante(container = $('main-content')){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
+        ${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
       el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
     });
+    list.querySelectorAll('[data-receive]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); confirmReceipt(orders.find(o=>o.id===b.dataset.receive));
+    }));
   });
 }
 
@@ -529,6 +636,8 @@ function renderAdmin(){
       <button data-tab="fila" class="admin-tab px-4 py-2 text-sm font-medium border-b-2" style="border-color:var(--blue)">Fila de Triagem</button>
       <button data-tab="todos" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--muted)">Todos os Pedidos</button>
       <button data-tab="usuarios" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Usuários</button>
+      <button data-tab="resumo" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Resumo por Solicitante</button>
+      <button data-tab="relatorio" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Relatório Excel</button>
       <button data-tab="solicitante" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Solicitante</button>
       <button data-tab="operador" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Operador</button>
     </div>
@@ -541,6 +650,8 @@ function renderAdmin(){
       if(btn.dataset.tab === 'fila') renderAdminFila();
       if(btn.dataset.tab === 'todos') renderAdminTodos();
       if(btn.dataset.tab === 'usuarios') renderAdminUsuarios();
+      if(btn.dataset.tab === 'resumo') renderAdminResumo();
+      if(btn.dataset.tab === 'relatorio') renderAdminRelatorio();
       if(btn.dataset.tab === 'solicitante') renderSolicitante($('admin-tab-content'));
       if(btn.dataset.tab === 'operador') renderOperador($('admin-tab-content'));
     });
@@ -674,11 +785,18 @@ function renderAdminTodos(){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
+        ${cardFooterHTML(o, 'adm')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
       el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
     });
+    list.querySelectorAll('[data-edit-order]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); openEditOrderModal(orders.find(o=>o.id===b.dataset.editOrder));
+    }));
+    list.querySelectorAll('[data-del-order]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); deleteOrder(orders.find(o=>o.id===b.dataset.delOrder));
+    }));
   });
 }
 
@@ -806,7 +924,7 @@ function renderOperador(container = $('main-content')){
 
     list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
     list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
-    list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> finishStep(orders.find(o=>o.id===b.dataset.finish))));
+    list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
   };
 
   drawChips();
@@ -821,25 +939,204 @@ async function startStep(order){
   if(r2.error) alert('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
 }
 
-async function finishStep(order){
+/* --- Finalizar etapa: foto obrigatória --- */
+$('finish-photo').addEventListener('change', ()=>{
+  const f = $('finish-photo').files[0]; const img = $('finish-preview');
+  if(f){ img.src = URL.createObjectURL(f); img.classList.remove('hidden'); } else img.classList.add('hidden');
+});
+function openFinishModal(order){
+  $('finish-form').reset(); $('finish-preview').classList.add('hidden'); $('finish-error').classList.add('hidden');
+  $('finish-title').textContent = `${order.pieceName} — etapa "${order.currentMachine}"`;
+  $('finish-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('finish-error'); const btn = $('finish-submit'); err.classList.add('hidden');
+    const photo = $('finish-photo').files[0];
+    if(!photo){ err.textContent = 'Envie uma foto do trabalho concluído.'; err.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{ await finishStep(order, photo); closeModal('finish-modal'); }
+    catch(ex){ console.error(ex); err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Enviar foto e finalizar etapa'; }
+  };
+  openModal('finish-modal');
+}
+
+async function finishStep(order, photo){
   const idx = order.currentStepIndex;
   const step = order.routing[idx];
   const nextIdx = idx + 1;
   const isLast = nextIdx >= order.routing.length;
-  const detail = `Finalizou a etapa "${order.currentMachine}".` + (isLast ? ' Pedido concluído.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
+  const detail = `Finalizou a etapa "${order.currentMachine}" (foto anexada).` + (isLast ? ' Pedido concluído — aguardando confirmação de recebimento.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
+  const ok = (r, msg)=>{ if(r.error) throw new Error(msg + ': ' + r.error.message); };
 
-  const r1 = await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id);
-  if(r1.error){ alert('Erro ao finalizar etapa: ' + r1.error.message); return; }
+  // 1) Foto primeiro: se falhar, nada é alterado.
+  const att = await uploadFile(order.id, photo, 'fotos');
+  ok(await sb.from('order_attachments').insert(att), 'Falha ao salvar a foto');
 
+  ok(await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id), 'Erro ao finalizar etapa');
   // Histórico ANTES de repassar o pedido (depois o operador perde acesso a ele).
-  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail));
-  if(r2.error){ alert('Erro ao registrar histórico: ' + r2.error.message); return; }
+  ok(await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail)), 'Erro ao registrar histórico');
 
   const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
   if(isLast){ updates.status = 'concluido'; updates.current_machine = null; }
   else{ updates.current_machine = order.routing[nextIdx].machine; }
-  const r3 = await sb.from('orders').update(updates).eq('id', order.id);
-  if(r3.error){ alert('Erro ao avançar o pedido: ' + r3.error.message); }
+  ok(await sb.from('orders').update(updates).eq('id', order.id), 'Erro ao avançar o pedido');
+}
+
+/* --- Confirmação de recebimento (solicitante) --- */
+async function confirmReceipt(order){
+  if(!confirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
+  const { error } = await sb.from('order_history').insert(historyRow(order.id, 'recebimento', 'Confirmou o recebimento da peça.'));
+  if(error) alert('Erro ao confirmar recebimento: ' + error.message);
+}
+
+/* --- Admin: editar / excluir pedido --- */
+function openEditOrderModal(order){
+  $('eo-piece').value = order.pieceName; $('eo-desc').value = order.description;
+  $('eo-qty').value = order.quantity; $('eo-deadline').value = order.deadline;
+  $('edit-order-error').classList.add('hidden');
+  $('edit-order-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
+    const v = { piece_name: $('eo-piece').value.trim(), description: $('eo-desc').value.trim(),
+                quantity: Number($('eo-qty').value), deadline: $('eo-deadline').value };
+    const ch = [];
+    if(v.piece_name !== order.pieceName) ch.push(`nome "${order.pieceName}" → "${v.piece_name}"`);
+    if(v.quantity !== order.quantity) ch.push(`quantidade ${order.quantity} → ${v.quantity}`);
+    if(v.deadline !== order.deadline) ch.push(`prazo ${fmtDate(order.deadline)} → ${fmtDate(v.deadline)}`);
+    if(v.description !== order.description) ch.push('descrição alterada');
+    if(ch.length === 0){ closeModal('edit-order-modal'); return; }
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try{
+      const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
+      if(error) throw error;
+      if(!data || data.length === 0) throw new Error('sem permissão para editar (verifique as políticas RLS do admin).');
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Pedido editado pelo ADM: ' + ch.join('; ') + '.'));
+      closeModal('edit-order-modal');
+    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+  };
+  openModal('edit-order-modal');
+}
+
+async function deleteOrder(order){
+  if(!confirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
+  try{
+    let r = await sb.from('orders').delete().eq('id', order.id).select();
+    if(r.error && r.error.code === '23503'){ // sem ON DELETE CASCADE: apaga os filhos e tenta de novo
+      for(const t of ['order_history', 'order_attachments', 'order_routing']){
+        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
+      }
+      r = await sb.from('orders').delete().eq('id', order.id).select();
+    }
+    if(r.error) throw r.error;
+    if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir (verifique as políticas RLS do admin).');
+    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
+    if(paths.length) await sb.storage.from('attachments').remove(paths);
+  }catch(ex){ alert('Erro ao excluir: ' + ex.message); }
+}
+
+/* --- Admin: resumo por solicitante --- */
+function renderAdminResumo(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
+    <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Por solicitante</p>
+    <div id="resumo-table" class="card rounded overflow-x-auto"></div>`;
+  liveRefresh('admin-resumo', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    if(error){ console.error(error); return; }
+    if(!$('resumo-stats')) return;
+    const orders = data.map(normalizeOrder);
+    $('resumo-stats').innerHTML = statsHTML(statsOf(orders));
+    const by = {};
+    orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
+    const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list) })).sort((a, b) => b.s.total - a.s.total);
+    const th = h => `<th class="text-left font-medium px-3 py-2 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
+    const td = (v, c) => `<td class="px-3 py-2 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
+    $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-6 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
+      `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
+      rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
+      `</tbody></table>`;
+  });
+}
+
+/* --- Admin: relatório mensal em Excel --- */
+function renderAdminRelatorio(){
+  clearChannels();
+  const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  $('admin-tab-content').innerHTML = `
+    <div class="card rounded p-5 max-w-md space-y-4">
+      <div>
+        <h2 class="font-display font-700 text-lg">Relatório mensal (Excel)</h2>
+        <p class="text-sm" style="color:var(--muted)">Inclui os pedidos criados no mês escolhido: pedidos, etapas por máquina e resumo por solicitante.</p>
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Mês</label>
+        <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 rounded">
+      </div>
+      <p id="rep-msg" class="text-sm hidden"></p>
+      <button id="rep-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
+    </div>`;
+  $('rep-btn').addEventListener('click', async ()=>{
+    const btn = $('rep-btn'); const msg = $('rep-msg'); const month = $('rep-month').value;
+    if(!month) return;
+    msg.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Gerando...';
+    try{
+      const n = await exportMonthly(month);
+      msg.textContent = n ? `Relatório gerado com ${n} pedido(s).` : 'Nenhum pedido encontrado nesse mês.';
+      msg.style.color = n ? 'var(--green)' : 'var(--muted)';
+    }catch(ex){ msg.textContent = 'Erro: ' + ex.message; msg.style.color = 'var(--red)'; }
+    msg.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Baixar Excel (.xlsx)';
+  });
+}
+
+async function exportMonthly(ym){
+  if(typeof XLSX === 'undefined') throw new Error('a biblioteca de Excel não carregou. Recarregue a página.');
+  const [y, m] = ym.split('-').map(Number);
+  const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+    .gte('created_at', new Date(y, m - 1, 1).toISOString()).lt('created_at', new Date(y, m, 1).toISOString())
+    .order('created_at', { ascending: true });
+  if(error) throw error;
+  const orders = data.map(normalizeOrder);
+  if(orders.length === 0) return 0;
+
+  const pedidos = orders.map(o => {
+    const last = o.routing[o.routing.length - 1];
+    const fim = (o.status === 'concluido' && last) ? last.finishedAt : null;
+    const atrasado = fim ? new Date(fim) > new Date(o.deadline + 'T23:59:59') : isLate(o);
+    const rec = receiptOf(o);
+    return {
+      'Peça': o.pieceName, 'Descrição': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
+      'Criado em': fmtDateTime(o.createdAt), 'Prazo': fmtDate(o.deadline), 'Status': statusInfo(o).label,
+      'Roteiro': o.routing.map(r => r.machine).join(' → '), 'Concluído em': fim ? fmtDateTime(fim) : '',
+      'Atrasado': atrasado ? 'Sim' : 'Não', 'Recebimento confirmado': rec ? 'Sim' : (o.status === 'concluido' ? 'Pendente' : ''),
+      'Recebido em': rec ? fmtDateTime(rec.at) : '', 'Arquivos enviados': reqFilesOf(o).length, 'Fotos de conclusão': photosOf(o).length
+    };
+  });
+  const etapas = [];
+  orders.forEach(o => o.routing.forEach((r, i) => etapas.push({
+    'Peça': o.pieceName, 'Solicitante': o.requesterName, 'Etapa': i + 1, 'Máquina': r.machine,
+    'Status': { pendente: 'Aguardando', em_andamento: 'Em andamento', concluido: 'Concluída' }[r.status] || r.status,
+    'Início': r.startedAt ? fmtDateTime(r.startedAt) : '', 'Fim': r.finishedAt ? fmtDateTime(r.finishedAt) : '',
+    'Duração (min)': (r.startedAt && r.finishedAt) ? Math.round((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000) : ''
+  })));
+  const by = {};
+  orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
+  const resumo = Object.values(by).map(g => { const s = statsOf(g.list); return {
+    'Solicitante': g.name, 'Pedidos': s.total, 'Aguardando ADM': s.aguardando, 'Em produção': s.producao,
+    'Concluídos': s.concluido, 'Recebidos': s.recebidos, 'Atrasados': s.atrasados, 'Arquivos enviados': s.arquivos, 'Fotos': s.fotos }; });
+
+  const sheet = rows => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const keys = Object.keys(rows[0] || {});
+    ws['!cols'] = keys.map(k => ({ wch: Math.min(45, Math.max(k.length, ...rows.map(r => String(r[k] == null ? '' : r[k]).length)) + 2) }));
+    return ws;
+  };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheet(pedidos), 'Pedidos');
+  XLSX.utils.book_append_sheet(wb, sheet(etapas), 'Etapas');
+  XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
+  XLSX.writeFile(wb, `relatorio-pedidos-${ym}.xlsx`);
+  return orders.length;
 }
 </script>
 </body>
