@@ -2,571 +2,250 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OrdemTech — Gestão de Produção</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<!-- SUPABASE SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-:root{
-  --graphite-900:#1A1D21;
-  --graphite-800:#22262B;
-  --graphite-700:#2E333A;
-  --steel-600:#3D6B94;
-  --steel-500:#4A7BA6;
-  --steel-100:#E7EFF4;
-  --paper:#F1F3F2;
-  --paper-2:#FFFFFF;
-  --line:#DCE0DE;
-  --ink:#1A1D21;
-  --ink-soft:#5B6169;
-  --hazard-500:#D99A1F;
-  --hazard-100:#FBF1DC;
-  --torch-500:#D8562C;
-  --torch-100:#FBE7DF;
-  --safety-600:#3F9463;
-  --safety-100:#E3F3EA;
-  --slate-500:#8A929B;
-  --slate-100:#ECEEEE;
-  --radius-s:4px;
-  --radius-m:8px;
-  --shadow:0 1px 2px rgba(26,29,33,.06), 0 1px 1px rgba(26,29,33,.04);
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#15171A; --paper-2:#1D2024; --ink:#EDEEEF; --ink-soft:#9BA1A8;
-    --line:#30343A; --steel-100:#20303B; --hazard-100:#332916; --torch-100:#33201A;
-    --safety-100:#17301F; --slate-100:#24272B;
+  :root{
+    --bg:#0F1318; --surface:#171C24; --surface-2:#1E2530; --line:#2A3140;
+    --text:#E7EBF0; --muted:#8B94A6;
+    --blue:#2E6FEE; --amber:#F2A93B; --green:#22C55E; --red:#EF4444; --slate:#5B6577;
   }
-}
-:root[data-theme="dark"]{
-  --paper:#15171A; --paper-2:#1D2024; --ink:#EDEEEF; --ink-soft:#9BA1A8;
-  --line:#30343A; --steel-100:#20303B; --hazard-100:#332916; --torch-100:#33201A;
-  --safety-100:#17301F; --slate-100:#24272B;
-}
-html{scroll-padding-top:env(safe-area-inset-top,0px);}
-*{box-sizing:border-box;}
-body{
-  margin:0; background:var(--paper); color:var(--ink);
-  font-family:'IBM Plex Sans', sans-serif; font-size:14px; line-height:1.5;
-  min-height:100%;
-}
-.label{font-family:'Barlow Condensed',sans-serif; letter-spacing:.02em;}
-h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:600; margin:0;}
-.mono{font-family:'IBM Plex Mono',monospace;}
-
-/* ---- Shell ---- */
-.shell{display:flex; min-height:100vh;}
-.rail{
-  width:220px; flex-shrink:0; background:var(--graphite-900); color:#DEE2E5;
-  display:flex; flex-direction:column; padding:20px 14px;
-  padding-top:calc(20px + env(safe-area-inset-top,0px));
-}
-.rail-brand{display:flex; align-items:center; gap:10px; padding:4px 6px 22px;}
-.rail-brand .mark{
-  width:30px; height:30px; border-radius:6px; background:var(--torch-500);
-  display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;
-}
-.rail-brand .txt h1{font-size:20px; color:#fff; line-height:1;}
-.rail-brand .txt span{font-size:11px; color:#8891A0;}
-.rail-nav{display:flex; flex-direction:column; gap:2px; margin-top:6px;}
-.rail-nav button{
-  all:unset; cursor:pointer; padding:9px 10px; border-radius:6px; font-size:13.5px;
-  color:#B7BEC7; display:flex; align-items:center; gap:9px;
-}
-.rail-nav button svg{width:16px;height:16px; flex-shrink:0; opacity:.85;}
-.rail-nav button:hover{background:#262A30; color:#fff;}
-.rail-nav button.active{background:var(--steel-600); color:#fff;}
-.rail-foot{margin-top:auto; padding-top:14px; border-top:1px solid #2A2E34;}
-
-.main{flex:1; min-width:0; display:flex; flex-direction:column;}
-.topbar{
-  padding:16px 28px; padding-top:calc(16px + env(safe-area-inset-top,0px));
-  border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;
-  background:var(--paper-2); position:sticky; top:0; z-index:5;
-}
-.topbar h2{font-size:22px;}
-.topbar .sub{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
-.topbar-actions{display:flex; align-items:center; gap:10px;}
-.content{padding:24px 28px 60px; overflow-x:hidden; overflow-y:auto;}
-
-/* ---- Buttons ---- */
-.btn{
-  font-family:'IBM Plex Sans',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer;
-  border-radius:6px; padding:9px 15px; border:1px solid transparent; display:inline-flex; align-items:center; gap:7px;
-}
-.btn-primary{background:var(--torch-500); color:#fff;}
-.btn-primary:hover{background:#C24B24;}
-.btn-secondary{background:var(--paper-2); color:var(--ink); border-color:var(--line);}
-.btn-secondary:hover{border-color:var(--steel-500); color:var(--steel-600);}
-.btn-steel{background:var(--steel-600); color:#fff;}
-.btn-steel:hover{background:#365E82;}
-.btn-ghost{background:transparent; color:var(--ink-soft); border-color:transparent;}
-.btn-ghost:hover{color:var(--ink);}
-.btn:disabled{opacity:.45; cursor:not-allowed;}
-.btn-sm{padding:6px 11px; font-size:12.5px;}
-.btn-block{width:100%; justify-content:center;}
-
-/* ---- KPI ---- */
-.kpi-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:22px;}
-.kpi{background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius-m); padding:14px 16px;}
-.kpi .n{font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:600; line-height:1;}
-.kpi .l{color:var(--ink-soft); font-size:12px; margin-top:5px;}
-
-/* ---- Status & priority chips ---- */
-.chip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 9px; border-radius:20px;}
-.chip::before{content:''; width:6px; height:6px; border-radius:50%;}
-.chip-pendente{background:var(--hazard-100); color:#8A6A15;}
-.chip-pendente::before{background:var(--hazard-500);}
-.chip-execucao{background:var(--steel-100); color:var(--steel-600);}
-.chip-execucao::before{background:var(--steel-500);}
-.chip-concluido{background:var(--safety-100); color:#296E43;}
-.chip-concluido::before{background:var(--safety-600);}
-
-/* ---- Order cards ---- */
-.order-list{display:flex; flex-direction:column; gap:10px;}
-.order-card{
-  background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius-m);
-  padding:14px 16px; display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; border-left-width:4px;
-}
-.order-main{flex:1; min-width:200px;}
-.order-main h3{font-size:16px; font-weight:600;}
-.order-meta{color:var(--ink-soft); font-size:12.5px; margin-top:3px;}
-.order-side{display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto;}
-.empty{border:1px dashed var(--line); border-radius:var(--radius-m); padding:40px 20px; text-align:center; color:var(--ink-soft);}
-.empty h3{color:var(--ink); font-size:18px; margin-bottom:6px;}
-
-/* ---- Modal ---- */
-.overlay{
-  position:fixed; inset:0; background:rgba(20,22,25,.55); display:none; align-items:flex-start; justify-content:center;
-  padding:40px 16px; overflow-y:auto; z-index:50;
-}
-.overlay.open{display:flex;}
-.modal{
-  background:var(--paper-2); width:100%; max-width:640px; border-radius:10px; border:1px solid var(--line);
-  box-shadow:0 20px 60px rgba(0,0,0,.25);
-}
-.modal-head{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;}
-.modal-head h2{font-size:20px;}
-.modal-close{all:unset; cursor:pointer; color:var(--ink-soft); font-size:20px; line-height:1; padding:4px;}
-.modal-body{padding:20px 22px; display:flex; flex-direction:column; gap:16px; max-height:70vh; overflow-y:auto;}
-.modal-foot{padding:16px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px;}
-.field{display:flex; flex-direction:column; gap:6px;}
-.field label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
-.field .hint{font-size:11px; color:var(--ink-soft); font-weight:400;}
-.row2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-input[type=text],input[type=number],input[type=date],select,textarea{
-  font-family:inherit; font-size:13.5px; padding:9px 11px; border:1px solid var(--line); border-radius:6px;
-  background:var(--paper); color:var(--ink); width:100%;
-}
-textarea{resize:vertical; min-height:64px;}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--steel-500); outline-offset:1px;}
-.file-drop{
-  border:1px dashed var(--line); border-radius:6px; padding:12px; display:flex; align-items:center; gap:10px; cursor:pointer;
-  font-size:12.5px; color:var(--ink-soft);
-}
-.file-drop input{display:none;}
-.file-drop.filled{border-color:var(--safety-600); color:var(--ink); background:var(--safety-100);}
-.file-drop .ic{font-size:16px;}
-
-/* ---- Kanban (operador) ---- */
-.kanban-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;}
-.machine-select{display:flex; align-items:center; gap:8px;}
-.machine-select select{width:auto; min-width:200px; font-weight:600;}
-.board{display:grid; grid-template-columns:repeat(3,minmax(260px,1fr)); gap:14px; overflow-x:auto;}
-.col{background:var(--slate-100); border-radius:var(--radius-m); padding:12px; min-height:120px;}
-.col-head{display:flex; align-items:center; justify-content:space-between; padding:2px 4px 12px;}
-.col-head h3{font-size:14px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft);}
-.col-head .cnt{font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:1px 7px;}
-.wcard{background:var(--paper-2); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; box-shadow:var(--shadow);}
-.wcard h4{font-size:15px; margin:2px 0 5px;}
-.wcard .meta{font-size:12px; color:var(--ink-soft); display:flex; flex-direction:column; gap:2px; margin-bottom:10px;}
-.wcard .actions{display:flex; gap:8px;}
-.col-empty{font-size:12px; color:var(--ink-soft); text-align:center; padding:20px 6px;}
-
-/* ---- Admin table ---- */
-table{width:100%; border-collapse:collapse; background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius-m); overflow:hidden;}
-thead th{text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); background:var(--slate-100);}
-tbody td{padding:11px 12px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:middle;}
-tbody tr:last-child td{border-bottom:none;}
-.filters{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
-.filters select{width:auto;}
-.table-wrap{overflow-x:auto; border-radius:var(--radius-m);}
-
-/* ---- toast ---- */
-.toast-wrap{position:fixed; bottom:calc(18px + env(safe-area-inset-bottom,0px)); right:18px; display:flex; flex-direction:column; gap:8px; z-index:80;}
-.toast{background:var(--graphite-900); color:#fff; padding:11px 16px; border-radius:8px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25); max-width:300px;}
-
-/* ---- Login & Pending Screens ---- */
-.auth-screen{
-  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-  background:var(--graphite-900); position:relative; overflow:hidden;
-}
-.auth-screen::before{
-  content:''; position:absolute; inset:0;
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size:34px 34px;
-}
-.auth-card{
-  position:relative; width:100%; max-width:380px; background:var(--paper-2); border-radius:12px;
-  border:1px solid var(--line); box-shadow:0 30px 80px rgba(0,0,0,.35); padding:30px 28px 26px;
-}
-.auth-brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
-.auth-brand .mark{width:36px; height:36px; border-radius:8px; background:var(--torch-500); display:flex; align-items:center; justify-content:center; font-size:18px;}
-.auth-brand h1{font-size:24px; line-height:1;}
-.auth-brand span{font-size:11.5px; color:var(--ink-soft); display:block; margin-top:2px;}
-.auth-form{display:flex; flex-direction:column; gap:14px;}
-.pw-wrap{position:relative;}
-.pw-wrap input{padding-right:38px;}
-.pw-toggle{position:absolute; right:9px; top:50%; transform:translateY(-50%); all:unset; cursor:pointer; font-size:13px; color:var(--ink-soft);}
-.auth-error{display:none; background:var(--torch-100); color:var(--torch-500); font-size:12.5px; padding:9px 11px; border-radius:6px;}
-.auth-error.show{display:block;}
-
-.logout-btn{all:unset; cursor:pointer; font-size:12px; color:#9AA2AB; display:flex; align-items:center; gap:7px; padding:8px 10px; border-radius:6px;}
-.logout-btn:hover{background:#262A30; color:#fff;}
-.menu-btn{display:none; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); align-items:center; justify-content:center; cursor:pointer; background:var(--paper-2); margin-right:8px;}
-@media (max-width:880px){
-  .rail{position:fixed; z-index:60; height:100vh; transform:translateX(-100%); transition:transform .2s ease;}
-  .rail.open{transform:translateX(0);}
-  .content{padding:18px 16px 60px;}
-  .menu-btn{display:flex !important;}
-}
+  body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);}
+  .font-display{font-family:'Space Grotesk',sans-serif;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  .card{background:var(--surface);border:1px solid var(--line);}
+  .step-line{background:var(--line);}
+  .step-line.done{background:var(--green);}
+  input,textarea,select{background:var(--surface-2);border:1px solid var(--line);color:var(--text);}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);}
+  ::placeholder{color:var(--muted);}
+  .hidden{display:none !important;}
+  .modal-backdrop{background:rgba(6,8,11,0.72);}
+  .tag{border-left-width:4px;}
 </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-<!-- Tela de Login / Cadastro -->
-<div class="auth-screen" id="loginScreen">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <div class="mark">⚙️</div>
-      <div><h1>OrdemTech</h1><span>Gestão de Produção</span></div>
+<!-- ================= LOGIN / CADASTRO ================= -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm">
+    <div class="mb-8 text-center">
+      <div class="inline-flex items-center gap-2 mb-2">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="font-display font-700 text-xl tracking-tight">OrdemTech</span>
+      </div>
+      <p class="text-sm" style="color:var(--muted)">Gestão de pedidos de produção — caldeiraria &amp; usinagem</p>
     </div>
-    
-    <!-- Formulário de Login -->
-    <form class="auth-form" id="loginForm">
-      <h2>Entrar</h2>
-      <p style="color:var(--ink-soft); font-size:12.5px; margin-bottom:6px;">Acesse com seu e-mail e senha.</p>
-      <div class="auth-error" id="loginError">E-mail ou senha inválidos.</div>
-      <div class="field">
-        <label>E-mail</label>
-        <input type="email" id="li_email" required placeholder="voce@empresa.com">
+
+    <form id="login-form" class="card p-6 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">E-mail</label>
+        <input id="login-email" type="email" required class="w-full mt-1 px-3 py-2 rounded" placeholder="voce@oficina.com">
       </div>
-      <div class="field">
-        <label>Senha</label>
-        <div class="pw-wrap">
-          <input type="password" id="li_pass" required placeholder="••••••••">
-          <button type="button" class="pw-toggle" id="pwToggle">mostrar</button>
-        </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Senha</label>
+        <input id="login-password" type="password" required class="w-full mt-1 px-3 py-2 rounded" placeholder="••••••••">
       </div>
-      <button type="submit" class="btn btn-primary btn-block" id="loginBtn" style="justify-content:center; padding:10px;">Entrar</button>
-      <button type="button" id="showSignup" class="btn btn-ghost btn-sm" style="text-align:center; justify-content:center;">Ainda não tem conta? Criar conta</button>
+      <p id="login-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="login-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Entrar</button>
+      <button type="button" id="show-signup" class="w-full text-xs" style="color:var(--muted)">Ainda não tenho conta — criar conta</button>
     </form>
 
-    <!-- Formulário de Cadastro -->
-    <form class="auth-form hidden" id="signupForm" style="display:none;">
-      <h2>Criar conta</h2>
-      <p style="color:var(--ink-soft); font-size:12.5px; margin-bottom:6px;">Cadastre seus dados para solicitar acesso.</p>
-      <div class="auth-error" id="signupError"></div>
-      <div class="field">
-        <label>Nome completo</label>
-        <input type="text" id="su_name" required placeholder="Seu Nome">
+    <form id="signup-form" class="card p-6 space-y-4 hidden">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome completo</label>
+        <input id="signup-name" required class="w-full mt-1 px-3 py-2 rounded">
       </div>
-      <div class="field">
-        <label>E-mail</label>
-        <input type="email" id="su_email" required placeholder="voce@empresa.com">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">E-mail</label>
+        <input id="signup-email" type="email" required class="w-full mt-1 px-3 py-2 rounded">
       </div>
-      <div class="field">
-        <label>Senha</label>
-        <input type="password" id="su_pass" required minlength="6" placeholder="Mínimo 6 caracteres">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Senha</label>
+        <input id="signup-password" type="password" required minlength="6" class="w-full mt-1 px-3 py-2 rounded" placeholder="mín. 6 caracteres">
       </div>
-      <button type="submit" class="btn btn-primary btn-block" id="signupBtn" style="justify-content:center; padding:10px;">Cadastrar</button>
-      <button type="button" id="showLogin" class="btn btn-ghost btn-sm" style="text-align:center; justify-content:center;">Já tem conta? Entrar</button>
+      <p class="text-xs" style="color:var(--muted)">Sua conta será criada com acesso pendente até um administrador definir sua função (solicitante, operador ou admin).</p>
+      <p id="signup-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="signup-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Criar conta</button>
+      <button type="button" id="show-login" class="w-full text-xs" style="color:var(--muted)">Já tenho conta — entrar</button>
     </form>
   </div>
 </div>
 
-<!-- Tela de Conta Pendente de Aprovação -->
-<div class="auth-screen" id="pendingScreen" style="display:none;">
-  <div class="auth-card text-center">
-    <h2>Aguardando Aprovação</h2>
-    <p style="color:var(--ink-soft); font-size:13px; margin:14px 0 20px;">Sua conta foi criada, mas ainda está pendente de liberação por um administrador. Peça ao administrador para definir sua função no painel.</p>
-    <button class="btn btn-secondary btn-block" id="pendingLogout">Sair da conta</button>
+<!-- ================= TELA: PENDENTE DE APROVAÇÃO ================= -->
+<div id="pending-screen" class="hidden min-h-screen flex items-center justify-center px-4">
+  <div class="card max-w-sm w-full p-6 rounded text-center">
+    <p class="font-display font-600 text-lg mb-2">Conta aguardando aprovação</p>
+    <p class="text-sm mb-5" style="color:var(--muted)">Sua conta foi criada. Peça a um administrador para acessar a aba "Usuários" e definir sua função (solicitante, operador ou admin) e, se for operador, a sua máquina.</p>
+    <button id="pending-logout" class="px-4 py-2 rounded border text-sm" style="border-color:var(--line)">Sair</button>
   </div>
 </div>
 
-<!-- App Shell (Painéis principais) -->
-<div class="shell" id="appShell" style="display:none;">
-  <nav class="rail" id="rail">
-    <div class="rail-brand">
-      <div class="mark">⚙️</div>
-      <div class="txt"><h1>OrdemTech</h1><span>Corte &amp; Usinagem</span></div>
+<!-- ================= APP SHELL ================= -->
+<div id="app-shell" class="hidden min-h-screen">
+  <header class="flex items-center justify-between px-5 py-3 border-b" style="border-color:var(--line);background:var(--surface)">
+    <div class="flex items-center gap-2">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="font-display font-700 tracking-tight">OrdemTech</span>
+      <span id="role-badge" class="ml-2 text-xs px-2 py-0.5 rounded" style="background:var(--surface-2);color:var(--muted)"></span>
     </div>
-    <div class="rail-nav" id="railNav"></div>
-    <div class="rail-foot">
-      <div id="railUser" style="font-size:12px; color:#B7BEC7; margin-bottom:10px;"></div>
-      <button class="logout-btn" id="logoutBtn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        Sair
-      </button>
+    <div class="flex items-center gap-4">
+      <span id="user-name" class="text-sm" style="color:var(--muted)"></span>
+      <button id="logout-btn" class="text-sm px-3 py-1.5 rounded border" style="border-color:var(--line)">Sair</button>
     </div>
-  </nav>
+  </header>
+  <main id="main-content" class="p-5 max-w-7xl mx-auto"></main>
+</div>
 
-  <div class="main">
-    <div class="topbar">
-      <div style="display:flex; align-items:center;">
-        <div class="menu-btn" id="menuBtn">☰</div>
+<!-- ================= MODAL: DETALHE / HISTÓRICO (compartilhado) ================= -->
+<div id="detail-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-2xl rounded max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Detalhes do Pedido</h3>
+      <button data-close-modal="detail-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <div id="detail-modal-body" class="p-5 space-y-5"></div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NOVO PEDIDO (Solicitante) ================= -->
+<div id="new-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Novo Pedido de Peça</h3>
+      <button data-close-modal="new-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="new-order-form" class="p-5 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome da peça</label>
+        <input id="order-piece-name" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Ex: Flange de suporte">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição / especificações</label>
+        <textarea id="order-description" rows="3" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Material, espessura, tolerâncias, observações..."></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
         <div>
-          <h2 id="pageTitle">Meus pedidos</h2>
-          <div class="sub" id="pageSub">Acompanhe suas solicitações de fabricação</div>
+          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label>
+          <input id="order-quantity" type="number" min="1" value="1" required class="w-full mt-1 px-3 py-2 rounded">
+        </div>
+        <div>
+          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label>
+          <input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded">
         </div>
       </div>
-      <div class="topbar-actions" id="topActions"></div>
-    </div>
-    <div class="content" id="content"></div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Anexo (desenho / PDF / DXF) — opcional</label>
+        <input id="order-attachment" type="file" class="w-full mt-1 text-sm">
+      </div>
+      <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
+    </form>
   </div>
 </div>
 
-<!-- Modal: novo pedido -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>Novo pedido de fabricação</h2>
-      <button class="modal-close" id="closeModal">✕</button>
+<!-- ================= MODAL: TRIAGEM (Admin) ================= -->
+<div id="triagem-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-2xl rounded max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Triagem do Pedido</h3>
+      <button data-close-modal="triagem-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <div class="modal-body">
-      <div class="field">
-        <label>Nome da peça</label>
-        <input type="text" id="f_piece" placeholder="Ex.: Flange de fixação">
-      </div>
-      <div class="field">
-        <label>Descrição detalhada</label>
-        <textarea id="f_desc" placeholder="Material, espessura, tolerâncias, acabamento, observações..."></textarea>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label>Quantidade</label>
-          <input type="number" id="f_qty" min="1" value="1">
-        </div>
-        <div class="field">
-          <label>Prazo limite</label>
-          <input type="date" id="f_deadline">
-        </div>
-      </div>
-      <div class="field">
-        <label>Anexo (Desenho / PDF) — Opcional</label>
-        <label class="file-drop" id="drop_project">
-          <span class="ic">📎</span><span id="drop_project_text">Selecionar arquivo</span>
-          <input type="file" id="f_project">
-        </label>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="cancelModal">Cancelar</button>
-      <button class="btn btn-primary" id="submitOrder">Enviar pedido</button>
-    </div>
+    <div id="triagem-body" class="p-5 space-y-5"></div>
   </div>
 </div>
 
-<!-- Modal: definir usuário / aprovar (Admin) -->
-<div class="overlay" id="overlayUser">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>Definir Função do Usuário</h2>
-      <button class="modal-close" id="closeUserModal">✕</button>
+<!-- ================= MODAL: APROVAR / EDITAR USUÁRIO (Admin) ================= -->
+<div id="edit-user-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-md rounded">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Definir Função do Usuário</h3>
+      <button data-close-modal="edit-user-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <div class="modal-body">
-      <p id="eu-name" class="text-sm font-medium" style="font-weight:600;"></p>
-      <div class="field">
-        <label>Perfil</label>
-        <select id="eu-role">
+    <form id="edit-user-form" class="p-5 space-y-4">
+      <p id="eu-name" class="text-sm font-medium"></p>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Perfil</label>
+        <select id="eu-role" class="w-full mt-1 px-3 py-2 rounded">
           <option value="pendente">Pendente</option>
           <option value="solicitante">Solicitante</option>
           <option value="operador">Operador</option>
           <option value="admin">Administrador</option>
         </select>
       </div>
-      <div class="field" id="eu-machine-wrap" style="display:none;">
-        <label>Máquinas / setores (marque uma ou mais)</label>
-        <div id="eu-machines" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;"></div>
+      <div id="eu-machine-wrap">
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Máquinas / setores (marque uma ou mais)</label>
+        <div id="eu-machines" class="mt-2 space-y-2"></div>
       </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="cancelUserModal">Cancelar</button>
-      <button class="btn btn-primary" id="submitUserEdit">Salvar alterações</button>
-    </div>
+      <p id="edit-user-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar</button>
+    </form>
   </div>
 </div>
 
-<div class="toast-wrap" id="toastWrap"></div>
+<!-- ================= SUPABASE SDK ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 /* =========================================================================
-   1) CONFIGURAÇÃO DO SUPABASE (Conectado ao seu projeto)
+   1) CONFIGURAÇÃO DO SUPABASE
+   Pegue esses valores em: Project Settings > API, no seu projeto Supabase.
    ========================================================================= */
 const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MACHINES = ["Corte a Laser", "Dobra CNC", "Centro de Usinagem", "Torno CNC"];
-const ORDER_SELECT = '*, order_routing(*), order_attachments(*), order_history(*)';
 
-let currentUser = null;
-let activeChannels = [];
-let editingUserObj = null;
+let currentUser = null;      // { id, name, email, role, machine }
+let activeChannels = [];     // canais realtime ativos, limpos ao trocar de view/logout
 
+/* =========================================================================
+   2) HELPERS GERAIS
+   ========================================================================= */
 function $(id){ return document.getElementById(id); }
-function toast(msg){
-  const el = document.createElement("div");
-  el.className = "toast"; el.textContent = msg;
-  $('toastWrap').appendChild(el);
-  setTimeout(()=>{ el.style.opacity="0"; setTimeout(()=>el.remove(),300); }, 3200);
-}
 function clearChannels(){ activeChannels.forEach(c => sb.removeChannel(c)); activeChannels = []; }
+function closeModal(id){ $(id).classList.add('hidden'); }
+function openModal(id){ $(id).classList.remove('hidden'); }
+document.querySelectorAll('[data-close-modal]').forEach(btn=>{
+  btn.addEventListener('click', ()=> closeModal(btn.dataset.closeModal));
+});
 
 function fmtDate(d){
   if(!d) return '—';
-  return new Date(d+'T00:00:00').toLocaleDateString('pt-BR');
+  const date = new Date(d+'T00:00:00');
+  return date.toLocaleDateString('pt-BR');
 }
 function fmtDateTime(iso){
   if(!iso) return '—';
   return new Date(iso).toLocaleString('pt-BR');
 }
+function isLate(order){
+  if(order.status === 'concluido' || !order.deadline) return false;
+  return new Date(order.deadline+'T23:59:59') < new Date();
+}
+function statusInfo(order){
+  if(order.status === 'aguardando_analise')
+    return { label: 'Aguardando Análise ADM', color: 'var(--slate)' };
+  if(order.status === 'em_producao')
+    return { label: `Em Produção (Etapa ${order.currentStepIndex+1}: ${order.currentMachine})`, color: 'var(--blue)' };
+  if(order.status === 'concluido')
+    return { label: 'Concluído / Pronto para Expedição', color: 'var(--green)' };
+  return { label: order.status, color: 'var(--slate)' };
+}
 function roleLabel(r){
   return { solicitante:'Solicitante', admin:'Administrador', operador:'Operador', pendente:'Pendente' }[r] || r;
 }
-
-/* =========================================================================
-   2) AUTENTICAÇÃO E SESSÃO
-   ========================================================================= */
-$('showSignup').onclick = ()=>{$('loginForm').style.display='none'; $('signupForm').style.display='flex'; };$('showLogin').onclick = ()=>{ $('signupForm').style.display='none';$('loginForm').style.display='flex'; };
-
-$('loginForm').onsubmit = async (e)=>{
-  e.preventDefault();
-  const err = $('loginError'); err.classList.remove('show');
-  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Entrando...';
-  try{
-    const { error } = await sb.auth.signInWithPassword({
-      email: $('li_email').value.trim(),
-      password: $('li_pass').value
-    });
-    if(error) throw error;
-  }catch(ex){
-    err.textContent = 'E-mail ou senha inválidos.';
-    err.classList.add('show');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Entrar';
-  }
-};
-
-$('signupForm').onsubmit = async (e)=>{
-  e.preventDefault();
-  const err = $('signupError'); err.classList.remove('show');
-  const btn = $('signupBtn'); btn.disabled = true; btn.textContent = 'Cadastrando...';
-  try{
-    const name = $('su_name').value.trim();
-    const email = $('su_email').value.trim();
-    const password = $('su_pass').value;
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if(error) throw error;
-    if(data.user){
-      await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
-      toast('Conta criada com sucesso! Faça login.');
-      $('signupForm').style.display = 'none';$('loginForm').style.display = 'flex';
-    }
-  }catch(ex){
-    err.textContent = 'Erro ao cadastrar: ' + ex.message;
-    err.classList.add('show');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Cadastrar';
-  }
-};
-
-$('logoutBtn').onclick = ()=> sb.auth.signOut();$('pendingLogout').onclick = ()=> sb.auth.signOut();
-
-async function handleSession(session){
-  clearChannels();
-  if(!session){
-    currentUser = null;
-    $('appShell').style.display = 'none';
-    $('pendingScreen').style.display = 'none';$('loginScreen').style.display = 'flex';
-    return;
-  }
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-  if(!profile){
-    sb.auth.signOut();
-    return;
-  }
-  currentUser = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, machines: profile.machines || [] };
-
-  $('loginScreen').style.display = 'none';
-  if(currentUser.role === 'pendente'){
-    $('pendingScreen').style.display = 'flex';
-    return;
-  }
-  $('pendingScreen').style.display = 'none';
-  $('appShell').style.display = 'flex';$('railUser.innerHTML') = `<strong>${currentUser.name}</strong><br>${roleLabel(currentUser.role)}`;
-  renderRail();
-  routeToDashboard();
+function historyRow(orderId, action, detail){
+  return { order_id: orderId, by_uid: currentUser.id, by_name: currentUser.name, by_role: currentUser.role, action, detail };
 }
 
-sb.auth.onAuthStateChange((_e, session)=> handleSession(session));
-sb.auth.getSession().then(({ data })=> handleSession(data.session));
-
-/* =========================================================================
-   3) NAVEGAÇÃO E PAINÉIS
-   ========================================================================= */
-function renderRail(){
-  const role = currentUser.role;
-  let navItems = [];
-  if(role === 'solicitante') navItems = [['dashboard', 'Meus Pedidos', '📋']];
-  else if(role === 'operador') navItems = [['kanban', 'Fila de Produção', '⚙️']];
-  else if(role === 'admin') navItems = [
-    ['fila', 'Fila de Triagem', '📥'],
-    ['todos', 'Todos os Pedidos', '📊'],
-    ['usuarios', 'Usuários', '👥'],
-    ['solicitante', 'Visão Solicitante', '📋'],
-    ['operador', 'Visão Operador', '⚙️']
-  ];
-
-  $('railNav').innerHTML = navItems.map(([id, label, icon])=>
-    `<button data-page="${id}" class="${window.activePage===id?'active':''}">${icon} ${label}</button>`
-  ).join('');
-
-  $('railNav').querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ window.activePage = b.dataset.page; renderRail(); routeToDashboard(); };
-  });
-  if(!window.activePage) window.activePage = navItems[0][0];
-}
-
-function routeToDashboard(){
-  const p = window.activePage;
-  if(currentUser.role === 'solicitante') renderSolicitante();
-  else if(currentUser.role === 'operador') renderOperador();
-  else if(currentUser.role === 'admin'){
-    if(p === 'fila') renderAdminFila();
-    else if(p === 'todos') renderAdminTodos();
-    else if(p === 'usuarios') renderAdminUsuarios();
-    else if(p === 'solicitante') renderSolicitante();
-    else if(p === 'operador') renderOperador();
-  }
-}
-
-function liveRefresh(channelName, fetchFn){
-  fetchFn();
-  const channel = sb.channel(channelName)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_routing' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_attachments' }, fetchFn)
-    .subscribe();
-  activeChannels.push(channel);
-}
-
+// Converte uma linha do Postgres (com joins aninhados) para o formato usado nas telas.
 function normalizeOrder(row){
   return {
     id: row.id,
@@ -574,182 +253,594 @@ function normalizeOrder(row){
     description: row.description,
     quantity: row.quantity,
     deadline: row.deadline,
+    requesterId: row.requester_id,
     requesterName: row.requester_name,
     status: row.status,
     currentStepIndex: row.current_step_index,
     currentMachine: row.current_machine,
-    routing: (row.order_routing || []).sort((a,b)=>a.step_index-b.step_index),
-    attachments: row.order_attachments || []
+    createdAt: row.created_at,
+    routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
+      .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
+    attachments: (row.order_attachments || [])
+      .map(a => ({ name:a.name, url:a.url, uploadedBy:a.uploaded_by, uploadedAt:a.uploaded_at })),
+    history: (row.order_history || []).slice().sort((a,b)=> new Date(a.at) - new Date(b.at))
+      .map(h => ({ at:h.at, byName:h.by_name, byRole:h.by_role, action:h.action, detail:h.detail }))
   };
 }
 
+const ORDER_SELECT = '*, order_routing(*), order_attachments(*), order_history(*)';
+
+async function uploadFile(orderId, file){
+  const path = `${orderId}/${Date.now()}_${file.name}`;
+  const { error: upErr } = await sb.storage.from('attachments').upload(path, file);
+  if(upErr) throw upErr;
+  const { data } = sb.storage.from('attachments').getPublicUrl(path);
+  return { order_id: orderId, name: file.name, url: data.publicUrl, uploaded_by: currentUser.name };
+}
+
+function stepperHTML(order){
+  if(!order.routing || order.routing.length === 0){
+    return `<p class="text-sm" style="color:var(--muted)">Roteiro ainda não definido pelo ADM.</p>`;
+  }
+  return `<div class="flex items-center flex-wrap gap-0">` + order.routing.map((step, i) => {
+    const done = step.status === 'concluido';
+    const current = i === order.currentStepIndex && order.status === 'em_producao';
+    const circleStyle = done ? `background:var(--green);color:#06210f`
+                       : current ? `background:var(--blue);color:#fff`
+                       : `background:var(--surface-2);color:var(--muted);border:1px solid var(--line)`;
+    const line = i < order.routing.length - 1
+      ? `<div class="step-line ${done ? 'done' : ''}" style="height:2px;width:28px;"></div>` : '';
+    return `<div class="flex items-center">
+        <div class="flex flex-col items-center gap-1 px-1">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="${circleStyle}">${i+1}</div>
+          <span class="text-[11px] text-center leading-tight max-w-[64px]" style="color:${current?'var(--text)':'var(--muted)'}">${step.machine}</span>
+        </div>
+        ${line}
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+function historyHTML(order){
+  if(!order.history || order.history.length === 0) return '<p class="text-sm" style="color:var(--muted)">Sem eventos.</p>';
+  return `<div class="space-y-3">` + order.history.slice().reverse().map(h => `
+    <div class="flex gap-3 text-sm">
+      <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
+      <div>
+        <p><span class="font-medium">${h.byName}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${h.detail}</p>
+        <p class="text-xs" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function attachmentsHTML(order){
+  if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
+  return `<ul class="space-y-1.5">` + order.attachments.map(a => `
+    <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
+      <span>📎 ${a.name} <span class="text-xs" style="color:var(--muted)">— enviado por ${a.uploadedBy}</span></span>
+      <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
+    </li>`).join('') + `</ul>`;
+}
+
+function openDetailModal(order){
+  const s = statusInfo(order);
+  $('detail-modal-body').innerHTML = `
+    <div class="flex items-start justify-between">
+      <div>
+        <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
+        <p class="text-sm" style="color:var(--muted)">Solicitado por ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+      </div>
+      <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+    </div>
+    <p class="text-sm">${order.description}</p>
+    <div>
+      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Roteiro de produção</p>
+      ${stepperHTML(order)}
+    </div>
+    <div>
+      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos</p>
+      ${attachmentsHTML(order)}
+    </div>
+    <div>
+      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Histórico de movimentação</p>
+      ${historyHTML(order)}
+    </div>
+  `;
+  openModal('detail-modal');
+}
+
 /* =========================================================================
-   4) PAINEL SOLICITANTE
+   3) AUTENTICAÇÃO
    ========================================================================= */
-function renderSolicitante(){
-  $('pageTitle').textContent = "Meus Pedidos";
-  $('pageSub').textContent = `Solicitante: ${currentUser.name}`;
-  $('topActions').innerHTML = `<button class="btn btn-primary" id="newOrderBtn">+ Novo pedido</button>`;
-  $('newOrderBtn').onclick = ()=>$('overlay').classList.add('open');
+$('show-signup').addEventListener('click', ()=>{ $('login-form').classList.add('hidden'); $('signup-form').classList.remove('hidden'); });
+$('show-login').addEventListener('click', ()=>{ $('signup-form').classList.add('hidden'); $('login-form').classList.remove('hidden'); });
+
+$('login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('login-email').value.trim();
+  const password = $('login-password').value;
+  const btn = $('login-btn'); const err = $('login-error');
+  err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Entrando...';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ err.textContent = 'E-mail ou senha inválidos.'; err.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Entrar';
+});
+
+$('signup-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const err = $('signup-error'); err.classList.add('hidden');
+  const btn = $('signup-btn'); btn.disabled = true; btn.textContent = 'Criando...';
+  try{
+    const name = $('signup-name').value.trim();
+    const email = $('signup-email').value.trim();
+    const password = $('signup-password').value;
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if(error) throw error;
+    if(!data.user) throw new Error('Confirme seu e-mail (verifique a caixa de entrada) e depois faça login.');
+    await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
+    e.target.reset();
+  }catch(ex){
+    err.textContent = 'Erro ao criar conta: ' + ex.message;
+    err.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Criar conta';
+  }
+});
+
+$('logout-btn').addEventListener('click', ()=> sb.auth.signOut());
+$('pending-logout').addEventListener('click', ()=> sb.auth.signOut());
+
+async function handleSession(session){
+  clearChannels();
+  if(!session){
+    currentUser = null;
+    $('app-shell').classList.add('hidden');
+    $('pending-screen').classList.add('hidden');
+    $('login-screen').classList.remove('hidden');
+    return;
+  }
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if(error || !profile){
+    alert('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
+    sb.auth.signOut();
+    return;
+  }
+  currentUser = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, machines: profile.machines || [] };
+
+  $('login-screen').classList.add('hidden');
+  if(currentUser.role === 'pendente'){
+    $('pending-screen').classList.remove('hidden');
+    return;
+  }
+  $('pending-screen').classList.add('hidden');
+  $('app-shell').classList.remove('hidden');
+  $('user-name').textContent = currentUser.name;
+  $('role-badge').textContent = roleLabel(currentUser.role) + (currentUser.machines.length ? ` · ${currentUser.machines.join(', ')}` : '');
+  routeToDashboard();
+}
+
+sb.auth.onAuthStateChange((_event, session)=> handleSession(session));
+sb.auth.getSession().then(({ data })=> handleSession(data.session));
+
+function routeToDashboard(){
+  if(currentUser.role === 'solicitante') renderSolicitante();
+  else if(currentUser.role === 'admin') renderAdmin();
+  else if(currentUser.role === 'operador') renderOperador();
+  else $('main-content').innerHTML = '<p>Perfil não reconhecido.</p>';
+}
+
+// Assina mudanças nas 4 tabelas e re-executa fetchFn a cada alteração relevante.
+function liveRefresh(channelName, fetchFn){
+  fetchFn();
+  const channel = sb.channel(channelName)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchFn)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_routing' }, fetchFn)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_attachments' }, fetchFn)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_history' }, fetchFn)
+    .subscribe();
+  activeChannels.push(channel);
+}
+
+/* =========================================================================
+   4) PAINEL — SOLICITANTE
+   ========================================================================= */
+function renderSolicitante(container = $('main-content')){
+  clearChannels();
+  container.innerHTML = `
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="font-display font-700 text-xl">Meus Pedidos</h2>
+        <p class="text-sm" style="color:var(--muted)">Acompanhe o status dos pedidos que você enviou.</p>
+      </div>
+      <button id="btn-new-order" class="px-4 py-2 rounded font-medium" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
+    </div>
+    <div id="solicitante-list" class="space-y-3"></div>
+  `;
+  $('btn-new-order').addEventListener('click', ()=> openModal('new-order-modal'));
 
   liveRefresh('solicitante-orders', async ()=>{
-    const { data } = await sb.from('orders').select(ORDER_SELECT).eq('requester_id', currentUser.id).order('created_at', {ascending:false});
-    const orders = (data||[]).map(normalizeOrder);
-    const content = $('content');
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('requester_id', currentUser.id).order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('solicitante-list');
     if(orders.length === 0){
-      content.innerHTML = `<div class="empty"><h3>Nenhum pedido ainda</h3>Clique em "+ Novo pedido" para solicitar a fabricação.</div>`;
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido ainda. Clique em "Novo Pedido" para começar.</div>`;
       return;
     }
-    content.innerHTML = `<div class="order-list">` + orders.map(o=>`
-      <div class="order-card" style="border-left-color:var(--steel-500)">
-        <div class="order-main">
-          <h3>${o.pieceName} <span style="font-weight:400; font-size:13px; color:var(--ink-soft);">(Qtd: ${o.quantity})</span></h3>
-          <div class="order-meta">Prazo: ${fmtDate(o.deadline)}</div>
+    list.innerHTML = orders.map(o=>{
+      const s = statusInfo(o); const late = isLate(o);
+      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
-        <div class="order-side">
-          <span class="chip chip-execucao">${o.status}</span>
-        </div>
-      </div>`).join('') + `</div>`;
+        <div class="mt-3">${stepperHTML(o)}</div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-order-id]').forEach(el=>{
+      el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
+    });
   });
 }
 
-$('closeModal').onclick = ()=>$('overlay').classList.remove('open');
-$('cancelModal').onclick = ()=>$('overlay').classList.remove('open');
+$('new-order-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = $('new-order-submit'); const err = $('new-order-error');
+  err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Enviando...';
+  try{
+    const { data: order, error } = await sb.from('orders').insert({
+      piece_name: $('order-piece-name').value.trim(),
+      description: $('order-description').value.trim(),
+      quantity: Number($('order-quantity').value),
+      deadline: $('order-deadline').value,
+      requester_id: currentUser.id,
+      requester_name: currentUser.name,
+      status: 'aguardando_analise'
+    }).select().single();
+    if(error) throw error;
 
-$('submitOrder').onclick = async ()=>{
-  const pieceName = $('f_piece').value.trim();
-  const description = $('f_desc').value.trim();
-  const quantity = parseInt($('f_qty').value || 1);
-  const deadline = $('f_deadline').value;
-  if(!pieceName || !deadline){ toast('Preencha os campos obrigatórios.'); return; }
+    await sb.from('order_history').insert(historyRow(order.id, 'criado', 'Pedido criado e enviado para triagem do ADM.'));
 
-  const { data: order, error } = await sb.from('orders').insert({
-    piece_name: pieceName, description, quantity, deadline,
-    requester_id: currentUser.id, requester_name: currentUser.name, status: 'aguardando_analise'
-  }).select().single();
-
-  if(error){ toast('Erro ao criar pedido.'); return; }
-  $('overlay').classList.remove('open');
-  toast('Pedido enviado com sucesso para análise!');
-};
+    const file = $('order-attachment').files[0];
+    if(file){
+      const att = await uploadFile(order.id, file);
+      await sb.from('order_attachments').insert(att);
+    }
+    e.target.reset();
+    closeModal('new-order-modal');
+  }catch(ex){
+    console.error(ex);
+    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
+    err.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
+  }
+});
 
 /* =========================================================================
-   5) PAINEL ADMINISTRADOR (Fila, Todos, Usuários)
+   5) PAINEL — ADMINISTRADOR
    ========================================================================= */
-function renderAdminFila(){
-  $('pageTitle').textContent = "Fila de Triagem";
-  $('pageSub').textContent = "Aprove e defina roteiros de produção";
-  $('topActions').innerHTML = '';
+function renderAdmin(){
+  $('main-content').innerHTML = `
+    <div class="flex items-center gap-2 mb-5 border-b overflow-x-auto" style="border-color:var(--line)">
+      <button data-tab="fila" class="admin-tab px-4 py-2 text-sm font-medium border-b-2" style="border-color:var(--blue)">Fila de Triagem</button>
+      <button data-tab="todos" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--muted)">Todos os Pedidos</button>
+      <button data-tab="usuarios" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Usuários</button>
+      <button data-tab="solicitante" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Solicitante</button>
+      <button data-tab="operador" class="admin-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent whitespace-nowrap" style="color:var(--muted)">Visão Operador</button>
+    </div>
+    <div id="admin-tab-content"></div>
+  `;
+  document.querySelectorAll('.admin-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.admin-tab').forEach(b=>{ b.style.borderColor='transparent'; b.style.color='var(--muted)'; });
+      btn.style.borderColor = 'var(--blue)'; btn.style.color = 'var(--text)';
+      if(btn.dataset.tab === 'fila') renderAdminFila();
+      if(btn.dataset.tab === 'todos') renderAdminTodos();
+      if(btn.dataset.tab === 'usuarios') renderAdminUsuarios();
+      if(btn.dataset.tab === 'solicitante') renderSolicitante($('admin-tab-content'));
+      if(btn.dataset.tab === 'operador') renderOperador($('admin-tab-content'));
+    });
+  });
+  renderAdminFila();
+}
 
+function renderAdminFila(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="fila-list" class="space-y-3"></div>`;
   liveRefresh('admin-fila', async ()=>{
-    const { data } = await sb.from('orders').select(ORDER_SELECT).eq('status', 'aguardando_analise');
-    const orders = (data||[]).map(normalizeOrder);
-    const content = $('content');
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('status', 'aguardando_analise').order('created_at', { ascending: true });
+    if(error){ console.error(error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('fila-list');
     if(orders.length === 0){
-      content.innerHTML = `<div class="empty"><h3>Nenhum pedido aguardando triagem. 🎉</h3></div>`;
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido aguardando triagem. 🎉</div>`;
       return;
     }
-    content.innerHTML = `<div class="order-list">` + orders.map(o=>`
-      <div class="order-card" style="border-left-color:var(--hazard-500)">
-        <div class="order-main">
-          <h3>${o.pieceName} <span style="font-weight:400; font-size:13px; color:var(--ink-soft);">(Solicitante: ${o.requesterName})</span></h3>
-          <div class="order-meta">${o.description} · Prazo: ${fmtDate(o.deadline)}</div>
+    list.innerHTML = orders.map(o=> `
+      <div class="card rounded p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
+        <div>
+          <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${o.requesterName} · Prazo: ${fmtDate(o.deadline)}</p>
         </div>
-        <div class="order-side">
-          <button class="btn btn-primary btn-sm" onclick="aprovarPedido('${o.id}')">Aprovar para Corte a Laser</button>
-        </div>
-      </div>`).join('') + `</div>`;
+        <button data-triar="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium shrink-0" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-triar]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openTriagemModal(orders.find(o=>o.id===btn.dataset.triar)));
+    });
   });
 }
 
-async function aprovarPedido(orderId){
-  await sb.from('orders').update({
-    status: 'em_producao', current_step_index: 0, current_machine: 'Corte a Laser'
-  }).eq('id', orderId);
-  await sb.from('order_routing').insert({ order_id: orderId, step_index: 0, machine: 'Corte a Laser', status: 'em_andamento' });
-  toast('Pedido aprovado e enviado para a produção!');
+function openTriagemModal(order){
+  let routing = [];
+  function renderBody(){
+    $('triagem-body').innerHTML = `
+      <div>
+        <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
+        <p class="text-sm" style="color:var(--muted)">Solicitante: ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+        <p class="text-sm mt-2">${order.description}</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos do solicitante</p>
+        ${attachmentsHTML(order)}
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
+        <input id="triagem-file" type="file" class="w-full text-sm">
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
+        <div class="flex flex-wrap gap-2 mb-3">
+          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3 py-1.5 rounded text-sm border" style="border-color:var(--line)">+ ${m}</button>`).join('')}
+        </div>
+        <div id="routing-list" class="space-y-2"></div>
+      </div>
+      <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button id="btn-aprovar" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
+    `;
+    renderRoutingList();
+    $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ routing.push(btn.dataset.addMachine); renderRoutingList(); });
+    });
+    $('btn-aprovar').addEventListener('click', async ()=>{
+      const err = $('triagem-error');
+      if(routing.length === 0){ err.textContent = 'Defina ao menos uma máquina no roteiro.'; err.classList.remove('hidden'); return; }
+      $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Enviando...';
+      try{
+        await sb.from('orders').update({
+          status: 'em_producao', current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
+        }).eq('id', order.id);
+
+        const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
+        await sb.from('order_routing').insert(rows);
+
+        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
+
+        const file = $('triagem-file').files[0];
+        if(file){
+          const att = await uploadFile(order.id, file);
+          await sb.from('order_attachments').insert(att);
+        }
+        closeModal('triagem-modal');
+      }catch(ex){
+        console.error(ex);
+        err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden');
+      }finally{
+        $('btn-aprovar').disabled = false; $('btn-aprovar').textContent = 'Aprovar e Enviar para Produção';
+      }
+    });
+  }
+  function renderRoutingList(){
+    const el = $('routing-list');
+    if(routing.length === 0){ el.innerHTML = `<p class="text-sm" style="color:var(--muted)">Nenhuma etapa adicionada.</p>`; return; }
+    el.innerHTML = routing.map((m,i)=> `
+      <div class="flex items-center justify-between card px-3 py-2 rounded">
+        <span class="text-sm">${i+1}. ${m}</span>
+        <div class="flex items-center gap-1">
+          <button data-up="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
+          <button data-down="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)" ${i===routing.length-1?'disabled style="opacity:.3"':''}>↓</button>
+          <button data-remove="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">✕</button>
+        </div>
+      </div>`).join('');
+    el.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.up; [routing[i-1],routing[i]]=[routing[i],routing[i-1]]; renderRoutingList(); }));
+    el.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.down; [routing[i+1],routing[i]]=[routing[i],routing[i+1]]; renderRoutingList(); }));
+    el.querySelectorAll('[data-remove]').forEach(b=> b.addEventListener('click', ()=>{ routing.splice(+b.dataset.remove,1); renderRoutingList(); }));
+  }
+  renderBody();
+  openModal('triagem-modal');
 }
 
 function renderAdminTodos(){
-  $('pageTitle').textContent = "Todos os Pedidos";
-  $('pageSub').textContent = "Visão geral de ordens";
-  $('topActions').innerHTML = '';
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="todos-list" class="space-y-3"></div>`;
   liveRefresh('admin-todos', async ()=>{
-    const { data } = await sb.from('orders').select(ORDER_SELECT).order('created_at', {ascending:false});
-    const orders = (data||[]).map(normalizeOrder);
-    $('content').innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Peça</th><th>Solicitante</th><th>Status</th><th>Máquina Atual</th><th>Prazo</th></tr></thead>
-      <tbody>` + orders.map(o=>`
-        <tr><td><strong>${o.pieceName}</strong></td><td>${o.requesterName}</td><td>${o.status}</td><td>${o.currentMachine || '—'}</td><td>${fmtDate(o.deadline)}</td></tr>`).join('') + `</tbody></table></div>`;
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('todos-list');
+    if(orders.length === 0){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido cadastrado.</div>`; return; }
+    list.innerHTML = orders.map(o=>{
+      const s = statusInfo(o); const late = isLate(o);
+      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+        </div>
+        <div class="mt-3">${stepperHTML(o)}</div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-order-id]').forEach(el=>{
+      el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
+    });
   });
 }
 
 function renderAdminUsuarios(){
-  $('pageTitle').textContent = "Gerenciamento de Usuários";
-  $('pageSub').textContent = "Defina funções e permissões da equipe";
-  $('topActions').innerHTML = '';
-
-  liveRefresh('admin-users', async ()=>{
-    const { data: users } = await sb.from('profiles').select('*').order('created_at', {ascending:false});
-    $('content').innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Ações</th></tr></thead>
-      <tbody>` + (users||[]).map(u=>`
-        <tr>
-          <td><strong>${u.name}</strong></td>
-          <td>${u.email}</td>
-          <td><span class="chip chip-execucao">${roleLabel(u.role)}</span></td>
-          <td><button class="btn btn-secondary btn-sm" onclick="abrirModalUsuario('${u.id}', '${u.name}', '${u.role}')">Editar Função</button></td>
-        </tr>`).join('') + `</tbody></table></div>`;
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-2"></div>`;
+  liveRefresh('admin-usuarios', async ()=>{
+    const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    $('users-list').innerHTML = users.map(u=> `
+      <div class="card rounded p-3 flex items-center justify-between">
+        <div>
+          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">${u.email}</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs px-2 py-1 rounded" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
+          <button data-edit-user="${u.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">Editar</button>
+        </div>
+      </div>`).join('');
+    $('users-list').querySelectorAll('[data-edit-user]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openEditUserModal(users.find(u=>u.id===btn.dataset.editUser)));
+    });
   });
 }
 
-function abrirModalUsuario(id, name, role){
-  editingUserObj = id;
-  $('eu-name').textContent = `Usuário: ${name}`;
-  $('eu-role').value = role;
-  $('overlayUser').classList.add('open');
-}
-$('closeUserModal').onclick = ()=>$('overlayUser').classList.remove('open');
-$('cancelUserModal').onclick = ()=>$('overlayUser').classList.remove('open');
+$('eu-machines').innerHTML = MACHINES.map(m=>`
+  <label class="flex items-center gap-2 text-sm cursor-pointer">
+    <input type="checkbox" name="eu-machine-check" value="${m}" style="width:16px;height:16px"> ${m}
+  </label>`).join('');
+$('eu-role').addEventListener('change', ()=>{
+  $('eu-machine-wrap').classList.toggle('hidden', $('eu-role').value !== 'operador');
+});
 
-$('submitUserEdit').onclick = async ()=>{
-  if(!editingUserObj) return;
-  const newRole = $('eu-role').value;
-  await sb.from('profiles').update({ role: newRole }).eq('id', editingUserObj);
-  $('overlayUser').classList.remove('open');
-  toast('Função do usuário atualizada com sucesso!');
-};
+function openEditUserModal(user){
+  $('eu-name').textContent = `${user.name} — ${user.email}`;
+  $('eu-role').value = user.role;
+  $('eu-machine-wrap').classList.toggle('hidden', user.role !== 'operador');
+  const mine = user.machines || [];
+  document.querySelectorAll('input[name="eu-machine-check"]').forEach(cb=>{ cb.checked = mine.includes(cb.value); });
+  $('edit-user-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('edit-user-error'); err.classList.add('hidden');
+    const role = $('eu-role').value;
+    const machines = role === 'operador'
+      ? [...document.querySelectorAll('input[name="eu-machine-check"]:checked')].map(cb=>cb.value)
+      : [];
+    if(role === 'operador' && machines.length === 0){
+      err.textContent = 'Marque ao menos uma máquina para o operador.'; err.classList.remove('hidden'); return;
+    }
+    const { error } = await sb.from('profiles').update({ role, machines }).eq('id', user.id);
+    if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); return; }
+    closeModal('edit-user-modal');
+  };
+  openModal('edit-user-modal');
+}
 
 /* =========================================================================
-   6) PAINEL OPERADOR
+   6) PAINEL — OPERADOR (operador: suas máquinas | admin: todas as máquinas)
    ========================================================================= */
-function renderOperador(){
-  $('pageTitle').textContent = "Fila de Produção";
-  $('pageSub').textContent = "Painel do operador";
-  $('topActions').innerHTML = '';
+function renderOperador(container = $('main-content')){
+  clearChannels();
+  const isAdmin = currentUser.role === 'admin';
+  const available = isAdmin ? MACHINES : (currentUser.machines || []);
+  let filter = 'todas';
 
-  liveRefresh('op-fila', async ()=>{
-    const { data } = await sb.from('orders').select(ORDER_SELECT).eq('status', 'em_producao').order('deadline', {ascending:true});
-    const orders = (data||[]).map(normalizeOrder);
-    $('content').innerHTML = `<div class="order-list">` + (orders.length ? orders.map(o=>`
-      <div class="order-card" style="border-left-color:var(--steel-600)">
-        <div class="order-main">
-          <h3>${o.pieceName} <span style="font-weight:400; font-size:13px; color:var(--ink-soft);">(Qtd: ${o.quantity})</span></h3>
-          <div class="order-meta">Setor atual: <strong>${o.currentMachine}</strong> · Prazo: ${fmtDate(o.deadline)}</div>
+  container.innerHTML = `
+    <div class="mb-5">
+      <h2 class="font-display font-700 text-xl">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
+      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}.</p>
+      <div id="op-chips" class="flex flex-wrap gap-2 mt-3"></div>
+    </div>
+    <div id="operador-list" class="space-y-3"></div>
+  `;
+  if(available.length === 0){
+    $('operador-list').innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
+    return;
+  }
+
+  function drawChips(){
+    if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
+    const opts = ['todas', ...available];
+    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3 py-1 rounded text-xs border" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'#2E6FEE22':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
+    $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
+      filter = b.dataset.chip; drawChips(); fetchOp();
+    }));
+  }
+
+  const fetchOp = async ()=>{
+    const machinesFilter = filter === 'todas' ? available : [filter];
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('status', 'em_producao').in('current_machine', machinesFilter)
+      .order('deadline', { ascending: true });
+    if(error){ console.error(error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('operador-list');
+    if(!list) return;
+    if(orders.length === 0){
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
+      return;
+    }
+    list.innerHTML = orders.map(o=>{
+      const step = o.routing[o.currentStepIndex];
+      const late = isLate(o);
+      return `<div class="card rounded p-4 tag" style="border-left-color:${late?'var(--red)':'var(--blue)'}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
+            ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
+          </span>
         </div>
-        <div class="order-side">
-          <button class="btn btn-primary btn-sm" onclick="concluirEtapa('${o.id}')">Concluir Etapa</button>
+        <p class="text-sm mt-2">${o.description}</p>
+        <div class="mt-3">${stepperHTML(o)}</div>
+        <div class="mt-3">${attachmentsHTML(o)}</div>
+        <div class="mt-3 flex gap-2">
+          <button data-detail="${o.id}" class="px-3 py-1.5 rounded text-sm border" style="border-color:var(--line)">Ver histórico</button>
+          ${step.status === 'pendente'
+            ? `<button data-start="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--blue);color:#fff">Iniciar Etapa</button>`
+            : `<button data-finish="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--green);color:#06210f">Finalizar Etapa</button>`}
         </div>
-      </div>`).join('') : `<div class="empty"><h3>Nenhum pedido na fila de produção.</h3></div>`) + `</div>`;
-  });
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
+    list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
+    list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> finishStep(orders.find(o=>o.id===b.dataset.finish))));
+  };
+
+  drawChips();
+  liveRefresh('operador-fila', fetchOp);
 }
 
-async function concluirEtapa(orderId){
-  await sb.from('orders').update({ status: 'concluido', current_machine: null }).eq('id', orderId);
-  toast('Etapa concluída e ordem finalizada!');
+async function startStep(order){
+  const step = order.routing[order.currentStepIndex];
+  const r1 = await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
+  if(r1.error){ alert('Erro ao iniciar etapa: ' + r1.error.message); return; }
+  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
+  if(r2.error) alert('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
 }
 
-document.getElementById("menuBtn").onclick = ()=>document.getElementById("rail").classList.toggle("open");
+async function finishStep(order){
+  const idx = order.currentStepIndex;
+  const step = order.routing[idx];
+  const nextIdx = idx + 1;
+  const isLast = nextIdx >= order.routing.length;
+  const detail = `Finalizou a etapa "${order.currentMachine}".` + (isLast ? ' Pedido concluído.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
+
+  const r1 = await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id);
+  if(r1.error){ alert('Erro ao finalizar etapa: ' + r1.error.message); return; }
+
+  // Histórico ANTES de repassar o pedido (depois o operador perde acesso a ele).
+  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail));
+  if(r2.error){ alert('Erro ao registrar histórico: ' + r2.error.message); return; }
+
+  const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
+  if(isLast){ updates.status = 'concluido'; updates.current_machine = null; }
+  else{ updates.current_machine = order.routing[nextIdx].machine; }
+  const r3 = await sb.from('orders').update(updates).eq('id', order.id);
+  if(r3.error){ alert('Erro ao avançar o pedido: ' + r3.error.message); }
+}
 </script>
 </body>
 </html>
