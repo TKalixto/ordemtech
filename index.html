@@ -125,17 +125,13 @@
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="order-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="order-piece-name" required class="w-full mt-1 px-3 py-2 rounded" placeholder="Ex: Flange de suporte"></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="order-material" required class="w-full mt-1 px-3 py-2 rounded"></select></div>
+      <div class="flex items-center justify-between">
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="order-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+      </div>
+      <div id="order-items-editor" class="space-y-3"></div>
       <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 rounded" placeholder="Tolerâncias, acabamento, observações..."></textarea></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label><input id="order-quantity" type="number" min="1" value="1" required class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
-      </div>
-      <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Anexo (desenho / PDF / DXF) — opcional</label>
-        <input id="order-attachment" type="file" class="w-full mt-1 text-sm">
-      </div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado (para o pedido inteiro)</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
       <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
       <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
     </form>
@@ -193,21 +189,45 @@
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="eo-piece" required class="w-full mt-1 px-3 py-2 rounded"></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="eo-material" class="w-full mt-1 px-3 py-2 rounded"></select></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label>
-          <input id="eo-qty" type="number" min="1" required class="w-full mt-1 px-3 py-2 rounded">
-        </div>
-        <div>
-          <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label>
-          <input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded">
-        </div>
+      <div id="eo-single-fields" class="space-y-4">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="eo-piece" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="eo-material" class="w-full mt-1 px-3 py-2 rounded"></select></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label><input id="eo-qty" type="number" min="1" class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
+      <div id="eo-multi-note" class="hidden space-y-2">
+        <p class="text-xs" style="color:var(--muted)">Este pedido tem várias peças. Para alterar os itens, oriente o solicitante a excluir e recriar o pedido (só é possível enquanto ele aguarda análise).</p>
+        <div id="eo-items-readonly" class="space-y-1"></div>
+      </div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label><input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
       <p id="edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
       <button type="submit" id="edit-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MODAL: EDITAR MEU PEDIDO (Solicitante) ================= -->
+<div id="sol-edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Editar Meu Pedido</h3>
+      <button data-close-modal="sol-edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="sol-edit-order-form" class="p-5 space-y-4">
+      <p class="text-xs" style="color:var(--muted)">Só é possível editar enquanto o pedido está aguardando análise do ADM.</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="seo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="seo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="seo-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+      </div>
+      <div id="seo-items-editor" class="space-y-3"></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações (opcional)</label><textarea id="seo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado</label><input id="seo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      <p id="sol-edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="sol-edit-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
     </form>
   </div>
 </div>
@@ -304,6 +324,7 @@ function normalizeOrder(row){
     currentStepIndex: row.current_step_index,
     currentMachine: row.current_machine,
     osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent,
+    items: Array.isArray(row.items) ? row.items : [],
     createdAt: row.created_at,
     routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
       .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
@@ -346,6 +367,13 @@ function statsHTML(s){
     `<div class="card rounded p-3"><p class="text-xs" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
 }
 // Rodapé dos cartões: contagem de arquivos + recebimento (+ editar/excluir para o ADM)
+function itemsListHTML(o){
+  const items = (o.items && o.items.length) ? o.items : [];
+  if(items.length <= 1) return '';
+  return `<div class="mt-2 space-y-1 pl-3 border-l" style="border-color:var(--line)">` +
+    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
+    `</div>`;
+}
 function metaLine(o){
   const bits = [o.osNumber && `O.S. ${o.osNumber}`, o.project && `Projeto: ${o.project}`, o.material && `Material: ${o.material}`].filter(Boolean);
   const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2" style="background:#F2A93B33;color:var(--amber)">🔥 URGENTE</span>` : '';
@@ -368,18 +396,21 @@ function cardFooterHTML(o, mode){
     ? `<button data-urgent="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
        <button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
        <button data-del-order="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
+  const solActions = (mode === 'sol' && o.status === 'aguardando_analise')
+    ? `<button data-sol-edit="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
+       <button data-sol-del="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
   return `<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
     <span>📎 ${reqFilesOf(o).length} arquivo(s) enviado(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
-    <div class="flex items-center gap-2 flex-wrap">${right}${adm}</div></div>`;
+    <div class="flex items-center gap-2 flex-wrap">${right}${solActions}${adm}</div></div>`;
 }
 
-async function uploadFile(orderId, file, folder = ''){
+async function uploadFile(orderId, file, folder = '', displayName = null){
   const safe = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\-]+/g, '_');
   const path = `${orderId}/${folder ? folder + '/' : ''}${Date.now()}_${safe}`;
   const { error: upErr } = await sb.storage.from('attachments').upload(path, file);
   if(upErr) throw upErr;
   const { data } = sb.storage.from('attachments').getPublicUrl(path);
-  return { order_id: orderId, name: file.name, url: data.publicUrl, uploaded_by: currentUser.name };
+  return { order_id: orderId, name: displayName || file.name, url: data.publicUrl, uploaded_by: currentUser.name };
 }
 
 function stepperHTML(order){
@@ -435,7 +466,7 @@ function openDetailModal(order){
       </div>
       <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
     </div>
-    ${metaLine(order)}
+    ${metaLine(order)}${itemsListHTML(order)}
     <p class="text-sm">${order.description || ''}</p>
     ${receiptHTML(order)}
     <div>
@@ -562,7 +593,7 @@ function renderSolicitante(container = $('main-content')){
     <div id="solicitante-summary"></div>
     <div id="solicitante-list" class="space-y-3"></div>
   `;
-  $('btn-new-order').addEventListener('click', ()=> openModal('new-order-modal'));
+  $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); openModal('new-order-modal'); });
 
   liveRefresh('solicitante-orders', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
@@ -586,7 +617,7 @@ function renderSolicitante(container = $('main-content')){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
-        ${metaLine(o)}${cardFooterHTML(o, 'sol')}
+        ${metaLine(o)}${itemsListHTML(o)}${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
@@ -594,6 +625,12 @@ function renderSolicitante(container = $('main-content')){
     });
     list.querySelectorAll('[data-receive]').forEach(b=> b.addEventListener('click', (ev)=>{
       ev.stopPropagation(); confirmReceipt(orders.find(o=>o.id===b.dataset.receive));
+    }));
+    list.querySelectorAll('[data-sol-edit]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); openSolEditModal(orders.find(o=>o.id===b.dataset.solEdit));
+    }));
+    list.querySelectorAll('[data-sol-del]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); deleteOwnOrder(orders.find(o=>o.id===b.dataset.solDel));
     }));
   });
 }
@@ -603,26 +640,37 @@ $('new-order-form').addEventListener('submit', async (e)=>{
   const btn = $('new-order-submit'); const err = $('new-order-error');
   err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Enviando...';
   try{
+    const items = orderItemsEditor.getItems();
+    if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+    if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+    const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+    const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+    const material = items.length === 1 ? items[0].material : null;
+
     const { data: order, error } = await sb.from('orders').insert({
-      piece_name: $('order-piece-name').value.trim(),
+      piece_name: pieceName,
       description: $('order-description').value.trim(),
-      quantity: Number($('order-quantity').value),
+      quantity: totalQty,
       deadline: $('order-deadline').value,
       requester_id: currentUser.id,
       requester_name: currentUser.name,
       status: 'aguardando_analise',
-      os_number: $('order-os').value.trim(), project: $('order-project').value.trim(), material: $('order-material').value
+      os_number: $('order-os').value.trim(), project: $('order-project').value.trim(), material,
+      items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
     }).select().single();
     if(error) throw error;
 
-    await sb.from('order_history').insert(historyRow(order.id, 'criado', 'Pedido criado e enviado para triagem do ADM.'));
+    await sb.from('order_history').insert(historyRow(order.id, 'criado', `Pedido criado com ${items.length} peça(s) e enviado para triagem do ADM.`));
 
-    const file = $('order-attachment').files[0];
-    if(file){
-      const att = await uploadFile(order.id, file);
-      await sb.from('order_attachments').insert(att);
+    for(let i = 0; i < items.length; i++){
+      if(items[i].file){
+        const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+        const att = await uploadFile(order.id, items[i].file, 'itens', label);
+        await sb.from('order_attachments').insert(att);
+      }
     }
     e.target.reset();
+    orderItemsEditor.reset();
     closeModal('new-order-modal');
   }catch(ex){
     console.error(ex);
@@ -701,7 +749,7 @@ function openTriagemModal(order){
       <div>
         <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
         <p class="text-sm" style="color:var(--muted)">Solicitante: ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
-        ${metaLine(order)}<p class="text-sm mt-2">${order.description || ''}</p>
+        ${metaLine(order)}<p class="text-sm mt-2">${order.description || ''}</p>${itemsListHTML(order)}
       </div>
       <div>
         <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos do solicitante</p>
@@ -817,7 +865,7 @@ function renderAdminTodos(){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
-        ${cardFooterHTML(o, 'adm')}
+        ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
       </div>`;
     }).join('');
     const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
@@ -943,7 +991,7 @@ function renderOperador(container = $('main-content')){
             ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
           </span>
         </div>
-        ${metaLine(o)}<p class="text-sm mt-2">${o.description || ''}</p>
+        ${metaLine(o)}<p class="text-sm mt-2">${o.description || ''}</p>${itemsListHTML(o)}
         <div class="mt-3">${stepperHTML(o)}</div>
         <div class="mt-3">${attachmentsHTML(o)}</div>
         <div class="mt-3 flex gap-2">
@@ -1024,24 +1072,34 @@ async function confirmReceipt(order){
 
 /* --- Admin: editar / excluir pedido --- */
 function openEditOrderModal(order){
-  $('eo-piece').value = order.pieceName; $('eo-desc').value = order.description;
-  $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || ''; $('eo-material').value = order.material || '';
-  $('eo-qty').value = order.quantity; $('eo-deadline').value = order.deadline;
+  const multi = order.items && order.items.length > 1;
+  $('eo-single-fields').classList.toggle('hidden', multi);
+  $('eo-multi-note').classList.toggle('hidden', !multi);
+  if(multi){
+    $('eo-items-readonly').innerHTML = order.items.map((it, i) => `<p class="text-sm">Peça ${i + 1}: <b>${escapeHtml(it.name)}</b> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('');
+  }else{
+    $('eo-piece').value = order.pieceName; $('eo-material').value = order.material || ''; $('eo-qty').value = order.quantity;
+  }
+  $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || '';
+  $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
   $('edit-order-error').classList.add('hidden');
   $('edit-order-form').onsubmit = async (e)=>{
     e.preventDefault();
     const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
-    const v = { os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(), material: $('eo-material').value,
-                piece_name: $('eo-piece').value.trim(), description: $('eo-desc').value.trim(),
-                quantity: Number($('eo-qty').value), deadline: $('eo-deadline').value };
+    const v = { os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(),
+                description: $('eo-desc').value.trim(), deadline: $('eo-deadline').value };
     const ch = [];
-    if(v.piece_name !== order.pieceName) ch.push(`nome "${order.pieceName}" → "${v.piece_name}"`);
     if(v.os_number !== (order.osNumber || '')) ch.push(`O.S. → ${v.os_number}`);
     if(v.project !== (order.project || '')) ch.push(`projeto → ${v.project}`);
-    if(v.material !== (order.material || '')) ch.push(`material → ${v.material || '—'}`);
-    if(v.quantity !== order.quantity) ch.push(`quantidade ${order.quantity} → ${v.quantity}`);
     if(v.deadline !== order.deadline) ch.push(`prazo ${fmtDate(order.deadline)} → ${fmtDate(v.deadline)}`);
     if(v.description !== order.description) ch.push('descrição alterada');
+    if(!multi){
+      v.piece_name = $('eo-piece').value.trim(); v.material = $('eo-material').value; v.quantity = Number($('eo-qty').value);
+      v.items = [{ name: v.piece_name, quantity: v.quantity, material: v.material }];
+      if(v.piece_name !== order.pieceName) ch.push(`nome "${order.pieceName}" → "${v.piece_name}"`);
+      if(v.material !== (order.material || '')) ch.push(`material → ${v.material || '—'}`);
+      if(v.quantity !== order.quantity) ch.push(`quantidade ${order.quantity} → ${v.quantity}`);
+    }
     if(ch.length === 0){ closeModal('edit-order-modal'); return; }
     btn.disabled = true; btn.textContent = 'Salvando...';
     try{
@@ -1054,6 +1112,80 @@ function openEditOrderModal(order){
     finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
   };
   openModal('edit-order-modal');
+}
+
+/* --- Solicitante: editar / excluir o PRÓPRIO pedido, só enquanto aguarda análise --- */
+function openSolEditModal(order){
+  if(order.status !== 'aguardando_analise'){
+    alert('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
+    return;
+  }
+  $('seo-os').value = order.osNumber || ''; $('seo-project').value = order.project || '';
+  $('seo-desc').value = order.description || ''; $('seo-deadline').value = order.deadline;
+  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
+  const withAttach = baseItems.map((it, i) => {
+    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
+    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
+    const att = tagged || fallback;
+    return { ...it, _attachmentName: att ? att.name : '' };
+  });
+  solItemsEditor.reset(withAttach);
+  $('sol-edit-order-error').classList.add('hidden');
+  $('sol-edit-order-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('sol-edit-order-error'); const btn = $('sol-edit-order-submit'); err.classList.add('hidden');
+    try{
+      const items = solItemsEditor.getItems();
+      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+      const material = items.length === 1 ? items[0].material : null;
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      const v = {
+        os_number: $('seo-os').value.trim(), project: $('seo-project').value.trim(),
+        description: $('seo-desc').value.trim(), deadline: $('seo-deadline').value,
+        piece_name: pieceName, quantity: totalQty, material,
+        items: items.map(({ name, quantity, material }) => ({ name, quantity, material })),
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
+      if(error) throw error;
+      if(!data || data.length === 0) throw new Error('não deu para salvar — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
+      for(let i = 0; i < items.length; i++){
+        if(items[i].file){
+          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          const att = await uploadFile(order.id, items[i].file, 'itens', label);
+          await sb.from('order_attachments').insert(att);
+        }
+      }
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Solicitante editou o próprio pedido.'));
+      closeModal('sol-edit-order-modal');
+    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+  };
+  openModal('sol-edit-order-modal');
+}
+
+async function deleteOwnOrder(order){
+  if(order.status !== 'aguardando_analise'){
+    alert('Este pedido já entrou em triagem/produção. Peça ao ADM para excluir.');
+    return;
+  }
+  if(!confirm(`Excluir seu pedido "${order.pieceName}"?\n\nIsso apaga também os anexos enviados. Não dá para desfazer.`)) return;
+  try{
+    let r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
+    if(r.error && r.error.code === '23503'){
+      for(const t of ['order_history', 'order_attachments', 'order_routing']){
+        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
+      }
+      r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
+    }
+    if(r.error) throw r.error;
+    if(!r.data || r.data.length === 0) throw new Error('não deu para excluir — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
+    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
+    if(paths.length) await sb.storage.from('attachments').remove(paths);
+  }catch(ex){ alert('Erro ao excluir: ' + ex.message); }
 }
 
 async function deleteOrder(order){
@@ -1105,7 +1237,7 @@ function renderAdminRelatorio(){
     <div class="card rounded p-5 max-w-md space-y-4">
       <div>
         <h2 class="font-display font-700 text-lg">Relatório mensal (Excel)</h2>
-        <p class="text-sm" style="color:var(--muted)">Inclui os pedidos criados no mês escolhido: pedidos, etapas por máquina e resumo por solicitante.</p>
+        <p class="text-sm" style="color:var(--muted)">Inclui os pedidos criados no mês escolhido: pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
       </div>
       <div>
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Mês</label>
@@ -1143,12 +1275,21 @@ async function exportMonthly(ym){
     const atrasado = fim ? new Date(fim) > new Date(o.deadline + 'T23:59:59') : isLate(o);
     const rec = receiptOf(o);
     return {
-      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Material': o.material || '', 'Urgente': o.urgent ? 'Sim' : 'Não', 'Peça': o.pieceName, 'Observações': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
+      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Material': o.material || '', 'Qtd Peças': (o.items && o.items.length) || 1, 'Urgente': o.urgent ? 'Sim' : 'Não', 'Peça': o.pieceName, 'Observações': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
       'Criado em': fmtDateTime(o.createdAt), 'Prazo': fmtDate(o.deadline), 'Status': statusInfo(o).label,
       'Roteiro': o.routing.map(r => r.machine).join(' → '), 'Concluído em': fim ? fmtDateTime(fim) : '',
       'Atrasado': atrasado ? 'Sim' : 'Não', 'Recebimento confirmado': rec ? 'Sim' : (o.status === 'concluido' ? 'Pendente' : ''),
       'Recebido em': rec ? fmtDateTime(rec.at) : '', 'Arquivos enviados': reqFilesOf(o).length, 'Fotos de conclusão': photosOf(o).length
     };
+  });
+  const itens = [];
+  orders.forEach(o => {
+    const its = (o.items && o.items.length) ? o.items : [{ name: o.pieceName, quantity: o.quantity, material: o.material }];
+    its.forEach((it, i) => itens.push({
+      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Peça': it.name, 'Item nº': i + 1,
+      'Quantidade': it.quantity, 'Material': it.material || '', 'Solicitante': o.requesterName,
+      'Status do pedido': statusInfo(o).label, 'Prazo': fmtDate(o.deadline), 'Urgente': o.urgent ? 'Sim' : 'Não'
+    }));
   });
   const etapas = [];
   orders.forEach(o => o.routing.forEach((r, i) => etapas.push({
@@ -1171,6 +1312,7 @@ async function exportMonthly(ym){
   };
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet(pedidos), 'Pedidos');
+  XLSX.utils.book_append_sheet(wb, sheet(itens), 'Itens');
   XLSX.utils.book_append_sheet(wb, sheet(etapas), 'Etapas');
   XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
   XLSX.writeFile(wb, `relatorio-pedidos-${ym}.xlsx`);
@@ -1182,10 +1324,66 @@ const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm"
   "Chapa Aço Carbono (1/8\") = 3,18mm (Xadrez)", "Chapa Aço Carbono (3/16\") = 4,76mm", "Chapa Aço Carbono (1/4\") = 6,35mm",
   "Chapa Aço Carbono (5/16\") = 7,94mm", "Chapa Aço Carbono (3/8\") = 9,53mm", "Chapa Aço Carbono (1/2\") = 12,70mm",
   "Chapa Aço Carbono (5/8\") = 15,88mm", "Chapa Inox #18 = 1.2mm", "Chapa Inox = 3mm", "Chapa Alumínio = 3mm"];
-['order-material', 'eo-material'].forEach(id=>{
-  $(id).innerHTML = `<option value="">${id === 'eo-material' ? '— sem material —' : 'Selecione o material...'}</option>` +
-    MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
-});
+function materialOptionsHTML(placeholder){
+  return `<option value="">${placeholder}</option>` + MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
+}
+$('eo-material').innerHTML = materialOptionsHTML('— sem material —');
+const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
+
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* --- Editor de peças (múltiplos itens por pedido, usado no Novo Pedido e na edição do solicitante) --- */
+function createItemsEditor(containerId){
+  const wrap = $(containerId);
+  let rows = [];
+  function addRow(data){
+    data = data || {};
+    rows.push({ id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null, existingAttachmentName: data._attachmentName || '' });
+    draw();
+  }
+  function removeRow(rid){ if(rows.length <= 1) return; rows = rows.filter(r => r.id !== rid); draw(); }
+  function draw(){
+    wrap.innerHTML = rows.map((r, i) => `
+      <div class="card rounded p-3 space-y-2" data-row="${r.id}">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold" style="color:var(--muted)">Peça ${i + 1}</span>
+          ${rows.length > 1 ? `<button type="button" data-remove-item="${r.id}" class="text-xs" style="color:var(--red)">Remover</button>` : ''}
+        </div>
+        <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 rounded text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 rounded text-sm">
+          <select data-f="material" class="w-full px-3 py-2 rounded text-sm">${ITEM_MATERIAL_OPTIONS}</select>
+        </div>
+        <div>
+          <label class="text-xs" style="color:var(--muted)">Anexo desta peça (opcional)</label>
+          <input data-f="file" type="file" class="w-full mt-1 text-xs">
+          ${r.existingAttachmentName ? `<p class="text-xs mt-1" style="color:var(--muted)">📎 Anexo atual: ${escapeHtml(r.existingAttachmentName)}</p>` : ''}
+        </div>
+      </div>`).join('');
+    rows.forEach(r=>{
+      const el = wrap.querySelector(`[data-row="${r.id}"]`);
+      el.querySelector('[data-f="material"]').value = r.material;
+      el.querySelector('[data-f="name"]').addEventListener('input', e=> r.name = e.target.value);
+      el.querySelector('[data-f="qty"]').addEventListener('input', e=> r.qty = Number(e.target.value));
+      el.querySelector('[data-f="material"]').addEventListener('change', e=> r.material = e.target.value);
+      el.querySelector('[data-f="file"]').addEventListener('change', e=> r.file = e.target.files[0] || null);
+      const rm = el.querySelector('[data-remove-item]'); if(rm) rm.addEventListener('click', ()=> removeRow(r.id));
+    });
+  }
+  function reset(items){ rows = []; (items && items.length ? items : [{}]).forEach(addRow); }
+  reset();
+  return {
+    addBlank: ()=> addRow(),
+    reset,
+    getItems: ()=> rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file }))
+  };
+}
+
+const orderItemsEditor = createItemsEditor('order-items-editor');
+$('order-add-item').addEventListener('click', ()=> orderItemsEditor.addBlank());
+
+const solItemsEditor = createItemsEditor('seo-items-editor');
+$('seo-add-item').addEventListener('click', ()=> solItemsEditor.addBlank());
 
 /* --- Prioridade --- */
 async function toggleUrgent(o){
