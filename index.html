@@ -311,7 +311,7 @@ function historyRow(orderId, action, detail){
 function normalizeOrder(row){
   return {
     id: row.id,
-    pieceName: row.piece_name,
+    pieceName: (Array.isArray(row.items) && row.items.length > 1 && row.project) ? row.project : row.piece_name,
     description: row.description,
     quantity: row.quantity,
     deadline: row.deadline,
@@ -326,7 +326,7 @@ function normalizeOrder(row){
     routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
       .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
     attachments: (row.order_attachments || [])
-      .map(a => ({ name:a.name, url:a.url, uploadedBy:a.uploaded_by, uploadedAt:a.uploaded_at })),
+      .map(a => ({ name:a.name, url:a.url, uploadedBy:a.uploaded_by, uploadedAt:a.uploaded_at, id:a.id })),
     history: (row.order_history || []).slice().sort((a,b)=> new Date(a.at) - new Date(b.at))
       .map(h => ({ at:h.at, byName:h.by_name, byRole:h.by_role, action:h.action, detail:h.detail }))
   };
@@ -455,9 +455,37 @@ function attachmentsHTML(order){
   return `<ul class="space-y-1.5">` + order.attachments.map(a => `
     <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
       <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${a.name} <span class="text-xs" style="color:var(--muted)">— enviado por ${a.uploadedBy}</span></span>
-      <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
+      <span class="flex items-center gap-2 shrink-0">
+        <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
+        ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : ''}
+      </span>
     </li>`).join('') + `</ul>`;
 }
+
+// O solicitante só exclui anexos que ele mesmo enviou (nunca as fotos de conclusão) e enquanto o pedido não foi concluído
+function canDeleteAttachment(order, a){
+  return !!(currentUser && currentUser.role === 'solicitante' && a.id && !isPhoto(a)
+    && order.requesterId === currentUser.id && a.uploadedBy === currentUser.name && order.status !== 'concluido');
+}
+document.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('[data-del-attach]'); if(!btn) return;
+  ev.stopPropagation();
+  if(!confirm('Excluir este anexo? Não dá para desfazer.')) return;
+  const li = btn.closest('li'); const name = li ? li.querySelector('span').textContent.trim() : 'anexo';
+  btn.disabled = true; btn.textContent = 'Excluindo...';
+  try{
+    const { data, error } = await sb.from('order_attachments').delete().eq('id', btn.dataset.delAttach).select();
+    if(error) throw error;
+    if(!data || data.length === 0) throw new Error('sem permissão para excluir (falta a política RLS de DELETE em order_attachments para o solicitante).');
+    const path = decodeURIComponent((data[0].url.split('/attachments/')[1] || ''));
+    if(path) await sb.storage.from('attachments').remove([path]);
+    await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`));
+    if(li) li.remove();
+  }catch(ex){
+    alert('Erro ao excluir anexo: ' + ex.message);
+    btn.disabled = false; btn.textContent = 'Excluir';
+  }
+});
 
 function openDetailModal(order){
   const s = statusInfo(order);
@@ -646,7 +674,7 @@ $('new-order-form').addEventListener('submit', async (e)=>{
     const items = orderItemsEditor.getItems();
     if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
     if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-    const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+    const pieceName = items.length === 1 ? items[0].name : ($('order-project').value.trim() || items[0].name);
     const totalQty = items.reduce((a, it) => a + it.quantity, 0);
     const material = items.length === 1 ? items[0].material : null;
 
@@ -1133,7 +1161,7 @@ function openEditOrderModal(order){
       const items = eoItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+      const pieceName = items.length === 1 ? items[0].name : ($('eo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
       const v = {
@@ -1185,7 +1213,7 @@ function openSolEditModal(order){
       const items = solItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+      const pieceName = items.length === 1 ? items[0].name : ($('seo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
       btn.disabled = true; btn.textContent = 'Salvando...';
