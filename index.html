@@ -465,11 +465,93 @@ function attachmentsHTML(order){
     <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
       <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)} <span class="text-xs" style="color:var(--muted)">— enviado por ${escapeHtml(a.uploadedBy)}</span></span>
       <span class="flex items-center gap-2 shrink-0">
+        ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2 py-1 rounded" style="background:var(--blue,#2563eb);color:#fff">Prévia</button>` : ''}
         <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
         ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : ''}
       </span>
     </li>`).join('') + `</ul>`;
 }
+
+// ===== Prévia de DXF (ASCII): LINE, CIRCLE, ARC, LWPOLYLINE (com bulge) e POLYLINE =====
+function parseDxf(text){
+  const L = text.split(/\r?\n/); const ents = []; let inEnt = false, cur = null;
+  for(let i = 0; i + 1 < L.length; i += 2){
+    const c = parseInt(L[i].trim(), 10), v = L[i + 1].trim();
+    if(c === 0){
+      if(cur) ents.push(cur); cur = null;
+      if(v === 'ENDSEC') inEnt = false;
+      else if(inEnt && v !== 'SEQEND') cur = { type: v, f: {}, pts: [] };
+      continue;
+    }
+    if(c === 2 && v === 'ENTITIES' && !cur) { inEnt = true; continue; }
+    if(!cur) continue;
+    const n = parseFloat(v);
+    if((cur.type === 'LWPOLYLINE' || cur.type === 'POLYLINE' || cur.type === 'VERTEX') && (c === 10 || c === 20 || c === 42)){
+      if(c === 10) cur.pts.push({ x: n, y: 0, b: 0 }); else if(cur.pts.length){ const p = cur.pts[cur.pts.length - 1]; if(c === 20) p.y = n; else p.b = n; }
+    } else if(!(c in cur.f)) cur.f[c] = n;
+  }
+  if(cur) ents.push(cur);
+  // POLYLINE clássico: junta os VERTEX seguintes na polilinha
+  const out = []; let pl = null;
+  for(const e of ents){
+    if(e.type === 'POLYLINE'){ pl = e; e.pts = []; out.push(e); }
+    else if(e.type === 'VERTEX' && pl){ if(e.pts[0]) { e.pts[0].b = e.f[42] || 0; pl.pts.push(e.pts[0]); } }
+    else { pl = null; out.push(e); }
+  }
+  return out;
+}
+function dxfToSvg(ents){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, d = '', found = 0;
+  const box = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  const f2 = v => +v.toFixed(3);
+  for(const e of ents){
+    const f = e.f;
+    if(e.type === 'LINE'){ box(f[10], f[20]); box(f[11], f[21]); d += `M${f2(f[10])} ${f2(f[20])}L${f2(f[11])} ${f2(f[21])}`; found++; }
+    else if(e.type === 'CIRCLE'){ const r = f[40]; box(f[10] - r, f[20] - r); box(f[10] + r, f[20] + r);
+      d += `M${f2(f[10] - r)} ${f2(f[20])}A${f2(r)} ${f2(r)} 0 1 1 ${f2(f[10] + r)} ${f2(f[20])}A${f2(r)} ${f2(r)} 0 1 1 ${f2(f[10] - r)} ${f2(f[20])}`; found++; }
+    else if(e.type === 'ARC'){ const r = f[40], a = f[50] * Math.PI / 180, b = f[51] * Math.PI / 180;
+      const sx = f[10] + r * Math.cos(a), sy = f[20] + r * Math.sin(a), ex = f[10] + r * Math.cos(b), ey = f[20] + r * Math.sin(b);
+      box(f[10] - r, f[20] - r); box(f[10] + r, f[20] + r);
+      d += `M${f2(sx)} ${f2(sy)}A${f2(r)} ${f2(r)} 0 ${((f[51] - f[50] + 360) % 360) > 180 ? 1 : 0} 1 ${f2(ex)} ${f2(ey)}`; found++; }
+    else if((e.type === 'LWPOLYLINE' || e.type === 'POLYLINE') && e.pts.length > 1){
+      const closed = ((e.f[70] || 0) & 1) === 1, P = e.pts, n = closed ? P.length : P.length - 1;
+      d += `M${f2(P[0].x)} ${f2(P[0].y)}`; box(P[0].x, P[0].y);
+      for(let i = 0; i < n; i++){
+        const p = P[i], q = P[(i + 1) % P.length]; box(q.x, q.y);
+        if(p.b){ const th = 4 * Math.atan(p.b), r = Math.hypot(q.x - p.x, q.y - p.y) / 2 / Math.abs(Math.sin(th / 2));
+          d += `A${f2(r)} ${f2(r)} 0 ${Math.abs(p.b) > 1 ? 1 : 0} ${p.b > 0 ? 1 : 0} ${f2(q.x)} ${f2(q.y)}`; }
+        else d += `L${f2(q.x)} ${f2(q.y)}`;
+      }
+      found++;
+    }
+  }
+  if(!found) return null;
+  const w = x1 - x0, h = y1 - y0, pad = Math.max(w, h) * 0.05 || 1;
+  return { w, h, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0 - pad} ${-y1 - pad} ${w + 2 * pad} ${h + 2 * pad}" style="width:100%;height:100%"><g transform="scale(1,-1)"><path d="${d}" fill="none" stroke="#5eead4" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></g></svg>` };
+}
+async function openDxfPreview(url, title){
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML = `<div style="background:var(--surface,#151a23);border-radius:12px;width:min(900px,100%);height:min(640px,90vh);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1)"><div><b>Prévia do DXF</b><div class="text-xs" style="opacity:.7" data-info>${escapeHtml(title)}</div></div><button type="button" data-x class="text-sm px-3 rounded" style="background:var(--surface-2)">Fechar</button></div>
+    <div data-body style="flex:1;min-height:0;padding:12px;display:flex;align-items:center;justify-content:center;background:#0b0f16">Carregando...</div></div>`;
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+  const esc = e => { if(e.key === 'Escape') close(); };
+  ov.addEventListener('click', e => { if(e.target === ov || e.target.closest('[data-x]')) close(); });
+  document.addEventListener('keydown', esc); document.body.appendChild(ov);
+  const body = ov.querySelector('[data-body]');
+  try{
+    const res = await fetch(url); if(!res.ok) throw new Error('não foi possível baixar o arquivo');
+    const r = dxfToSvg(parseDxf(await res.text()));
+    if(!r) throw new Error('nenhuma linha, arco ou círculo reconhecido (o DXF pode ser binário ou usar blocos/splines)');
+    body.innerHTML = r.svg;
+    ov.querySelector('[data-info]').textContent = `${title} · ${r.w.toFixed(1)} × ${r.h.toFixed(1)} (unidades do desenho)`;
+  }catch(ex){ body.textContent = 'Prévia indisponível: ' + ex.message + '. Use o botão Baixar.'; }
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-dxf]'); if(!b) return;
+  ev.stopPropagation(); openDxfPreview(b.dataset.dxf, b.dataset.title || 'DXF');
+});
 
 // O solicitante só exclui anexos que ele mesmo enviou (nunca as fotos de conclusão) e enquanto o pedido não foi concluído
 function canDeleteAttachment(order, a){
