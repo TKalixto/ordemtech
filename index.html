@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OrdemTech — Gestão de Produção</title>
+<title>Gestão CIMA — Gestão de Produção</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -37,9 +37,9 @@
     <div class="mb-8 text-center">
       <div class="inline-flex items-center gap-2 mb-2">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="font-display font-700 text-xl tracking-tight">OrdemTech</span>
+        <span class="font-display font-700 text-xl tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
       </div>
-      <p class="text-sm" style="color:var(--muted)">Gestão de pedidos de produção — caldeiraria &amp; usinagem</p>
+      <p class="text-sm" style="color:var(--muted)">Centro de Inovação de Manufatura Avançada</p>
     </div>
 
     <form id="login-form" class="card p-6 space-y-4">
@@ -91,7 +91,7 @@
   <header class="flex items-center justify-between px-5 py-3 border-b" style="border-color:var(--line);background:var(--surface)">
     <div class="flex items-center gap-2">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="font-display font-700 tracking-tight">OrdemTech</span>
+      <span class="font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
       <span id="role-badge" class="ml-2 text-xs px-2 py-0.5 rounded" style="background:var(--surface-2);color:var(--muted)"></span>
     </div>
     <div class="flex items-center gap-4">
@@ -189,15 +189,11 @@
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
-      <div id="eo-single-fields" class="space-y-4">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Descrição da peça (nome)</label><input id="eo-piece" class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Material</label><select id="eo-material" class="w-full mt-1 px-3 py-2 rounded"></select></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Quantidade</label><input id="eo-qty" type="number" min="1" class="w-full mt-1 px-3 py-2 rounded"></div>
+      <div class="flex items-center justify-between">
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="eo-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
       </div>
-      <div id="eo-multi-note" class="hidden space-y-2">
-        <p class="text-xs" style="color:var(--muted)">Este pedido tem várias peças. Para alterar os itens, oriente o solicitante a excluir e recriar o pedido (só é possível enquanto ele aguarda análise).</p>
-        <div id="eo-items-readonly" class="space-y-1"></div>
-      </div>
+      <div id="eo-items-editor" class="space-y-3"></div>
       <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
       <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label><input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
       <p id="edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
@@ -323,7 +319,7 @@ function normalizeOrder(row){
     status: row.status,
     currentStepIndex: row.current_step_index,
     currentMachine: row.current_machine,
-    osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent,
+    osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent, queueOrder: row.queue_order,
     items: Array.isArray(row.items) ? row.items : [],
     createdAt: row.created_at,
     routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
@@ -367,6 +363,12 @@ function statsHTML(s){
     `<div class="card rounded p-3"><p class="text-xs" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
 }
 // Rodapé dos cartões: contagem de arquivos + recebimento (+ editar/excluir para o ADM)
+function miniTimelineHTML(o){
+  if(!o.history || !o.history.length) return '';
+  const shown = o.history.slice(-3);
+  const line = shown.map(h => `${escapeHtml(h.detail || h.action)} <span style="color:var(--muted)">(${fmtDateTime(h.at)})</span>`).join(' <span style="color:var(--muted)">→</span> ');
+  return `<p class="text-xs mt-2 leading-relaxed">${line}${o.history.length > 3 ? ' <span style="color:var(--blue)">· clique para ver tudo</span>' : ''}</p>`;
+}
 function itemsListHTML(o){
   const items = (o.items && o.items.length) ? o.items : [];
   if(items.length <= 1) return '';
@@ -617,7 +619,7 @@ function renderSolicitante(container = $('main-content')){
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
-        ${metaLine(o)}${itemsListHTML(o)}${cardFooterHTML(o, 'sol')}
+        ${metaLine(o)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
@@ -941,11 +943,15 @@ function renderOperador(container = $('main-content')){
   const isAdmin = currentUser.role === 'admin';
   const available = isAdmin ? MACHINES : (currentUser.machines || []);
   let filter = 'todas';
+  let lastOrders = [];
 
   container.innerHTML = `
     <div class="mb-5">
-      <h2 class="font-display font-700 text-xl">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
-      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}.</p>
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="font-display font-700 text-xl">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
+        <button id="op-reset-order" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--muted)">↺ Ordem automática (prazo + urgência)</button>
+      </div>
+      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
       <div id="op-chips" class="flex flex-wrap gap-2 mt-3"></div>
     </div>
     <div id="operador-list" class="space-y-3"></div>
@@ -973,7 +979,15 @@ function renderOperador(container = $('main-content')){
     const orders = data.map(normalizeOrder);
     const list = $('operador-list');
     if(!list) return;
-    orders.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)); // urgentes primeiro (ordem por prazo mantida)
+    orders.sort((a, b) => {
+      if(a.queueOrder != null && b.queueOrder != null) return a.queueOrder - b.queueOrder;
+      if(a.queueOrder != null) return -1;
+      if(b.queueOrder != null) return 1;
+      const u = (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
+      if(u !== 0) return u;
+      return new Date(a.deadline) - new Date(b.deadline);
+    }); // manual (setas) tem prioridade; senão urgente; senão prazo
+    lastOrders = orders;
     if(orders.length === 0){
       list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
       return;
@@ -987,9 +1001,15 @@ function renderOperador(container = $('main-content')){
             <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
             <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
           </div>
-          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
-            ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
+              ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
+            </span>
+            <div class="flex flex-col gap-0.5">
+              <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▲</button>
+              <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▼</button>
+            </div>
+          </div>
         </div>
         ${metaLine(o)}<p class="text-sm mt-2">${o.description || ''}</p>${itemsListHTML(o)}
         <div class="mt-3">${stepperHTML(o)}</div>
@@ -1006,10 +1026,32 @@ function renderOperador(container = $('main-content')){
     list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
     list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
     list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
+    list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1)));
+    list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1)));
   };
 
   drawChips();
   liveRefresh('operador-fila', fetchOp);
+  $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders));
+}
+
+async function moveQueueItem(orders, id, dir){
+  const idx = orders.findIndex(o => o.id === id);
+  const j = idx + dir;
+  if(idx < 0 || j < 0 || j >= orders.length) return;
+  const a = orders[idx], b = orders[j];
+  const [ra, rb] = await Promise.all([
+    sb.from('orders').update({ queue_order: j }).eq('id', a.id),
+    sb.from('orders').update({ queue_order: idx }).eq('id', b.id)
+  ]);
+  if(ra.error || rb.error) alert('Erro ao reordenar: ' + (ra.error || rb.error).message);
+}
+
+async function resetQueueOrder(orders){
+  if(!orders.length) return;
+  if(!confirm('Voltar a fila para a ordem automática (prazo + urgência), desfazendo as prioridades manuais?')) return;
+  const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
+  if(error) alert('Erro: ' + error.message);
 }
 
 async function startStep(order){
@@ -1072,41 +1114,45 @@ async function confirmReceipt(order){
 
 /* --- Admin: editar / excluir pedido --- */
 function openEditOrderModal(order){
-  const multi = order.items && order.items.length > 1;
-  $('eo-single-fields').classList.toggle('hidden', multi);
-  $('eo-multi-note').classList.toggle('hidden', !multi);
-  if(multi){
-    $('eo-items-readonly').innerHTML = order.items.map((it, i) => `<p class="text-sm">Peça ${i + 1}: <b>${escapeHtml(it.name)}</b> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('');
-  }else{
-    $('eo-piece').value = order.pieceName; $('eo-material').value = order.material || ''; $('eo-qty').value = order.quantity;
-  }
   $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || '';
   $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
+  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
+  const withAttach = baseItems.map((it, i) => {
+    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
+    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
+    const att = tagged || fallback;
+    return { ...it, _attachmentName: att ? att.name : '' };
+  });
+  eoItemsEditor.reset(withAttach);
   $('edit-order-error').classList.add('hidden');
   $('edit-order-form').onsubmit = async (e)=>{
     e.preventDefault();
     const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
-    const v = { os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(),
-                description: $('eo-desc').value.trim(), deadline: $('eo-deadline').value };
-    const ch = [];
-    if(v.os_number !== (order.osNumber || '')) ch.push(`O.S. → ${v.os_number}`);
-    if(v.project !== (order.project || '')) ch.push(`projeto → ${v.project}`);
-    if(v.deadline !== order.deadline) ch.push(`prazo ${fmtDate(order.deadline)} → ${fmtDate(v.deadline)}`);
-    if(v.description !== order.description) ch.push('descrição alterada');
-    if(!multi){
-      v.piece_name = $('eo-piece').value.trim(); v.material = $('eo-material').value; v.quantity = Number($('eo-qty').value);
-      v.items = [{ name: v.piece_name, quantity: v.quantity, material: v.material }];
-      if(v.piece_name !== order.pieceName) ch.push(`nome "${order.pieceName}" → "${v.piece_name}"`);
-      if(v.material !== (order.material || '')) ch.push(`material → ${v.material || '—'}`);
-      if(v.quantity !== order.quantity) ch.push(`quantidade ${order.quantity} → ${v.quantity}`);
-    }
-    if(ch.length === 0){ closeModal('edit-order-modal'); return; }
-    btn.disabled = true; btn.textContent = 'Salvando...';
     try{
+      const items = eoItemsEditor.getItems();
+      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      const pieceName = items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1} peça(s))`;
+      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+      const material = items.length === 1 ? items[0].material : null;
+      const v = {
+        os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(),
+        description: $('eo-desc').value.trim(), deadline: $('eo-deadline').value,
+        piece_name: pieceName, quantity: totalQty, material,
+        items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
+      };
+      btn.disabled = true; btn.textContent = 'Salvando...';
       const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
       if(error) throw error;
       if(!data || data.length === 0) throw new Error('sem permissão para editar (verifique as políticas RLS do admin).');
-      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Pedido editado pelo ADM: ' + ch.join('; ') + '.'));
+      for(let i = 0; i < items.length; i++){
+        if(items[i].file){
+          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          const att = await uploadFile(order.id, items[i].file, 'itens', label);
+          await sb.from('order_attachments').insert(att);
+        }
+      }
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', `Pedido editado pelo ADM (${items.length} peça(s)).`));
       closeModal('edit-order-modal');
     }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
     finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
@@ -1232,39 +1278,81 @@ function renderAdminResumo(){
 /* --- Admin: relatório mensal em Excel --- */
 function renderAdminRelatorio(){
   clearChannels();
-  const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const toStr = d => d.toISOString().slice(0, 10);
+  const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
   $('admin-tab-content').innerHTML = `
     <div class="card rounded p-5 max-w-md space-y-4">
       <div>
-        <h2 class="font-display font-700 text-lg">Relatório mensal (Excel)</h2>
-        <p class="text-sm" style="color:var(--muted)">Inclui os pedidos criados no mês escolhido: pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
+        <h2 class="font-display font-700 text-lg">Relatório (Excel)</h2>
+        <p class="text-sm" style="color:var(--muted)">Inclui pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
       </div>
-      <div>
+      <div class="flex gap-4 text-sm">
+        <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="rep-mode" value="mes" checked style="width:15px;height:15px"> Por mês</label>
+        <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="rep-mode" value="periodo" style="width:15px;height:15px"> Por período livre</label>
+      </div>
+      <div id="rep-mes-field">
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Mês</label>
         <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 rounded">
+      </div>
+      <div id="rep-periodo-field" class="hidden grid grid-cols-2 gap-3">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">De</label><input id="rep-from" type="date" value="${toStr(monthAgo)}" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Até</label><input id="rep-to" type="date" value="${toStr(now)}" class="w-full mt-1 px-3 py-2 rounded"></div>
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Solicitante (opcional)</label>
+        <select id="rep-requester" class="w-full mt-1 px-3 py-2 rounded"><option value="">Todos os solicitantes</option></select>
       </div>
       <p id="rep-msg" class="text-sm hidden"></p>
       <button id="rep-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
     </div>`;
+
+  document.querySelectorAll('input[name="rep-mode"]').forEach(r=> r.addEventListener('change', ()=>{
+    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
+    $('rep-mes-field').classList.toggle('hidden', periodo);
+    $('rep-periodo-field').classList.toggle('hidden', !periodo);
+  }));
+
+  sb.from('orders').select('requester_name').then(({ data })=>{
+    if(!$('rep-requester') || !data) return;
+    const names = [...new Set(data.map(r => r.requester_name))].sort();
+    $('rep-requester').innerHTML = '<option value="">Todos os solicitantes</option>' +
+      names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n}</option>`).join('');
+  });
+
   $('rep-btn').addEventListener('click', async ()=>{
-    const btn = $('rep-btn'); const msg = $('rep-msg'); const month = $('rep-month').value;
-    if(!month) return;
+    const btn = $('rep-btn'); const msg = $('rep-msg');
+    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
+    let from, to, label;
+    if(periodo){
+      if(!$('rep-from').value || !$('rep-to').value) return;
+      from = new Date($('rep-from').value + 'T00:00:00'); to = new Date($('rep-to').value + 'T23:59:59');
+      label = `${$('rep-from').value}_a_${$('rep-to').value}`;
+    }else{
+      const month = $('rep-month').value; if(!month) return;
+      const [y, m] = month.split('-').map(Number);
+      from = new Date(y, m - 1, 1); to = new Date(y, m, 0, 23, 59, 59);
+      label = month;
+    }
+    const requesterName = $('rep-requester').value || null;
     msg.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Gerando...';
     try{
-      const n = await exportMonthly(month);
-      msg.textContent = n ? `Relatório gerado com ${n} pedido(s).` : 'Nenhum pedido encontrado nesse mês.';
+      const n = await exportReport(from, to, requesterName, label);
+      msg.textContent = n ? `Relatório gerado com ${n} pedido(s).` : 'Nenhum pedido encontrado nesse filtro.';
       msg.style.color = n ? 'var(--green)' : 'var(--muted)';
     }catch(ex){ msg.textContent = 'Erro: ' + ex.message; msg.style.color = 'var(--red)'; }
     msg.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Baixar Excel (.xlsx)';
   });
 }
 
-async function exportMonthly(ym){
+async function exportReport(from, to, requesterName, label){
   if(typeof XLSX === 'undefined') throw new Error('a biblioteca de Excel não carregou. Recarregue a página.');
-  const [y, m] = ym.split('-').map(Number);
-  const { data, error } = await sb.from('orders').select(ORDER_SELECT)
-    .gte('created_at', new Date(y, m - 1, 1).toISOString()).lt('created_at', new Date(y, m, 1).toISOString())
+  let q = sb.from('orders').select(ORDER_SELECT)
+    .gte('created_at', from.toISOString()).lt('created_at', new Date(to.getTime() + 1000).toISOString())
     .order('created_at', { ascending: true });
+  if(requesterName) q = q.eq('requester_name', requesterName);
+  const { data, error } = await q;
   if(error) throw error;
   const orders = data.map(normalizeOrder);
   if(orders.length === 0) return 0;
@@ -1315,7 +1403,7 @@ async function exportMonthly(ym){
   XLSX.utils.book_append_sheet(wb, sheet(itens), 'Itens');
   XLSX.utils.book_append_sheet(wb, sheet(etapas), 'Etapas');
   XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
-  XLSX.writeFile(wb, `relatorio-pedidos-${ym}.xlsx`);
+  XLSX.writeFile(wb, `relatorio-pedidos-${label}.xlsx`);
   return orders.length;
 }
 
@@ -1384,6 +1472,9 @@ $('order-add-item').addEventListener('click', ()=> orderItemsEditor.addBlank());
 
 const solItemsEditor = createItemsEditor('seo-items-editor');
 $('seo-add-item').addEventListener('click', ()=> solItemsEditor.addBlank());
+
+const eoItemsEditor = createItemsEditor('eo-items-editor');
+$('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
 
 /* --- Prioridade --- */
 async function toggleUrgent(o){
