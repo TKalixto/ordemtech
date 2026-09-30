@@ -1416,7 +1416,7 @@ const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm"
 function materialOptionsHTML(placeholder){
   return `<option value="">${placeholder}</option>` + MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
 }
-$('eo-material').innerHTML = materialOptionsHTML('— sem material —');
+if($('eo-material')) $('eo-material').innerHTML = materialOptionsHTML('— sem material —');
 const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
 
 function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
