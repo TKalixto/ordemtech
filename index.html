@@ -378,7 +378,7 @@ function itemsListHTML(o){
     `</div>`;
 }
 function metaLine(o){
-  const bits = [o.osNumber && `O.S. ${o.osNumber}`, o.project && `Projeto: ${o.project}`, o.material && `Material: ${o.material}`].filter(Boolean);
+  const bits = [o.osNumber && `O.S. ${escapeHtml(o.osNumber)}`, o.project && `Projeto: ${escapeHtml(o.project)}`, o.material && `Material: ${escapeHtml(o.material)}`].filter(Boolean);
   const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2" style="background:#F2A93B33;color:var(--amber)">🔥 URGENTE</span>` : '';
   return (bits.length || o.urgent) ? `<p class="text-xs mt-2" style="color:var(--muted)">${urg}${bits.join(' · ')}</p>` : '';
 }
@@ -407,7 +407,16 @@ function cardFooterHTML(o, mode){
     <div class="flex items-center gap-2 flex-wrap">${right}${solActions}${adm}</div></div>`;
 }
 
+const MAX_FILE_MB = 20;
+const ALLOWED_EXT = ['dxf','dwg','pdf','png','jpg','jpeg','webp','gif','heic','step','stp'];
+function validateFile(file){
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if(!ALLOWED_EXT.includes(ext)) return `Tipo de arquivo não permitido (.${ext}). Use: ${ALLOWED_EXT.join(', ')}.`;
+  if(file.size > MAX_FILE_MB * 1024 * 1024) return `Arquivo muito grande (${(file.size / 1048576).toFixed(1)} MB). Limite: ${MAX_FILE_MB} MB.`;
+  return '';
+}
 async function uploadFile(orderId, file, folder = '', displayName = null){
+  const fileErr = validateFile(file); if(fileErr) throw new Error(`"${file.name}": ${fileErr}`);
   const safe = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\-]+/g, '_');
   const path = `${orderId}/${folder ? folder + '/' : ''}${Date.now()}_${safe}`;
   const { error: upErr } = await sb.storage.from('attachments').upload(path, file);
@@ -444,7 +453,7 @@ function historyHTML(order){
     <div class="flex gap-3 text-sm">
       <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
       <div>
-        <p><span class="font-medium">${h.byName}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${h.detail}</p>
+        <p><span class="font-medium">${escapeHtml(h.byName)}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${escapeHtml(h.detail)}</p>
         <p class="text-xs" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
       </div>
     </div>`).join('') + `</div>`;
@@ -454,7 +463,7 @@ function attachmentsHTML(order){
   if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
   return `<ul class="space-y-1.5">` + order.attachments.map(a => `
     <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
-      <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${a.name} <span class="text-xs" style="color:var(--muted)">— enviado por ${a.uploadedBy}</span></span>
+      <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)} <span class="text-xs" style="color:var(--muted)">— enviado por ${escapeHtml(a.uploadedBy)}</span></span>
       <span class="flex items-center gap-2 shrink-0">
         <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
         ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : ''}
@@ -492,13 +501,13 @@ function openDetailModal(order){
   $('detail-modal-body').innerHTML = `
     <div class="flex items-start justify-between">
       <div>
-        <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitado por ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+        <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
+        <p class="text-sm" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
       </div>
       <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
     </div>
     ${metaLine(order)}${itemsListHTML(order)}
-    <p class="text-sm">${order.description || ''}</p>
+    <p class="text-sm">${escapeHtml(order.description || '')}</p>
     ${receiptHTML(order)}
     <div>
       <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Roteiro de produção</p>
@@ -642,7 +651,7 @@ function renderSolicitante(container = $('main-content')){
       return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
             <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
           </div>
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
@@ -669,7 +678,9 @@ function renderSolicitante(container = $('main-content')){
 $('new-order-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const btn = $('new-order-submit'); const err = $('new-order-error');
-  err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Enviando...';
+  err.classList.add('hidden');
+  if($('order-deadline').value < new Date().toLocaleDateString('sv-SE')){ err.textContent = 'O prazo não pode ser uma data que já passou.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Enviando...';
   try{
     const items = orderItemsEditor.getItems();
     if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
@@ -762,8 +773,8 @@ function renderAdminFila(){
     list.innerHTML = orders.map(o=> `
       <div class="card rounded p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
         <div>
-          <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${o.requesterName} · Prazo: ${fmtDate(o.deadline)}</p>
+          <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${fmtDate(o.deadline)}</p>
         </div>
         <button data-triar="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium shrink-0" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
       </div>`).join('');
@@ -778,9 +789,9 @@ function openTriagemModal(order){
   function renderBody(){
     $('triagem-body').innerHTML = `
       <div>
-        <h4 class="font-display font-600 text-lg">${order.pieceName}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitante: ${order.requesterName} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
-        ${metaLine(order)}<p class="text-sm mt-2">${order.description || ''}</p>${itemsListHTML(order)}
+        <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
+        <p class="text-sm" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+        ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
       </div>
       <div>
         <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos do solicitante</p>
@@ -889,8 +900,8 @@ function renderAdminTodos(){
       return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
             ${metaLine(o)}
           </div>
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
@@ -1027,8 +1038,8 @@ function renderOperador(container = $('main-content')){
       return `<div class="card rounded p-4 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:#F2A93B12;':''}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${o.pieceName} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${o.requesterName} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
@@ -1177,6 +1188,7 @@ function openEditOrderModal(order){
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          await removeOldPieceAttachment(order, i, items.length);
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
           await sb.from('order_attachments').insert(att);
         }
@@ -1230,6 +1242,7 @@ function openSolEditModal(order){
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          await removeOldPieceAttachment(order, i, items.length);
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
           await sb.from('order_attachments').insert(att);
         }
@@ -1240,6 +1253,16 @@ function openSolEditModal(order){
     finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
   };
   openModal('sol-edit-order-modal');
+}
+
+async function removeOldPieceAttachment(order, i, total){
+  const old = order.attachments.filter(a => a.id && !isPhoto(a) && a.uploadedBy === order.requesterName
+    && (total > 1 ? a.name.startsWith(`Peça ${i + 1} - `) : true));
+  if(!old.length) return;
+  const { error } = await sb.from('order_attachments').delete().in('id', old.map(a => a.id));
+  if(error) return; // sem permissão: mantém o antigo em vez de falhar a edição
+  const paths = old.map(a => decodeURIComponent(a.url.split('/attachments/')[1] || '')).filter(Boolean);
+  if(paths.length) await sb.storage.from('attachments').remove(paths);
 }
 
 async function deleteOwnOrder(order){
@@ -1445,6 +1468,7 @@ function materialOptionsHTML(placeholder){
   return `<option value="">${placeholder}</option>` + MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
 }
 if($('eo-material')) $('eo-material').innerHTML = materialOptionsHTML('— sem material —');
+$('order-deadline').min = new Date().toLocaleDateString('sv-SE');
 const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
 
 function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1483,7 +1507,7 @@ function createItemsEditor(containerId){
       el.querySelector('[data-f="name"]').addEventListener('input', e=> r.name = e.target.value);
       el.querySelector('[data-f="qty"]').addEventListener('input', e=> r.qty = Number(e.target.value));
       el.querySelector('[data-f="material"]').addEventListener('change', e=> r.material = e.target.value);
-      el.querySelector('[data-f="file"]').addEventListener('change', e=> r.file = e.target.files[0] || null);
+      el.querySelector('[data-f="file"]').addEventListener('change', e=>{ const f = e.target.files[0] || null; const m = f ? validateFile(f) : ''; if(m){ alert(m); e.target.value = ''; r.file = null; } else r.file = f; });
       const rm = el.querySelector('[data-remove-item]'); if(rm) rm.addEventListener('click', ()=> removeRow(r.id));
     });
   }
