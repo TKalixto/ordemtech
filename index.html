@@ -397,12 +397,14 @@ function cardFooterHTML(o, mode){
   }
   const adm = mode === 'adm'
     ? `<button data-urgent="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
+       ${o.status === 'em_producao' ? `<button data-edit-routing="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--blue);color:var(--blue)">Editar etapas</button>` : ''}
        <button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
        <button data-del-order="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
   const solActions = (mode === 'sol' && o.status === 'aguardando_analise')
     ? `<button data-sol-edit="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
        <button data-sol-del="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
-  return `<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
+  const posNote = (mode === 'sol' && ['aguardando_analise', 'em_producao'].includes(o.status)) ? `<p data-pos="${o.id}" hidden class="text-sm mt-3 font-medium" style="color:var(--amber)"></p>` : '';
+  return `${posNote}<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
     <span>📎 ${reqFilesOf(o).length} arquivo(s) enviado(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
     <div class="flex items-center gap-2 flex-wrap">${right}${solActions}${adm}</div></div>`;
 }
@@ -463,8 +465,9 @@ function attachmentsHTML(order){
   if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
   return `<ul class="space-y-1.5">` + order.attachments.map(a => `
     <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
-      <span>${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)} <span class="text-xs" style="color:var(--muted)">— enviado por ${escapeHtml(a.uploadedBy)}</span></span>
+      <span>${isImage(a) ? `<img src="${escapeHtml(a.url)}" loading="lazy" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" onerror="this.remove()" style="width:44px;height:44px;object-fit:cover;border-radius:6px;cursor:zoom-in;vertical-align:middle;margin-right:8px">` : ''}${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)} <span class="text-xs" style="color:var(--muted)">— enviado por ${escapeHtml(a.uploadedBy)}</span></span>
       <span class="flex items-center gap-2 shrink-0">
+        ${isImage(a) ? `<button type="button" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2 py-1 rounded" style="background:var(--blue,#2563eb);color:#fff">Ver</button>` : ''}
         ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2 py-1 rounded" style="background:var(--blue,#2563eb);color:#fff">Prévia</button>` : ''}
         <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
         ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : ''}
@@ -754,6 +757,7 @@ function renderSolicitante(container = $('main-content')){
     list.querySelectorAll('[data-sol-del]').forEach(b=> b.addEventListener('click', (ev)=>{
       ev.stopPropagation(); deleteOwnOrder(orders.find(o=>o.id===b.dataset.solDel));
     }));
+    fillPositions(list);
   });
 }
 
@@ -994,7 +998,7 @@ function renderAdminTodos(){
     }).join('');
     const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
     list.querySelectorAll('[data-order-id]').forEach(el=> el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId))));
-    by('data-edit-order', openEditOrderModal); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
+    by('data-edit-order', openEditOrderModal); by('data-edit-routing', openRoutingEditor); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
   };
   ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
   liveRefresh('admin-todos', async ()=>{
@@ -1114,7 +1118,7 @@ function renderOperador(container = $('main-content')){
       list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
       return;
     }
-    list.innerHTML = orders.map(o=>{
+    list.innerHTML = orders.map((o, i)=>{
       const step = o.routing[o.currentStepIndex];
       const late = isLate(o);
       return `<div class="card rounded p-4 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:#F2A93B12;':''}">
@@ -1127,6 +1131,7 @@ function renderOperador(container = $('main-content')){
             <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
               ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
             </span>
+            ${isAdmin ? `<input data-pos-in="${o.id}" type="number" min="1" max="${orders.length}" value="${i + 1}" title="Posição na fila" class="w-12 h-8 rounded border text-xs text-center" style="border-color:var(--line);background:transparent;color:var(--text)">` : ''}
             <div class="flex flex-col gap-0.5">
               <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▲</button>
               <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▼</button>
@@ -1150,6 +1155,7 @@ function renderOperador(container = $('main-content')){
     list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
     list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1)));
     list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1)));
+    list.querySelectorAll('[data-pos-in]').forEach(inp=> inp.addEventListener('change', ()=> setQueuePosition(orders, inp.dataset.posIn, parseInt(inp.value, 10) - 1)));
   };
 
   drawChips();
@@ -1157,17 +1163,14 @@ function renderOperador(container = $('main-content')){
   $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders));
 }
 
-async function moveQueueItem(orders, id, dir){
-  const idx = orders.findIndex(o => o.id === id);
-  const j = idx + dir;
-  if(idx < 0 || j < 0 || j >= orders.length) return;
-  const a = orders[idx], b = orders[j];
-  const [ra, rb] = await Promise.all([
-    sb.from('orders').update({ queue_order: j }).eq('id', a.id),
-    sb.from('orders').update({ queue_order: idx }).eq('id', b.id)
-  ]);
-  if(ra.error || rb.error) alert('Erro ao reordenar: ' + (ra.error || rb.error).message);
+async function setQueuePosition(orders, id, to){
+  const from = orders.findIndex(o => o.id === id); if(from < 0 || isNaN(to)) return;
+  to = Math.max(0, Math.min(orders.length - 1, to));
+  const arr = orders.slice(); arr.splice(to, 0, arr.splice(from, 1)[0]);
+  const rs = await Promise.all(arr.map((o, k) => sb.from('orders').update({ queue_order: k }).eq('id', o.id)));
+  const bad = rs.find(r => r.error); if(bad) alert('Erro ao reordenar: ' + bad.error.message);
 }
+async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir); }
 
 async function resetQueueOrder(orders){
   if(!orders.length) return;
@@ -1235,6 +1238,87 @@ async function confirmReceipt(order){
 }
 
 /* --- Admin: editar / excluir pedido --- */
+/* ===== Imagem sem baixar (miniatura + visualização ampliada) ===== */
+const IMG_RE = /\.(png|jpe?g|webp|gif)$/i;
+function isImage(a){ return IMG_RE.test(a.name || '') || IMG_RE.test((a.url || '').split('?')[0]) || isPhoto(a); }
+function openImagePreview(url, title){
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px';
+  ov.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="max-width:100%;max-height:82vh;object-fit:contain;border-radius:8px">
+    <div class="text-sm" style="color:#fff">${escapeHtml(title)} · <a href="${escapeHtml(url)}" target="_blank" style="text-decoration:underline">abrir em nova aba</a> · clique fora ou Esc para fechar</div>`;
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+  const esc = e => { if(e.key === 'Escape') close(); };
+  ov.addEventListener('click', e => { if(e.target.tagName !== 'A') close(); });
+  document.addEventListener('keydown', esc); document.body.appendChild(ov);
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-img]'); if(!b) return;
+  ev.stopPropagation(); openImagePreview(b.dataset.img, b.dataset.title || 'Imagem');
+}, true);
+
+/* ===== Posição do pedido na fila (nota para o solicitante) ===== */
+async function fillPositions(root){
+  for(const el of root.querySelectorAll('[data-pos]')){
+    const { data, error } = await sb.rpc('queue_position', { p_order: el.dataset.pos });
+    if(error || !data) continue;
+    el.textContent = data.kind === 'triagem'
+      ? `📍 Aguardando triagem do ADM — ${data.pos}º de ${data.total} na fila`
+      : `📍 Na fila de ${data.machine} — ${data.pos}º de ${data.total}${data.pos === 1 ? ' (próximo!)' : ''}`;
+    el.hidden = false;
+  }
+}
+
+/* ===== ADM: editar o roteiro depois da triagem ===== */
+function openRoutingEditor(order){
+  const isLocked = s => s.status === 'concluido' || (s.status === 'em_andamento' && s.started_at);
+  const locked = order.routing.filter(isLocked);
+  let edit = order.routing.filter(s => !isLocked(s)).map(s => ({ id: s.id, machine: s.machine }));
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px';
+  const btn = 'class="px-2 py-1 rounded border text-xs" style="border-color:var(--line)"';
+  const draw = () => { ov.innerHTML = `<div style="background:var(--surface,#151a23);border-radius:12px;width:min(520px,100%);max-height:90vh;overflow:auto;padding:16px" class="space-y-2">
+    <b>Editar etapas — ${escapeHtml(order.pieceName)}</b>
+    <p class="text-xs" style="color:var(--muted)">Etapas concluídas ou já iniciadas ficam travadas (🔒). As demais podem ser reordenadas, removidas ou criadas.</p>
+    ${locked.map(s => `<div class="card rounded px-3 py-2 text-sm">🔒 ${escapeHtml(s.machine)} <span class="text-xs" style="color:var(--muted)">(${s.status === 'concluido' ? 'concluída' : 'em andamento'})</span></div>`).join('')}
+    ${edit.map((s, i) => `<div class="card rounded px-3 py-2 text-sm flex items-center justify-between"><span>${locked.length + i + 1}. ${escapeHtml(s.machine)}</span><span class="flex gap-1"><button type="button" ${btn} data-m="up" data-i="${i}">▲</button><button type="button" ${btn} data-m="dn" data-i="${i}">▼</button><button type="button" ${btn} data-m="rm" data-i="${i}">✕</button></span></div>`).join('')}
+    <div class="flex flex-wrap gap-2">${MACHINES.map(m => `<button type="button" ${btn} data-add="${m}">+ ${m}</button>`).join('')}</div>
+    <p data-err class="text-sm" style="color:var(--red);display:none"></p>
+    <div class="flex justify-end gap-2"><button type="button" data-x class="px-3 py-1.5 rounded text-sm" style="background:var(--surface-2)">Cancelar</button><button type="button" data-save class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--blue);color:#fff">Salvar etapas</button></div></div>`; };
+  const showErr = m => { const e = ov.querySelector('[data-err]'); e.textContent = 'Erro: ' + m; e.style.display = 'block'; };
+  const chk = r => { if(r.error) throw r.error; };
+  const save = async () => {
+    const cur = order.currentStepIndex;
+    if(cur >= locked.length + edit.length) return showErr('mantenha ao menos uma etapa pendente.');
+    const keepIds = edit.filter(s => s.id).map(s => s.id);
+    const removed = order.routing.filter(s => !isLocked(s) && !keepIds.includes(s.id));
+    try{
+      if(removed.length) chk(await sb.from('order_routing').delete().in('id', removed.map(s => s.id)));
+      for(const [k, id] of keepIds.entries()) chk(await sb.from('order_routing').update({ step_index: 1000 + k, status: 'pendente' }).eq('id', id));
+      for(const [i, s] of edit.entries()){
+        const idx = locked.length + i;
+        if(s.id) chk(await sb.from('order_routing').update({ step_index: idx }).eq('id', s.id));
+        else chk(await sb.from('order_routing').insert({ order_id: order.id, step_index: idx, machine: s.machine, status: 'pendente' }));
+      }
+      const all = [...locked.map(s => s.machine), ...edit.map(s => s.machine)];
+      chk(await sb.from('orders').update({ current_machine: all[cur], updated_at: new Date().toISOString() }).eq('id', order.id));
+      await sb.from('order_history').insert(historyRow(order.id, 'roteiro', `Roteiro alterado pelo ADM: ${all.join(' → ')}.`));
+      ov.remove();
+    }catch(ex){ showErr(ex.message); }
+  };
+  ov.addEventListener('click', e => {
+    const t = e.target, m = t.dataset && t.dataset.m, i = +t.dataset.i;
+    if(t === ov || t.closest('[data-x]')) return ov.remove();
+    if(t.dataset.save !== undefined) return save();
+    if(t.dataset.add) edit.push({ id: null, machine: t.dataset.add });
+    else if(m === 'rm') edit.splice(i, 1);
+    else if(m === 'up' && i > 0) edit.splice(i - 1, 0, edit.splice(i, 1)[0]);
+    else if(m === 'dn' && i < edit.length - 1) edit.splice(i + 1, 0, edit.splice(i, 1)[0]);
+    else return;
+    draw();
+  });
+  draw(); document.body.appendChild(ov);
+}
+
 function openEditOrderModal(order){
   $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || '';
   $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
