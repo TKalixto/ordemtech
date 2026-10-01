@@ -1521,6 +1521,24 @@ async function deleteOrder(order){
 }
 
 /* --- Admin: resumo por solicitante --- */
+/* peças cortadas = quantidade dos pedidos cuja etapa "Corte a Laser" já foi concluída */
+const cutQtyOf = o => o.routing.some(r => r.machine === 'Corte a Laser' && r.status === 'concluido') ? (o.quantity || 0) : 0;
+function materialUsage(orders){
+  const m = {};
+  orders.forEach(o => {
+    const its = (o.items && o.items.length) ? o.items : [{ quantity: o.quantity, material: o.material }];
+    its.forEach(it => { const k = it.material || 'Sem material'; m[k] = (m[k] || 0) + (Number(it.quantity) || 0); });
+  });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
+}
+function materialChartHTML(orders){
+  const data = materialUsage(orders), total = data.reduce((a, d) => a + d[1], 0), max = data.length ? data[0][1] : 1;
+  const bars = data.length === 0 ? '<p class="text-sm" style="color:var(--muted)">Sem dados ainda.</p>' : data.map(([name, q], i) => `
+    <div class="mb-2.5"><div class="flex justify-between gap-3 text-xs mb-1"><span>${i === 0 ? '🏆 ' : ''}${escapeHtml(name)}</span><span style="color:var(--muted)">${q} peça(s) · ${total ? Math.round(q / total * 100) : 0}%</span></div>
+    <div style="height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.max(3, q / max * 100)}%;border-radius:6px;background:${i === 0 ? 'var(--blue)' : '#4C6A9C'}"></div></div></div>`).join('');
+  return `<div class="card rounded p-4 mb-5"><p class="text-xs uppercase tracking-wide mb-3" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
+}
+
 function renderAdminResumo(){
   clearChannels();
   $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
@@ -1531,15 +1549,17 @@ function renderAdminResumo(){
     if(error){ console.error(error); return; }
     if(!$('resumo-stats')) return;
     const orders = data.map(normalizeOrder);
-    $('resumo-stats').innerHTML = statsHTML(statsOf(orders));
+    const cutTotal = orders.reduce((a, o) => a + cutQtyOf(o), 0);
+    $('resumo-stats').innerHTML = statsHTML(statsOf(orders)) +
+      `<div class="card rounded p-4 mb-5 flex items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças cortadas (Corte a Laser concluído)</p><p class="font-display text-3xl font-700 mt-1" style="color:var(--green)">${cutTotal}</p></div><span style="font-size:32px">✂️</span></div>` + materialChartHTML(orders);
     const by = {};
     orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
-    const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list) })).sort((a, b) => b.s.total - a.s.total);
+    const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list), cut: g.list.reduce((a, o) => a + cutQtyOf(o), 0) })).sort((a, b) => b.s.total - a.s.total);
     const th = h => `<th class="text-left font-medium px-3 py-2 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
     const td = (v, c) => `<td class="px-3 py-2 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
     $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-6 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
-      `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
-      rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
+      `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Peças cortadas', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
+      rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.cut, 'var(--green)')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
       `</tbody></table>`;
   });
 }
