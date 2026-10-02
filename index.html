@@ -1378,7 +1378,7 @@ function openEditOrderModal(order){
     const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
     const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
     const att = tagged || fallback;
-    return { ...it, _attachmentName: att ? att.name : '' };
+    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
   });
   eoItemsEditor.reset(withAttach);
   $('edit-order-error').classList.add('hidden');
@@ -1402,10 +1402,10 @@ function openEditOrderModal(order){
       const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
       if(error) throw error;
       if(!data || data.length === 0) throw new Error('sem permissão para editar (verifique as políticas RLS do admin).');
+      await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
-          await removeOldPieceAttachment(order, i, items.length);
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
           await sb.from('order_attachments').insert(att);
         }
@@ -1431,7 +1431,7 @@ function openSolEditModal(order){
     const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
     const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
     const att = tagged || fallback;
-    return { ...it, _attachmentName: att ? att.name : '' };
+    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
   });
   solItemsEditor.reset(withAttach);
   $('sol-edit-order-error').classList.add('hidden');
@@ -1456,10 +1456,10 @@ function openSolEditModal(order){
       const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
       if(error) throw error;
       if(!data || data.length === 0) throw new Error('não deu para salvar — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
+      await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
-          await removeOldPieceAttachment(order, i, items.length);
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
           await sb.from('order_attachments').insert(att);
         }
@@ -1713,48 +1713,80 @@ function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').
 /* --- Editor de peças (múltiplos itens por pedido, usado no Novo Pedido e na edição do solicitante) --- */
 function createItemsEditor(containerId){
   const wrap = $(containerId);
-  let rows = [];
-  function addRow(data){
-    data = data || {};
-    rows.push({ id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null, existingAttachmentName: data._attachmentName || '' });
-    draw();
+  let rows = [], removedIds = [];
+  const hasFile = r => !!(r.file || (r.existingAttachmentName && !r.removeExisting));
+  function fileAreaHTML(r){
+    if(hasFile(r)) return `<div class="flex items-center justify-between gap-2 mt-1 px-2 py-1.5 rounded text-xs" style="background:var(--surface-2)">
+        <span class="truncate">📎 ${escapeHtml(r.file ? r.file.name : r.existingAttachmentName)}${r.file ? '' : ' <em style="color:var(--muted)">(atual)</em>'}</span>
+        <button type="button" data-del-file style="color:var(--red)" class="shrink-0">Excluir arquivo</button></div>`;
+    return `<input data-f="file" type="file" class="w-full mt-1 text-xs">${r.removeExisting ? '<p class="text-xs mt-1" style="color:var(--amber)">O anexo atual será removido ao salvar. Escolha outro arquivo ou deixe sem anexo.</p>' : ''}`;
   }
-  function removeRow(rid){ if(rows.length <= 1) return; rows = rows.filter(r => r.id !== rid); draw(); }
-  function draw(){
-    wrap.innerHTML = rows.map((r, i) => `
-      <div class="card rounded p-3 space-y-2" data-row="${r.id}">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold" style="color:var(--muted)">Peça ${i + 1}</span>
-          ${rows.length > 1 ? `<button type="button" data-remove-item="${r.id}" class="text-xs" style="color:var(--red)">Remover</button>` : ''}
-        </div>
-        <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 rounded text-sm">
-        <div class="grid grid-cols-2 gap-2">
-          <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 rounded text-sm">
-          <select data-f="material" class="w-full px-3 py-2 rounded text-sm">${ITEM_MATERIAL_OPTIONS}</select>
-        </div>
-        <div>
-          <label class="text-xs" style="color:var(--muted)">Anexo desta peça (opcional)</label>
-          <input data-f="file" type="file" class="w-full mt-1 text-xs">
-          ${r.existingAttachmentName ? `<p class="text-xs mt-1" style="color:var(--muted)">📎 Anexo atual: ${escapeHtml(r.existingAttachmentName)}</p>` : ''}
-        </div>
-      </div>`).join('');
-    rows.forEach(r=>{
+  function renderFileArea(r){
+    const area = wrap.querySelector(`[data-row="${r.id}"] [data-file-area]`);
+    area.innerHTML = fileAreaHTML(r);
+    const inp = area.querySelector('[data-f="file"]');
+    if(inp) inp.addEventListener('change', e => {
+      const f = e.target.files[0] || null, m = f ? validateFile(f) : '';
+      if(m){ alert(m); e.target.value = ''; return; }
+      r.file = f; renderFileArea(r);   // um único arquivo por peça: depois de escolher, só dá para excluir
+    });
+    const del = area.querySelector('[data-del-file]');
+    if(del) del.addEventListener('click', () => { if(r.file) r.file = null; else r.removeExisting = true; renderFileArea(r); });
+  }
+  function rowHTML(r){
+    return `<div class="card rounded p-3 space-y-2" data-row="${r.id}">
+      <div class="flex items-center justify-between"><span class="text-xs font-semibold" data-label style="color:var(--muted)"></span>
+        <button type="button" data-remove-item class="text-xs" style="color:var(--red)">Remover</button></div>
+      <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 rounded text-sm">
+      <div class="grid grid-cols-2 gap-2">
+        <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 rounded text-sm">
+        <select data-f="material" class="w-full px-3 py-2 rounded text-sm">${ITEM_MATERIAL_OPTIONS}</select></div>
+      <div><label class="text-xs" style="color:var(--muted)">Anexo desta peça (1 arquivo, opcional)</label><div data-file-area></div></div></div>`;
+  }
+  function refreshLabels(){
+    rows.forEach((r, i) => {
       const el = wrap.querySelector(`[data-row="${r.id}"]`);
-      el.querySelector('[data-f="material"]').value = r.material;
-      el.querySelector('[data-f="name"]').addEventListener('input', e=> r.name = e.target.value);
-      el.querySelector('[data-f="qty"]').addEventListener('input', e=> r.qty = Number(e.target.value));
-      el.querySelector('[data-f="material"]').addEventListener('change', e=> r.material = e.target.value);
-      el.querySelector('[data-f="file"]').addEventListener('change', e=>{ const f = e.target.files[0] || null; const m = f ? validateFile(f) : ''; if(m){ alert(m); e.target.value = ''; r.file = null; } else r.file = f; });
-      const rm = el.querySelector('[data-remove-item]'); if(rm) rm.addEventListener('click', ()=> removeRow(r.id));
+      el.querySelector('[data-label]').textContent = `Peça ${i + 1}`;
+      el.querySelector('[data-remove-item]').style.display = rows.length > 1 ? '' : 'none';
     });
   }
-  function reset(items){ rows = []; (items && items.length ? items : [{}]).forEach(addRow); }
+  function addRow(data){
+    data = data || {};
+    const r = { id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null,
+      existingAttachmentName: data._attachmentName || '', existingAttachmentId: data._attachmentId || null, removeExisting: false };
+    rows.push(r);
+    wrap.insertAdjacentHTML('beforeend', rowHTML(r));       // só acrescenta: as peças já preenchidas não são tocadas
+    const el = wrap.querySelector(`[data-row="${r.id}"]`);
+    el.querySelector('[data-f="material"]').value = r.material;
+    el.querySelector('[data-f="name"]').addEventListener('input', e => r.name = e.target.value);
+    el.querySelector('[data-f="qty"]').addEventListener('input', e => r.qty = Number(e.target.value));
+    el.querySelector('[data-f="material"]').addEventListener('change', e => r.material = e.target.value);
+    el.querySelector('[data-remove-item]').addEventListener('click', () => removeRow(r.id));
+    renderFileArea(r); refreshLabels();
+  }
+  function removeRow(rid){
+    if(rows.length <= 1) return;
+    const r = rows.find(x => x.id === rid);
+    if(r.existingAttachmentId) removedIds.push(r.existingAttachmentId);
+    rows = rows.filter(x => x.id !== rid);
+    wrap.querySelector(`[data-row="${rid}"]`).remove(); refreshLabels();
+  }
+  function reset(items){ rows = []; removedIds = []; wrap.innerHTML = ''; (items && items.length ? items : [{}]).forEach(addRow); }
   reset();
   return {
-    addBlank: ()=> addRow(),
+    addBlank: () => addRow(),
     reset,
-    getItems: ()=> rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file }))
+    getItems: () => rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file })),
+    // ids de anexos antigos a apagar ao salvar (peça removida, arquivo excluído ou substituído); zera depois de ler
+    takeDeletes: () => { const ids = [...removedIds, ...rows.filter(r => r.existingAttachmentId && (r.removeExisting || r.file)).map(r => r.existingAttachmentId)]; removedIds = []; return ids; }
   };
+}
+async function deleteAttachmentsByIds(ids){
+  if(!ids.length) return;
+  const { data, error } = await sb.from('order_attachments').delete().in('id', ids).select();
+  if(error || !data) return;   // sem permissão: mantém os antigos em vez de falhar a edição
+  const paths = data.map(a => decodeURIComponent((a.url.split('/attachments/')[1] || ''))).filter(Boolean);
+  if(paths.length) await sb.storage.from('attachments').remove(paths);
 }
 
 const orderItemsEditor = createItemsEditor('order-items-editor');
