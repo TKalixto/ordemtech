@@ -28,6 +28,9 @@
   .hidden{display:none !important;}
   .modal-backdrop{background:rgba(6,8,11,0.72);}
   .tag{border-left-width:4px;}
+  .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
+  .bell-btn:hover{background:var(--surface-2);color:var(--text);}
+  .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;line-height:16px;font-weight:700;text-align:center;}
   /* ===== Sidebar do ADM ===== */
   #admin-sb{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;display:flex;flex-direction:column;background:#0B1017;border-right:1px solid var(--line)}
   .sb-logo{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
@@ -126,6 +129,10 @@
       <span id="role-badge" class="ml-2 text-xs px-2 py-0.5 rounded hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+      <button id="bell-btn" type="button" class="bell-btn hidden" title="Pedidos aguardando triagem" aria-label="Notificações">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="bell-dot" class="bell-dot hidden">0</span>
+      </button>
       <span id="user-name" class="text-sm truncate max-w-[90px] sm:max-w-none" style="color:var(--muted)"></span>
       <button id="logout-btn" class="text-sm px-3 py-1.5 rounded border shrink-0" style="border-color:var(--line)">Sair</button>
     </div>
@@ -152,9 +159,13 @@
       <button data-close-modal="new-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
     <form id="new-order-form" class="p-5 space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="order-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
+<div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="order-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
       <div class="flex items-center justify-between">
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
@@ -216,9 +227,13 @@
       <button data-close-modal="edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
     </div>
     <form id="edit-order-form" class="p-5 space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
+<div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="eo-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-3 hidden" id="eo-op-manual">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
       <div class="flex items-center justify-between">
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
@@ -242,9 +257,13 @@
     </div>
     <form id="sol-edit-order-form" class="p-5 space-y-4">
       <p class="text-xs" style="color:var(--muted)">Só é possível editar enquanto o pedido está aguardando análise do ADM.</p>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="seo-os" required class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="seo-project" required class="w-full mt-1 px-3 py-2 rounded"></div>
+<div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="seo-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-3 hidden" id="seo-op-manual">
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="seo-os" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="seo-project" class="w-full mt-1 px-3 py-2 rounded"></div>
       </div>
       <div class="flex items-center justify-between">
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
@@ -280,6 +299,29 @@
 </div>
 
 <!-- ================= SUPABASE SDK ================= -->
+<!-- ================= MODAL: PROJETO / OS (Admin) ================= -->
+<div id="project-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-md rounded">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg" id="project-modal-title">Novo Projeto / OS</h3>
+      <button data-close-modal="project-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="project-form" class="p-5 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label>
+        <input id="pm-os" required class="w-full mt-1 px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome do Projeto</label>
+        <input id="pm-project" required class="w-full mt-1 px-3 py-2 rounded">
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input id="pm-active" type="checkbox" checked> Disponível para o solicitante escolher</label>
+      <p id="project-modal-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="project-modal-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Salvar</button>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -296,6 +338,8 @@ const MACHINES = ["Corte a Laser", "Dobra CNC", "Centro de Usinagem", "Torno CNC
 
 let currentUser = null;      // { id, name, email, role, machine }
 let activeChannels = [];     // canais realtime ativos, limpos ao trocar de view/logout
+let bellChannel = null;      // canal do sino, independente das abas (nunca é limpo por clearChannels)
+let projectsCache = [];      // cache simples da lista de Projetos/OS cadastrados
 
 /* =========================================================================
    2) HELPERS GERAIS
@@ -707,6 +751,8 @@ async function handleSession(session){
   $('app-shell').classList.remove('hidden');
   $('user-name').textContent = currentUser.name;
   $('role-badge').textContent = roleLabel(currentUser.role) + (currentUser.machines.length ? ` · ${currentUser.machines.join(', ')}` : '');
+  if(currentUser.role === 'admin'){ $('bell-btn').classList.remove('hidden'); startBell(); }
+  else { $('bell-btn').classList.add('hidden'); if(bellChannel){ sb.removeChannel(bellChannel); bellChannel = null; } }
   routeToDashboard();
 }
 
@@ -732,6 +778,59 @@ function liveRefresh(channelName, fetchFn){
   activeChannels.push(channel);
 }
 
+/* ============ Sino de notificação (pedidos aguardando triagem) ============ */
+function goAdminTab(tab){
+  const btn = document.querySelector(`.admin-tab[data-tab="${tab}"]`);
+  if(btn) btn.click(); else renderAdmin();
+}
+async function refreshBell(){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  const { count, error } = await sb.from('orders').select('id', { count:'exact', head:true }).eq('status','aguardando_analise');
+  if(error){ console.error(error); return; }
+  const dot = $('bell-dot');
+  if(count > 0){ dot.textContent = count > 99 ? '99+' : String(count); dot.classList.remove('hidden'); }
+  else dot.classList.add('hidden');
+}
+function startBell(){
+  refreshBell();
+  if(bellChannel) return; // já está assinado, não duplica
+  bellChannel = sb.channel('bell-admin')
+    .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, refreshBell)
+    .subscribe();
+}
+$('bell-btn').addEventListener('click', ()=> goAdminTab('fila'));
+
+/* ============ Seletor de Projeto/OS cadastrado (usado nos 3 formulários de pedido) ============ */
+async function loadProjects(){
+  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
+  if(error){ console.error(error); projectsCache = []; return []; }
+  projectsCache = data; return data;
+}
+function projectOptionsHTML(list, selectedValue){
+  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
+  return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
+}
+async function setupOpPicker({ selectId, manualId, osId, projectId, matchOs, matchProject }){
+  const list = await loadProjects();
+  const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
+  const match = (matchOs && matchProject) ? list.find(p => p.os_number === matchOs && p.project_name === matchProject) : null;
+  const initial = match ? match.id : ((matchOs || matchProject) ? '__custom__' : '');
+  sel.innerHTML = projectOptionsHTML(list, initial);
+  sel.value = initial;
+  if(initial === '__custom__'){ osEl.value = matchOs || ''; projEl.value = matchProject || ''; }
+  const apply = ()=>{
+    if(sel.value === '__custom__'){ manual.classList.remove('hidden'); }
+    else{
+      manual.classList.add('hidden');
+      const p = list.find(x => x.id === sel.value);
+      osEl.value = p ? p.os_number : '';
+      projEl.value = p ? p.project_name : '';
+    }
+  };
+  sel.onchange = apply;
+  apply();
+}
+
 /* =========================================================================
    4) PAINEL — SOLICITANTE
    ========================================================================= */
@@ -748,7 +847,7 @@ function renderSolicitante(container = $('main-content')){
     <div id="solicitante-summary"></div>
     <div id="solicitante-list" class="space-y-3"></div>
   `;
-  $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); openModal('new-order-modal'); });
+  $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
 
   liveRefresh('solicitante-orders', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
@@ -801,6 +900,7 @@ $('new-order-form').addEventListener('submit', async (e)=>{
     const items = orderItemsEditor.getItems();
     if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
     if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+    if(!$('order-os').value.trim() || !$('order-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
     const pieceName = items.length === 1 ? items[0].name : ($('order-project').value.trim() || items[0].name);
     const totalQty = items.reduce((a, it) => a + it.quantity, 0);
     const material = items.length === 1 ? items[0].material : null;
@@ -853,12 +953,13 @@ const SB_ICONS = {
   sheet: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>',
   user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
-  down: '<path d="m6 9 6 6 6-6"/>', menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+  down: '<path d="m6 9 6 6 6-6"/>', menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>'
 };
 const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SB_ICONS[n]}</svg>`;
 const SB_MENU = [
   { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
-  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users']] },
+  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
   { title: 'Dados', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
   { title: 'Visualização', items: [['solicitante', 'Visão Solicitante', 'user'], ['operador', 'Visão Operador', 'wrench']] }
 ];
@@ -872,13 +973,13 @@ function renderAdmin(){
     <button type="button" id="sb-toggle" aria-label="Abrir menu">${sbIcon('menu')}</button>
     <div id="sb-backdrop"></div>
     <aside id="admin-sb" aria-label="Menu principal">
-      <div class="sb-logo"><span class="sb-mark">O</span><span>OrdemTech<small>Painel do ADM</small></span></div>
+      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão CIMA<small>Painel do ADM</small></span></div>
       <nav class="sb-nav">${nav}</nav>
       <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
     </aside>
     <div id="admin-tab-content"></div>`;
   const sb = $('admin-sb'), grp = $('sb-dados');
-  const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
+  const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, projetos: renderAdminProjetos, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
     solicitante: () => renderSolicitante($('admin-tab-content')), operador: () => renderOperador($('admin-tab-content')) };
   const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
   const go = tab => {
@@ -1058,6 +1159,72 @@ function renderAdminTodos(){
     all = data.map(normalizeOrder); draw();
   });
 }
+
+/* ============ ADMIN: Projetos / OS (lista que o solicitante escolhe) ============ */
+function renderAdminProjetos(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `
+    <div class="flex items-center justify-between mb-4 gap-3">
+      <div><h2 class="font-display font-700 text-lg">Projetos / OS cadastrados</h2>
+        <p class="text-sm" style="color:var(--muted)">Essa lista aparece para o solicitante escolher ao criar ou editar um pedido, evitando OS/Projeto digitados errado.</p></div>
+      <button id="btn-new-project" class="px-4 py-2 rounded font-medium shrink-0" style="background:var(--blue);color:#fff">+ Novo</button>
+    </div>
+    <div id="projects-list" class="space-y-2"></div>`;
+  $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
+  liveRefresh('admin-projetos', async ()=>{
+    const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
+    if(error){ console.error(error); return; }
+    const list = $('projects-list');
+    if(!data.length){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
+    list.innerHTML = data.map(p => `
+      <div class="card rounded p-3 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p class="font-medium text-sm">OS ${escapeHtml(p.os_number)} <span style="color:var(--muted)">— ${escapeHtml(p.project_name)}</span></p>
+          <p class="text-xs" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button data-edit-project="${p.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">Editar</button>
+          <button data-toggle-project="${p.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
+          <button data-del-project="${p.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('[data-edit-project]').forEach(b => b.addEventListener('click', ()=> openProjectModal(data.find(p=>p.id===b.dataset.editProject))));
+    list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
+      const p = data.find(x=>x.id===b.dataset.toggleProject);
+      const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
+      if(error) alert('Erro: ' + error.message);
+    }));
+    list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
+      if(!confirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados — só deixa de aparecer para novas escolhas.')) return;
+      const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
+      if(error) alert('Erro: ' + error.message);
+    }));
+  });
+}
+let editProjectTarget = null;
+function openProjectModal(p){
+  editProjectTarget = p;
+  $('project-modal-title').textContent = p ? 'Editar Projeto / OS' : 'Novo Projeto / OS';
+  $('pm-os').value = p ? p.os_number : '';
+  $('pm-project').value = p ? p.project_name : '';
+  $('pm-active').checked = p ? p.active : true;
+  $('project-modal-error').classList.add('hidden');
+  openModal('project-modal');
+}
+$('project-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const err = $('project-modal-error'); err.classList.add('hidden');
+  const os_number = $('pm-os').value.trim(), project_name = $('pm-project').value.trim();
+  if(!os_number || !project_name){ err.textContent = 'Preencha a OS e o nome do projeto.'; err.classList.remove('hidden'); return; }
+  const btn = $('project-modal-submit'); btn.disabled = true; btn.textContent = 'Salvando...';
+  const payload = { os_number, project_name, active: $('pm-active').checked };
+  const { error } = editProjectTarget
+    ? await sb.from('projects').update(payload).eq('id', editProjectTarget.id)
+    : await sb.from('projects').insert(payload);
+  if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); }
+  else closeModal('project-modal');
+  btn.disabled = false; btn.textContent = 'Salvar';
+});
 
 function renderAdminUsuarios(){
   clearChannels();
@@ -1371,7 +1538,7 @@ function openRoutingEditor(order){
 }
 
 function openEditOrderModal(order){
-  $('eo-os').value = order.osNumber || ''; $('eo-project').value = order.project || '';
+  setupOpPicker({ selectId:'eo-op-select', manualId:'eo-op-manual', osId:'eo-os', projectId:'eo-project', matchOs: order.osNumber, matchProject: order.project });
   $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
   const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
   const withAttach = baseItems.map((it, i) => {
@@ -1389,6 +1556,7 @@ function openEditOrderModal(order){
       const items = eoItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      if(!$('eo-os').value.trim() || !$('eo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
       const pieceName = items.length === 1 ? items[0].name : ($('eo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
@@ -1424,7 +1592,7 @@ function openSolEditModal(order){
     alert('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
     return;
   }
-  $('seo-os').value = order.osNumber || ''; $('seo-project').value = order.project || '';
+  setupOpPicker({ selectId:'seo-op-select', manualId:'seo-op-manual', osId:'seo-os', projectId:'seo-project', matchOs: order.osNumber, matchProject: order.project });
   $('seo-desc').value = order.description || ''; $('seo-deadline').value = order.deadline;
   const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
   const withAttach = baseItems.map((it, i) => {
@@ -1442,6 +1610,7 @@ function openSolEditModal(order){
       const items = solItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      if(!$('seo-os').value.trim() || !$('seo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
       const pieceName = items.length === 1 ? items[0].name : ($('seo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
