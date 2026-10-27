@@ -30,11 +30,24 @@
   .tag{border-left-width:4px;}
   .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
   .bell-btn:hover{background:var(--surface-2);color:var(--text);}
-  .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;line-height:16px;font-weight:700;text-align:center;}
+  .toast-wrap{position:fixed;right:16px;bottom:16px;z-index:70;display:flex;flex-direction:column;gap:8px;max-width:min(92vw,380px)}
+  .toast{padding:10px 14px;border-radius:8px;font-size:13px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-left:4px solid var(--blue);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .toast.err{border-left-color:var(--red)} .toast.ok{border-left-color:var(--green)}
+  .skel{height:84px;border-radius:8px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel 1.2s infinite}
+  @keyframes skel{to{background-position:-200% 0}}
+  .nav-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:20px;font-weight:700;text-align:center}
+  .page-head{margin-bottom:18px}
+  .chip-st{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);background:transparent;transition:background .15s,color .15s}
+  .chip-st b{color:var(--text);margin-left:4px}
+  .chip-st:hover{background:var(--surface-2)}
+  .chip-st.on{background:rgba(46,111,238,.16);border-color:var(--blue);color:var(--text)}
+  [data-start],[data-finish]{min-height:44px;padding-left:18px !important;padding-right:18px !important;font-size:14px !important}
+  @media (min-width:1024px){ body:has(#admin-sb) .brand-top{display:none} }
+  .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:16px;font-weight:700;text-align:center;}
   /* ===== Sidebar do ADM ===== */
   #admin-sb{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;display:flex;flex-direction:column;background:#0B1017;border-right:1px solid var(--line)}
   .sb-logo{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
-  .sb-logo small,.sb-foot small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+  .sb-logo small,.sb-foot small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
   .sb-mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#2E6FEE,#5B8DEF);color:#fff;font-weight:800}
   .sb-nav{flex:1;overflow-y:auto;padding:10px 10px 16px}
   .sb-sec{margin-bottom:6px}
@@ -124,8 +137,8 @@
 <div id="app-shell" class="hidden min-h-screen">
   <header class="flex items-center justify-between px-3 sm:px-5 py-3 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
     <div class="flex items-center gap-2 min-w-0">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
+      <svg class="brand-top" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
       <span id="role-badge" class="ml-2 text-xs px-2 py-0.5 rounded hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -162,6 +175,7 @@
 <div>
         <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
         <select id="order-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+        <p class="text-xs mt-1" style="color:var(--muted)">Não achou a OS/Projeto? Escolha "Outro" ou peça ao ADM para cadastrar em Projetos / OS.</p>
       </div>
       <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
         <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" class="w-full mt-1 px-3 py-2 rounded"></div>
@@ -352,6 +366,68 @@ document.querySelectorAll('[data-close-modal]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.closeModal));
 });
 
+const BASE_TITLE = document.title;
+
+/* ============ Avisos e confirmações no padrão do sistema ============ */
+function notify(msg, type){
+  const t = type || (/^(erro|não foi possível|falha)/i.test(msg) ? 'err' : 'info');
+  let wrap = $('toast-wrap');
+  if(!wrap){ wrap = document.createElement('div'); wrap.id = 'toast-wrap'; wrap.className = 'toast-wrap'; document.body.appendChild(wrap); }
+  const el = document.createElement('div'); el.className = 'toast ' + t; el.setAttribute('role', 'alert'); el.textContent = msg;
+  wrap.appendChild(el); setTimeout(() => el.remove(), t === 'err' ? 7000 : 4500);
+}
+function askConfirm(msg){
+  return new Promise(resolve => {
+    const danger = !/^(Confirmar|Voltar)/.test(msg);
+    const ov = document.createElement('div');
+    ov.className = 'fixed inset-0 modal-backdrop flex items-center justify-center p-4'; ov.style.zIndex = 60;
+    ov.innerHTML = `<div class="card w-full max-w-sm rounded p-5" role="dialog" aria-modal="true">
+      <p class="text-sm" style="white-space:pre-line"></p>
+      <div class="flex justify-end gap-2 mt-5">
+        <button type="button" data-no class="px-4 py-2 rounded border text-sm" style="border-color:var(--line)">Cancelar</button>
+        <button type="button" data-yes class="px-4 py-2 rounded text-sm font-medium" style="background:${danger ? 'var(--red)' : 'var(--blue)'};color:#fff">${danger ? 'Sim, continuar' : 'Confirmar'}</button>
+      </div></div>`;
+    ov.querySelector('p').textContent = msg;
+    const onKey = e => { if(e.key === 'Escape') done(false); };
+    const done = v => { document.removeEventListener('keydown', onKey); ov.remove(); resolve(v); };
+    ov.addEventListener('click', e => { if(e.target === ov) done(false); });
+    ov.querySelector('[data-no]').onclick = () => done(false);
+    const yes = ov.querySelector('[data-yes]'); yes.onclick = () => done(true);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(ov); yes.focus();
+  });
+}
+// Mostra o erro na própria lista (em vez de deixar a tela vazia sem explicação)
+function showError(id, error){
+  console.error(error);
+  const el = $(id); if(!el) return;
+  el.innerHTML = `<div class="card rounded p-6 text-center" style="border-color:var(--red)">
+    <p class="text-sm font-medium" style="color:var(--red)">Não foi possível carregar os dados.</p>
+    <p class="text-xs mt-1" style="color:var(--muted)">${escapeHtml((error && error.message) || '')}</p>
+    <button type="button" class="retry-btn mt-3 px-3 py-1.5 rounded border text-sm" style="border-color:var(--line)">Tentar de novo</button></div>`;
+  el.querySelector('.retry-btn').onclick = () => location.reload();
+}
+// "10/11/2026 · vence em 3 dias" / "atrasado há 2 dias"
+function prazoTxt(o){
+  if(!o.deadline) return '—';
+  const base = fmtDate(o.deadline);
+  if(o.status === 'concluido') return base;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(o.deadline + 'T00:00:00') - hoje) / 86400000);
+  if(diff < 0) return `${base} · atrasado há ${-diff} dia${-diff > 1 ? 's' : ''}`;
+  if(diff === 0) return `${base} · vence hoje`;
+  if(diff === 1) return `${base} · vence amanhã`;
+  if(diff <= 7) return `${base} · vence em ${diff} dias`;
+  return base;
+}
+// OS/Projeto como título (é assim que a equipe identifica o pedido); peça em segundo plano
+function cardTitleHTML(o){
+  const piece = `${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span>`;
+  if(!o.osNumber) return piece;
+  const head = `OS ${escapeHtml(o.osNumber)}${o.project ? ' — ' + escapeHtml(o.project) : ''}`;
+  return `${head}<span class="block text-xs font-normal" style="color:var(--muted)">${piece}</span>`;
+}
+
 function fmtDate(d){
   if(!d) return '—';
   const date = new Date(d+'T00:00:00');
@@ -451,8 +527,9 @@ function itemsListHTML(o){
     items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
     `</div>`;
 }
-function metaLine(o){
-  const bits = [o.osNumber && `O.S. ${escapeHtml(o.osNumber)}`, o.project && `Projeto: ${escapeHtml(o.project)}`, o.material && `Material: ${escapeHtml(o.material)}`].filter(Boolean);
+function metaLine(o, inCard){
+  const hide = inCard && o.osNumber;
+  const bits = [!hide && o.osNumber && `O.S. ${escapeHtml(o.osNumber)}`, !hide && o.project && `Projeto: ${escapeHtml(o.project)}`, o.material && `Material: ${escapeHtml(o.material)}`].filter(Boolean);
   const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2" style="background:#F2A93B33;color:var(--amber)">🔥 URGENTE</span>` : '';
   return (bits.length || o.urgent) ? `<p class="text-xs mt-2" style="color:var(--muted)">${urg}${bits.join(' · ')}</p>` : '';
 }
@@ -516,7 +593,7 @@ function stepperHTML(order){
     return `<div class="flex items-center">
         <div class="flex flex-col items-center gap-1 px-1">
           <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="${circleStyle}">${i+1}</div>
-          <span class="text-[11px] text-center leading-tight max-w-[64px]" style="color:${current?'var(--text)':'var(--muted)'}">${step.machine}</span>
+          <span class="text-xs text-center leading-tight max-w-[76px]" style="color:${current?'var(--text)':'var(--muted)'}">${step.machine}</span>
         </div>
         ${line}
       </div>`;
@@ -638,7 +715,7 @@ function canDeleteAttachment(order, a){
 document.addEventListener('click', async (ev)=>{
   const btn = ev.target.closest('[data-del-attach]'); if(!btn) return;
   ev.stopPropagation();
-  if(!confirm('Excluir este anexo? Não dá para desfazer.')) return;
+  if(!await askConfirm('Excluir este anexo? Não dá para desfazer.')) return;
   const li = btn.closest('li'); const name = li ? li.querySelector('span').textContent.trim() : 'anexo';
   btn.disabled = true; btn.textContent = 'Excluindo...';
   try{
@@ -650,7 +727,7 @@ document.addEventListener('click', async (ev)=>{
     await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`));
     if(li) li.remove();
   }catch(ex){
-    alert('Erro ao excluir anexo: ' + ex.message);
+    notify('Erro ao excluir anexo: ' + ex.message);
     btn.disabled = false; btn.textContent = 'Excluir';
   }
 });
@@ -661,7 +738,7 @@ function openDetailModal(order){
     <div class="flex items-start justify-between">
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+        <p class="text-sm" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
       </div>
       <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
     </div>
@@ -727,6 +804,7 @@ $('pending-logout').addEventListener('click', ()=> sb.auth.signOut());
 
 async function handleSession(session){
   clearChannels();
+  document.title = BASE_TITLE;
   if(!session){
     currentUser = null;
     $('app-shell').classList.add('hidden');
@@ -736,7 +814,7 @@ async function handleSession(session){
   }
   const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
   if(error || !profile){
-    alert('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
+    notify('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
     sb.auth.signOut();
     return;
   }
@@ -787,9 +865,12 @@ async function refreshBell(){
   if(!currentUser || currentUser.role !== 'admin') return;
   const { count, error } = await sb.from('orders').select('id', { count:'exact', head:true }).eq('status','aguardando_analise');
   if(error){ console.error(error); return; }
-  const dot = $('bell-dot');
-  if(count > 0){ dot.textContent = count > 99 ? '99+' : String(count); dot.classList.remove('hidden'); }
+  const dot = $('bell-dot'), txt = count > 99 ? '99+' : String(count);
+  if(count > 0){ dot.textContent = txt; dot.classList.remove('hidden'); }
   else dot.classList.add('hidden');
+  const nc = $('nav-count-fila');
+  if(nc){ nc.textContent = txt; nc.classList.toggle('hidden', !(count > 0)); }
+  document.title = count > 0 ? `(${count}) ${BASE_TITLE}` : BASE_TITLE;
 }
 function startBell(){
   refreshBell();
@@ -845,19 +926,19 @@ function renderSolicitante(container = $('main-content')){
       <button id="btn-new-order" class="px-4 py-2 rounded font-medium" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
     </div>
     <div id="solicitante-summary"></div>
-    <div id="solicitante-list" class="space-y-3"></div>
+    <div id="solicitante-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
   `;
   $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
 
   liveRefresh('solicitante-orders', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
       .eq('requester_id', currentUser.id).order('created_at', { ascending: false });
-    if(error){ console.error(error); return; }
+    if(error){ showError('solicitante-list', error); return; }
     const orders = data.map(normalizeOrder);
     const list = $('solicitante-list');
     if($('solicitante-summary')) $('solicitante-summary').innerHTML = statsHTML(statsOf(orders));
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido ainda. Clique em "Novo Pedido" para começar.</div>`;
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
       return;
     }
     list.innerHTML = orders.map(o=>{
@@ -865,13 +946,13 @@ function renderSolicitante(container = $('main-content')){
       return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            <p class="font-medium">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
         <div class="mt-3">${stepperHTML(o)}</div>
-        ${metaLine(o)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
+        ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
     list.querySelectorAll('[data-order-id]').forEach(el=>{
@@ -960,10 +1041,24 @@ const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="
 const SB_MENU = [
   { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
   { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
-  { title: 'Dados', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
-  { title: 'Visualização', items: [['solicitante', 'Visão Solicitante', 'user'], ['operador', 'Visão Operador', 'wrench']] }
+  { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
+  { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
 ];
-const sbLink = ([t, label, ic]) => `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span></button>`;
+const sbLink = ([t, label, ic]) => `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-count-fila">0</span>' : ''}</button>`;
+
+const PAGE_INFO = {
+  fila: ['Fila de Triagem', 'Pedidos novos aguardando você definir o roteiro de máquinas.'],
+  todos: ['Todos os Pedidos', 'Acompanhe, filtre e edite todos os pedidos do sistema.'],
+  usuarios: ['Usuários', 'Aprove contas novas e defina o perfil e as máquinas de cada pessoa.'],
+  graficos: ['Gráficos', 'Indicadores da produção em gráficos.'],
+  resumo: ['Resumo por Solicitante', 'Pedidos, arquivos e fotos de cada solicitante.']
+};
+function setPageHead(tab){
+  const el = $('page-head'); if(!el) return;
+  const i = PAGE_INFO[tab];
+  el.innerHTML = i ? `<h1 class="font-display font-700 text-xl">${i[0]}</h1><p class="text-sm" style="color:var(--muted)">${i[1]}</p>` : '';
+  el.style.display = i ? '' : 'none';
+}
 
 function renderAdmin(){
   const nav = SB_MENU.map(sec => sec.group
@@ -977,6 +1072,7 @@ function renderAdmin(){
       <nav class="sb-nav">${nav}</nav>
       <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
     </aside>
+    <div id="page-head" class="page-head"></div>
     <div id="admin-tab-content"></div>`;
   const sb = $('admin-sb'), grp = $('sb-dados');
   const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, projetos: renderAdminProjetos, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
@@ -986,6 +1082,7 @@ function renderAdmin(){
     document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if(['graficos', 'resumo', 'relatorio'].includes(tab)) setGroup(true);
     sb.classList.remove('show'); $('sb-backdrop').classList.remove('show');
+    setPageHead(tab);
     views[tab]();
   };
   document.querySelectorAll('.admin-tab').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
@@ -993,26 +1090,27 @@ function renderAdmin(){
   $('sb-toggle').addEventListener('click', () => { sb.classList.add('show'); $('sb-backdrop').classList.add('show'); });
   $('sb-backdrop').addEventListener('click', () => { sb.classList.remove('show'); $('sb-backdrop').classList.remove('show'); });
   go('fila');
+  refreshBell();
 }
 
 function renderAdminFila(){
   clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="fila-list" class="space-y-3"></div>`;
+  $('admin-tab-content').innerHTML = `<div id="fila-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
   liveRefresh('admin-fila', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
       .eq('status', 'aguardando_analise').order('created_at', { ascending: true });
-    if(error){ console.error(error); return; }
+    if(error){ showError('fila-list', error); return; }
     const orders = data.map(normalizeOrder);
     const list = $('fila-list');
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido aguardando triagem. 🎉</div>`;
+      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Tudo em dia: nenhum pedido aguardando triagem. 🎉</div>`;
       return;
     }
     list.innerHTML = orders.map(o=> `
       <div class="card rounded p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
         <div>
-          <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${fmtDate(o.deadline)}</p>
+          <p class="font-medium">${cardTitleHTML(o)}</p>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${prazoTxt(o)}</p>
         </div>
         <button data-triar="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium shrink-0" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
       </div>`).join('');
@@ -1028,7 +1126,7 @@ function openTriagemModal(order){
     $('triagem-body').innerHTML = `
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${fmtDate(order.deadline)}</p>
+        <p class="text-sm" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
         ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
       </div>
       <div>
@@ -1106,6 +1204,7 @@ function renderAdminTodos(){
   clearChannels();
   const fld = 'px-3 py-2 rounded text-sm';
   $('admin-tab-content').innerHTML = `
+    <div id="f-chips" class="flex flex-wrap gap-2 mb-3"></div>
     <div class="card rounded p-3 mb-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2 items-center">
       <input id="f-q" placeholder="Buscar peça, O.S., projeto, solicitante..." class="sm:col-span-2 ${fld}">
       <select id="f-status" class="${fld}">
@@ -1117,10 +1216,15 @@ function renderAdminTodos(){
       <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="f-urg" type="checkbox" style="width:16px;height:16px"> Só urgentes</label>
     </div>
     <p id="f-count" class="text-xs mb-2" style="color:var(--muted)"></p>
-    <div id="todos-list" class="space-y-3"></div>`;
+    <div id="todos-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
   let all = [];
   const draw = ()=>{
     const list = $('todos-list'); if(!list) return;
+    const cnt = { '': all.length, aguardando_analise: all.filter(o => o.status === 'aguardando_analise').length, em_producao: all.filter(o => o.status === 'em_producao').length,
+      concluido: all.filter(o => o.status === 'concluido').length, atrasado: all.filter(isLate).length };
+    $('f-chips').innerHTML = [['', 'Todos'], ['aguardando_analise', 'Aguardando análise'], ['em_producao', 'Em produção'], ['concluido', 'Concluídos'], ['atrasado', 'Atrasados']]
+      .map(([v, l]) => `<button type="button" data-chip-st="${v}" class="chip-st ${$('f-status').value === v ? 'on' : ''}">${l} <b>${cnt[v]}</b></button>`).join('');
+    $('f-chips').querySelectorAll('[data-chip-st]').forEach(b => b.onclick = () => { $('f-status').value = b.dataset.chipSt; draw(); });
     const q = $('f-q').value.trim().toLowerCase(), st = $('f-status').value, urg = $('f-urg').checked;
     const from = $('f-from').value ? new Date($('f-from').value + 'T00:00:00') : null;
     const to = $('f-to').value ? new Date($('f-to').value + 'T23:59:59') : null;
@@ -1138,9 +1242,9 @@ function renderAdminTodos(){
       return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
-            ${metaLine(o)}
+            <p class="font-medium">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            ${metaLine(o, true)}
           </div>
           <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
         </div>
@@ -1155,7 +1259,7 @@ function renderAdminTodos(){
   ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
   liveRefresh('admin-todos', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
-    if(error){ console.error(error); return; }
+    if(error){ showError('todos-list', error); return; }
     all = data.map(normalizeOrder); draw();
   });
 }
@@ -1169,11 +1273,11 @@ function renderAdminProjetos(){
         <p class="text-sm" style="color:var(--muted)">Essa lista aparece para o solicitante escolher ao criar ou editar um pedido, evitando OS/Projeto digitados errado.</p></div>
       <button id="btn-new-project" class="px-4 py-2 rounded font-medium shrink-0" style="background:var(--blue);color:#fff">+ Novo</button>
     </div>
-    <div id="projects-list" class="space-y-2"></div>`;
+    <div id="projects-list" class="space-y-2"><div class="skel"></div><div class="skel"></div></div>`;
   $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
   liveRefresh('admin-projetos', async ()=>{
     const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
-    if(error){ console.error(error); return; }
+    if(error){ showError('projects-list', error); return; }
     const list = $('projects-list');
     if(!data.length){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
     list.innerHTML = data.map(p => `
@@ -1192,12 +1296,12 @@ function renderAdminProjetos(){
     list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
       const p = data.find(x=>x.id===b.dataset.toggleProject);
       const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
-      if(error) alert('Erro: ' + error.message);
+      if(error) notify('Erro: ' + error.message);
     }));
     list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
-      if(!confirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados — só deixa de aparecer para novas escolhas.')) return;
+      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados — só deixa de aparecer para novas escolhas.')) return;
       const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
-      if(error) alert('Erro: ' + error.message);
+      if(error) notify('Erro: ' + error.message);
     }));
   });
 }
@@ -1228,10 +1332,10 @@ $('project-form').addEventListener('submit', async (e)=>{
 
 function renderAdminUsuarios(){
   clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-2"></div>`;
+  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-2"><div class="skel"></div><div class="skel"></div></div>`;
   liveRefresh('admin-usuarios', async ()=>{
     const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
-    if(error){ console.error(error); return; }
+    if(error){ showError('users-list', error); return; }
     $('users-list').innerHTML = users.map(u=> `
       <div class="card rounded p-3 flex items-center justify-between">
         <div>
@@ -1298,7 +1402,7 @@ function renderOperador(container = $('main-content')){
       <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
       <div id="op-chips" class="flex flex-wrap gap-2 mt-3"></div>
     </div>
-    <div id="operador-list" class="space-y-3"></div>
+    <div id="operador-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
   `;
   if(available.length === 0){
     $('operador-list').innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
@@ -1319,7 +1423,7 @@ function renderOperador(container = $('main-content')){
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
       .eq('status', 'em_producao').in('current_machine', machinesFilter)
       .order('deadline', { ascending: true });
-    if(error){ console.error(error); return; }
+    if(error){ showError('operador-list', error); return; }
     const orders = data.map(normalizeOrder);
     const list = $('operador-list');
     if(!list) return;
@@ -1342,8 +1446,8 @@ function renderOperador(container = $('main-content')){
       return `<div class="card rounded p-4 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:#F2A93B12;':''}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span></p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ Prazo vencido — ':''}Prazo: ${fmtDate(o.deadline)}</p>
+            <p class="font-medium">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
@@ -1356,7 +1460,7 @@ function renderOperador(container = $('main-content')){
             </div>
           </div>
         </div>
-        ${metaLine(o)}<p class="text-sm mt-2">${o.description || ''}</p>${itemsListHTML(o)}
+        ${metaLine(o, true)}<p class="text-sm mt-2">${o.description || ''}</p>${itemsListHTML(o)}
         <div class="mt-3">${stepperHTML(o)}</div>
         <div class="mt-3">${attachmentsHTML(o)}</div>
         <div class="mt-3 flex gap-2">
@@ -1386,23 +1490,23 @@ async function setQueuePosition(orders, id, to){
   to = Math.max(0, Math.min(orders.length - 1, to));
   const arr = orders.slice(); arr.splice(to, 0, arr.splice(from, 1)[0]);
   const rs = await Promise.all(arr.map((o, k) => sb.from('orders').update({ queue_order: k }).eq('id', o.id)));
-  const bad = rs.find(r => r.error); if(bad) alert('Erro ao reordenar: ' + bad.error.message);
+  const bad = rs.find(r => r.error); if(bad) notify('Erro ao reordenar: ' + bad.error.message);
 }
 async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir); }
 
 async function resetQueueOrder(orders){
   if(!orders.length) return;
-  if(!confirm('Voltar a fila para a ordem automática (prazo + urgência), desfazendo as prioridades manuais?')) return;
+  if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência), desfazendo as prioridades manuais?')) return;
   const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
-  if(error) alert('Erro: ' + error.message);
+  if(error) notify('Erro: ' + error.message);
 }
 
 async function startStep(order){
   const step = order.routing[order.currentStepIndex];
   const r1 = await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
-  if(r1.error){ alert('Erro ao iniciar etapa: ' + r1.error.message); return; }
+  if(r1.error){ notify('Erro ao iniciar etapa: ' + r1.error.message); return; }
   const r2 = await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
-  if(r2.error) alert('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
+  if(r2.error) notify('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
 }
 
 /* --- Finalizar etapa: foto obrigatória --- */
@@ -1450,9 +1554,9 @@ async function finishStep(order, photo){
 
 /* --- Confirmação de recebimento (solicitante) --- */
 async function confirmReceipt(order){
-  if(!confirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
+  if(!await askConfirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
   const { error } = await sb.from('order_history').insert(historyRow(order.id, 'recebimento', 'Confirmou o recebimento da peça.'));
-  if(error) alert('Erro ao confirmar recebimento: ' + error.message);
+  if(error) notify('Erro ao confirmar recebimento: ' + error.message);
 }
 
 /* --- Admin: editar / excluir pedido --- */
@@ -1589,7 +1693,7 @@ function openEditOrderModal(order){
 /* --- Solicitante: editar / excluir o PRÓPRIO pedido, só enquanto aguarda análise --- */
 function openSolEditModal(order){
   if(order.status !== 'aguardando_analise'){
-    alert('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
+    notify('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
     return;
   }
   setupOpPicker({ selectId:'seo-op-select', manualId:'seo-op-manual', osId:'seo-os', projectId:'seo-project', matchOs: order.osNumber, matchProject: order.project });
@@ -1653,10 +1757,10 @@ async function removeOldPieceAttachment(order, i, total){
 
 async function deleteOwnOrder(order){
   if(order.status !== 'aguardando_analise'){
-    alert('Este pedido já entrou em triagem/produção. Peça ao ADM para excluir.');
+    notify('Este pedido já entrou em triagem/produção. Peça ao ADM para excluir.');
     return;
   }
-  if(!confirm(`Excluir seu pedido "${order.pieceName}"?\n\nIsso apaga também os anexos enviados. Não dá para desfazer.`)) return;
+  if(!await askConfirm(`Excluir seu pedido "${order.pieceName}"?\n\nIsso apaga também os anexos enviados. Não dá para desfazer.`)) return;
   try{
     let r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
     if(r.error && r.error.code === '23503'){
@@ -1669,11 +1773,11 @@ async function deleteOwnOrder(order){
     if(!r.data || r.data.length === 0) throw new Error('não deu para excluir — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
     const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
     if(paths.length) await sb.storage.from('attachments').remove(paths);
-  }catch(ex){ alert('Erro ao excluir: ' + ex.message); }
+  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
 }
 
 async function deleteOrder(order){
-  if(!confirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
+  if(!await askConfirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
   try{
     let r = await sb.from('orders').delete().eq('id', order.id).select();
     if(r.error && r.error.code === '23503'){ // sem ON DELETE CASCADE: apaga os filhos e tenta de novo
@@ -1686,7 +1790,7 @@ async function deleteOrder(order){
     if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir (verifique as políticas RLS do admin).');
     const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
     if(paths.length) await sb.storage.from('attachments').remove(paths);
-  }catch(ex){ alert('Erro ao excluir: ' + ex.message); }
+  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
 }
 
 /* --- Admin: resumo por solicitante --- */
@@ -1715,7 +1819,7 @@ function renderAdminResumo(){
     <div id="resumo-table" class="card rounded overflow-x-auto"></div>`;
   liveRefresh('admin-resumo', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT);
-    if(error){ console.error(error); return; }
+    if(error){ showError('resumo-table', error); return; }
     if(!$('resumo-stats')) return;
     const orders = data.map(normalizeOrder);
     const cutTotal = orders.reduce((a, o) => a + cutQtyOf(o), 0);
@@ -1896,7 +2000,7 @@ function createItemsEditor(containerId){
     const inp = area.querySelector('[data-f="file"]');
     if(inp) inp.addEventListener('change', e => {
       const f = e.target.files[0] || null, m = f ? validateFile(f) : '';
-      if(m){ alert(m); e.target.value = ''; return; }
+      if(m){ notify(m); e.target.value = ''; return; }
       r.file = f; renderFileArea(r);   // um único arquivo por peça: depois de escolher, só dá para excluir
     });
     const del = area.querySelector('[data-del-file]');
@@ -1970,7 +2074,7 @@ $('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
 /* --- Prioridade --- */
 async function toggleUrgent(o){
   const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
-  if(error || !data || !data.length){ alert('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão') + ' (a coluna "urgent" já foi criada no banco?)'); return; }
+  if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão') + ' (a coluna "urgent" já foi criada no banco?)'); return; }
   await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
 }
 
@@ -1990,7 +2094,7 @@ function renderAdminGraficos(){
   $('admin-tab-content').innerHTML = `<div id="gr" class="grid gap-4 lg:grid-cols-2"></div>`;
   liveRefresh('admin-graficos', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT);
-    if(error){ console.error(error); return; }
+    if(error){ showError('gr', error); return; }
     if(!$('gr')) return;
     const orders = data.map(normalizeOrder);
     const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
