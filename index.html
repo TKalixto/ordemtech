@@ -9,68 +9,125 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root{
-    --bg:#0F1318; --surface:#171C24; --surface-2:#1E2530; --line:#2A3140;
-    --text:#E7EBF0; --muted:#8B94A6;
-    --blue:#2E6FEE; --amber:#F2A93B; --green:#22C55E; --red:#EF4444; --slate:#5B6577;
+    --bg:#090D13; 
+    --surface:#121821; 
+    --surface-2:#1A222D; 
+    --line:#263244;
+    --text:#F3F4F6; 
+    --muted:#9CA3AF;
+    --blue:#3B82F6; 
+    --amber:#F59E0B; 
+    --green:#10B981; 
+    --red:#EF4444; 
+    --slate:#64748B;
   }
   html,body{overflow-x:hidden;}
-  body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);}
+  body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
   .font-display{font-family:'Space Grotesk',sans-serif;}
-  ::-webkit-scrollbar{width:8px;height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+  
+  /* Scrollbars mais elegantes */
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--slate);}
   ::-webkit-scrollbar-track{background:transparent;}
-  .card{background:var(--surface);border:1px solid var(--line);}
+
+  /* Cartões com profundidade e bordas refinadas */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.2s ease, transform 0.1s ease;
+  }
+  .card:hover{
+    border-color: rgba(59, 130, 246, 0.35);
+  }
+
   .step-line{background:var(--line);}
   .step-line.done{background:var(--green);}
-  input,textarea,select{background:var(--surface-2);border:1px solid var(--line);color:var(--text);}
-  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);}
-  ::placeholder{color:var(--muted);}
+
+  input,textarea,select{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius: 0.5rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;
+    border-color:var(--blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  ::placeholder{color:var(--muted); opacity: 0.7;}
   .hidden{display:none !important;}
-  .modal-backdrop{background:rgba(6,8,11,0.72);}
-  .tag{border-left-width:4px;}
-  .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
+
+  /* Modais com efeito blur */
+  .modal-backdrop{
+    background:rgba(5, 7, 10, 0.8);
+    backdrop-filter: blur(4px);
+  }
+  
+  .tag{border-left-width:5px; border-radius:0.75rem;}
+
+  .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
   .bell-btn:hover{background:var(--surface-2);color:var(--text);}
+  
   .toast-wrap{position:fixed;right:16px;bottom:16px;z-index:70;display:flex;flex-direction:column;gap:8px;max-width:min(92vw,380px)}
-  .toast{padding:10px 14px;border-radius:8px;font-size:13px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-left:4px solid var(--blue);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .toast{padding:12px 16px;border-radius:8px;font-size:13px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-left:4px solid var(--blue);box-shadow:0 10px 30px rgba(0,0,0,.5)}
   .toast.err{border-left-color:var(--red)} .toast.ok{border-left-color:var(--green)}
-  .skel{height:84px;border-radius:8px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel 1.2s infinite}
+  
+  .skel{height:84px;border-radius:12px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel 1.2s infinite}
   @keyframes skel{to{background-position:-200% 0}}
+  
   .nav-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:20px;font-weight:700;text-align:center}
-  .page-head{margin-bottom:18px}
-  .chip-st{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);background:transparent;transition:background .15s,color .15s}
+  .page-head{margin-bottom:20px}
+  
+  .chip-st{padding:6px 14px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);background:transparent;transition:background .15s,color .15s,border-color .15s}
   .chip-st b{color:var(--text);margin-left:4px}
-  .chip-st:hover{background:var(--surface-2)}
-  .chip-st.on{background:rgba(46,111,238,.16);border-color:var(--blue);color:var(--text)}
-  [data-start],[data-finish]{min-height:44px;padding-left:18px !important;padding-right:18px !important;font-size:14px !important}
+  .chip-st:hover{background:var(--surface-2);color:var(--text)}
+  .chip-st.on{background:rgba(59, 130, 246, 0.16);border-color:var(--blue);color:var(--text)}
+  
+  [data-start],[data-finish]{min-height:44px;padding-left:18px !important;padding-right:18px !important;font-size:14px !important;border-radius: 0.5rem;}
   @media (min-width:1024px){ body:has(#admin-sb) .brand-top{display:none} }
+  
   .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:16px;font-weight:700;text-align:center;}
+  
   /* ===== Sidebar do ADM ===== */
-  #admin-sb{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;display:flex;flex-direction:column;background:#0B1017;border-right:1px solid var(--line)}
-  .sb-logo{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
+  #admin-sb{
+    position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;
+    display:flex;flex-direction:column;background:#0D131C;
+    border-right:1px solid var(--line);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+  }
+  .sb-logo{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
   .sb-logo small,.sb-foot small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
-  .sb-mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#2E6FEE,#5B8DEF);color:#fff;font-weight:800}
-  .sb-nav{flex:1;overflow-y:auto;padding:10px 10px 16px}
-  .sb-sec{margin-bottom:6px}
+  .sb-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;font-weight:800;box-shadow: 0 2px 8px rgba(59,130,246,0.4);}
+  .sb-nav{flex:1;overflow-y:auto;padding:12px 10px 16px}
+  .sb-sec{margin-bottom:8px}
   .sb-title{padding:12px 10px 6px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);font-weight:600}
-  .sb-link{position:relative;display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--muted);text-align:left;transition:background .15s,color .15s}
-  .sb-link:hover{background:rgba(255,255,255,.05);color:var(--text)}
-  .sb-link.active{background:rgba(46,111,238,.14);color:var(--text)}
-  .sb-link.active::before{content:"";position:absolute;left:-10px;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
-  .sb-link.active .sb-ic{color:#6B9BFF}
+  .sb-link{
+    position:relative;display:flex;align-items:center;gap:11px;width:100%;
+    padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:500;
+    color:var(--muted);text-align:left;transition:all .15s ease;
+  }
+  .sb-link:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+  .sb-link.active{background:rgba(59, 130, 246, 0.12);color:#60A5FA;font-weight:600;}
+  .sb-link.active::before{content:"";position:absolute;left:-10px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
+  .sb-link.active .sb-ic{color:#60A5FA}
   .sb-ic{width:18px;height:18px;flex-shrink:0}
   .sb-group{margin-top:6px}.sb-group .sb-chev{margin-left:auto;width:16px;height:16px;transition:transform .2s}
   .sb-group.open .sb-chev{transform:rotate(180deg)}
   .sb-sub{display:none;margin:2px 0 4px 18px;padding-left:8px;border-left:1px solid var(--line)}
   .sb-group.open + .sb-sub{display:block}
-  .sb-foot{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:500}
-  .sb-avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700}
+  .sb-foot{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:500}
+  .sb-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700;border:1px solid var(--line)}
   #sb-toggle,#sb-backdrop{display:none}
-  #main-content:has(#admin-sb){max-width:none;margin:0;padding-left:calc(260px + 1.25rem)}
-  body:has(#admin-sb) header{padding-left:calc(260px + 1.25rem)}
+  #main-content:has(#admin-sb){max-width:none;margin:0;padding-left:calc(260px + 1.5rem)}
+  body:has(#admin-sb) header{padding-left:calc(260px + 1.5rem)}
   @media (max-width:1023px){
     #admin-sb{transform:translateX(-100%);transition:transform .22s}#admin-sb.show{transform:none}
     #sb-toggle{display:grid;place-items:center;position:fixed;top:10px;left:10px;z-index:25;width:38px;height:38px;border-radius:8px;background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
-    #sb-backdrop.show{display:block;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,.55)}
+    #sb-backdrop.show{display:block;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);}
     #main-content:has(#admin-sb){padding-left:.75rem}
     body:has(#admin-sb) header{padding-left:3.5rem}
   }
@@ -91,132 +148,132 @@
 
     <form id="login-form" class="card p-6 space-y-4">
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">E-mail</label>
-        <input id="login-email" type="email" required class="w-full mt-1 px-3 py-2 rounded" placeholder="voce@oficina.com">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">E-mail</label>
+        <input id="login-email" type="email" required class="w-full mt-1 px-3 py-2 text-sm" placeholder="voce@oficina.com">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Senha</label>
-        <input id="login-password" type="password" required class="w-full mt-1 px-3 py-2 rounded" placeholder="••••••••">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Senha</label>
+        <input id="login-password" type="password" required class="w-full mt-1 px-3 py-2 text-sm" placeholder="••••••••">
       </div>
       <p id="login-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="login-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Entrar</button>
-      <button type="button" id="show-signup" class="w-full text-xs" style="color:var(--muted)">Ainda não tenho conta — criar conta</button>
+      <button type="submit" id="login-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Entrar</button>
+      <button type="button" id="show-signup" class="w-full text-xs hover:underline" style="color:var(--muted)">Ainda não tenho conta — criar conta</button>
     </form>
 
     <form id="signup-form" class="card p-6 space-y-4 hidden">
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome completo</label>
-        <input id="signup-name" required class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Nome completo</label>
+        <input id="signup-name" required class="w-full mt-1 px-3 py-2 text-sm">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">E-mail</label>
-        <input id="signup-email" type="email" required class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">E-mail</label>
+        <input id="signup-email" type="email" required class="w-full mt-1 px-3 py-2 text-sm">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Senha</label>
-        <input id="signup-password" type="password" required minlength="6" class="w-full mt-1 px-3 py-2 rounded" placeholder="mín. 6 caracteres">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Senha</label>
+        <input id="signup-password" type="password" required minlength="6" class="w-full mt-1 px-3 py-2 text-sm" placeholder="mín. 6 caracteres">
       </div>
       <p class="text-xs" style="color:var(--muted)">Sua conta será criada com acesso pendente até um administrador definir sua função (solicitante, operador ou admin).</p>
       <p id="signup-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="signup-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Criar conta</button>
-      <button type="button" id="show-login" class="w-full text-xs" style="color:var(--muted)">Já tenho conta — entrar</button>
+      <button type="submit" id="signup-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Criar conta</button>
+      <button type="button" id="show-login" class="w-full text-xs hover:underline" style="color:var(--muted)">Já tenho conta — entrar</button>
     </form>
   </div>
 </div>
 
 <!-- ================= TELA: PENDENTE DE APROVAÇÃO ================= -->
 <div id="pending-screen" class="hidden min-h-screen flex items-center justify-center px-4">
-  <div class="card max-w-sm w-full p-6 rounded text-center">
+  <div class="card max-w-sm w-full p-6 text-center">
     <p class="font-display font-600 text-lg mb-2">Conta aguardando aprovação</p>
     <p class="text-sm mb-5" style="color:var(--muted)">Sua conta foi criada. Peça a um administrador para acessar a aba "Usuários" e definir sua função (solicitante, operador ou admin) e, se for operador, a sua máquina.</p>
-    <button id="pending-logout" class="px-4 py-2 rounded border text-sm" style="border-color:var(--line)">Sair</button>
+    <button id="pending-logout" class="px-4 py-2 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Sair</button>
   </div>
 </div>
 
 <!-- ================= APP SHELL ================= -->
 <div id="app-shell" class="hidden min-h-screen">
-  <header class="flex items-center justify-between px-3 sm:px-5 py-3 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
+  <header class="flex items-center justify-between px-3 sm:px-6 py-3.5 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
     <div class="flex items-center gap-2 min-w-0">
       <svg class="brand-top" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
-      <span id="role-badge" class="ml-2 text-xs px-2 py-0.5 rounded hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted)"></span>
+      <span id="role-badge" class="ml-2 text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--line)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
       <button id="bell-btn" type="button" class="bell-btn hidden" title="Pedidos aguardando triagem" aria-label="Notificações">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span id="bell-dot" class="bell-dot hidden">0</span>
       </button>
-      <span id="user-name" class="text-sm truncate max-w-[90px] sm:max-w-none" style="color:var(--muted)"></span>
-      <button id="logout-btn" class="text-sm px-3 py-1.5 rounded border shrink-0" style="border-color:var(--line)">Sair</button>
+      <span id="user-name" class="text-sm font-medium truncate max-w-[90px] sm:max-w-none" style="color:var(--muted)"></span>
+      <button id="logout-btn" class="text-sm px-3 py-1.5 rounded-lg border shrink-0 transition-colors hover:bg-white/5" style="border-color:var(--line)">Sair</button>
     </div>
   </header>
-  <main id="main-content" class="p-3 sm:p-5 max-w-7xl mx-auto"></main>
+  <main id="main-content" class="p-4 sm:p-6 max-w-7xl mx-auto"></main>
 </div>
 
-<!-- ================= MODAL: DETALHE / HISTÓRICO (compartilhado) ================= -->
+<!-- ================= MODAL: DETALHE / HISTÓRICO ================= -->
 <div id="detail-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-2xl rounded max-h-[85vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Detalhes do Pedido</h3>
-      <button data-close-modal="detail-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="detail-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <div id="detail-modal-body" class="p-5 space-y-5"></div>
+    <div id="detail-modal-body" class="p-6 space-y-5"></div>
   </div>
 </div>
 
-<!-- ================= MODAL: NOVO PEDIDO (Solicitante) ================= -->
+<!-- ================= MODAL: NOVO PEDIDO ================= -->
 <div id="new-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Novo Pedido de Peça</h3>
-      <button data-close-modal="new-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="new-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="new-order-form" class="p-5 space-y-4">
-<div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
-        <select id="order-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+    <form id="new-order-form" class="p-6 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="order-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
         <p class="text-xs mt-1" style="color:var(--muted)">Não achou a OS/Projeto? Escolha "Outro" ou peça ao ADM para cadastrar em Projetos / OS.</p>
       </div>
       <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
       </div>
       <div class="flex items-center justify-between">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
-        <button type="button" id="order-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="order-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
       </div>
       <div id="order-items-editor" class="space-y-3"></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 rounded" placeholder="Tolerâncias, acabamento, observações..."></textarea></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado (para o pedido inteiro)</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 text-sm" placeholder="Tolerâncias, acabamento, observações..."></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado (para o pedido inteiro)</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
       <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
+      <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
     </form>
   </div>
 </div>
 
-<!-- ================= MODAL: TRIAGEM (Admin) ================= -->
+<!-- ================= MODAL: TRIAGEM ================= -->
 <div id="triagem-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-2xl rounded max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Triagem do Pedido</h3>
-      <button data-close-modal="triagem-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="triagem-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <div id="triagem-body" class="p-5 space-y-5"></div>
+    <div id="triagem-body" class="p-6 space-y-5"></div>
   </div>
 </div>
 
-<!-- ================= MODAL: APROVAR / EDITAR USUÁRIO (Admin) ================= -->
+<!-- ================= MODAL: EDITAR USUÁRIO ================= -->
 <div id="edit-user-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-md rounded">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Definir Função do Usuário</h3>
-      <button data-close-modal="edit-user-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="edit-user-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="edit-user-form" class="p-5 space-y-4">
+    <form id="edit-user-form" class="p-6 space-y-4">
       <p id="eu-name" class="text-sm font-medium"></p>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Perfil</label>
-        <select id="eu-role" class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Perfil</label>
+        <select id="eu-role" class="w-full mt-1 px-3 py-2 text-sm">
           <option value="pendente">Pendente</option>
           <option value="solicitante">Solicitante</option>
           <option value="operador">Operador</option>
@@ -224,114 +281,113 @@
         </select>
       </div>
       <div id="eu-machine-wrap">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Máquinas / setores (marque uma ou mais)</label>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Máquinas / setores (marque uma ou mais)</label>
         <div id="eu-machines" class="mt-2 space-y-2"></div>
       </div>
       <p id="edit-user-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar</button>
+      <button type="submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar</button>
     </form>
   </div>
 </div>
 
-<!-- ================= MODAL: EDITAR PEDIDO (Admin) ================= -->
+<!-- ================= MODAL: EDITAR PEDIDO (ADMIN) ================= -->
 <div id="edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Editar Pedido</h3>
-      <button data-close-modal="edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="edit-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="edit-order-form" class="p-5 space-y-4">
-<div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
-        <select id="eo-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+    <form id="edit-order-form" class="p-6 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="eo-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
       </div>
       <div class="grid grid-cols-2 gap-3 hidden" id="eo-op-manual">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="eo-os" class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="eo-project" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="eo-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="eo-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
       </div>
       <div class="flex items-center justify-between">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
-        <button type="button" id="eo-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="eo-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
       </div>
       <div id="eo-items-editor" class="space-y-3"></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo limite</label><input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 text-sm"></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo limite</label><input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
       <p id="edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="edit-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+      <button type="submit" id="edit-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
     </form>
   </div>
 </div>
 
-<!-- ================= MODAL: EDITAR MEU PEDIDO (Solicitante) ================= -->
+<!-- ================= MODAL: EDITAR MEU PEDIDO ================= -->
 <div id="sol-edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-lg rounded max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Editar Meu Pedido</h3>
-      <button data-close-modal="sol-edit-order-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="sol-edit-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="sol-edit-order-form" class="p-5 space-y-4">
+    <form id="sol-edit-order-form" class="p-6 space-y-4">
       <p class="text-xs" style="color:var(--muted)">Só é possível editar enquanto o pedido está aguardando análise do ADM.</p>
-<div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">OS / Projeto cadastrado</label>
-        <select id="seo-op-select" class="w-full mt-1 px-3 py-2 rounded"></select>
+      <div>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="seo-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
       </div>
       <div class="grid grid-cols-2 gap-3 hidden" id="seo-op-manual">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S.</label><input id="seo-os" class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Projeto</label><input id="seo-project" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="seo-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="seo-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
       </div>
       <div class="flex items-center justify-between">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças deste pedido</label>
-        <button type="button" id="seo-add-item" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="seo-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
       </div>
       <div id="seo-items-editor" class="space-y-3"></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Observações (opcional)</label><textarea id="seo-desc" rows="2" class="w-full mt-1 px-3 py-2 rounded"></textarea></div>
-      <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Prazo desejado</label><input id="seo-deadline" type="date" required class="w-full mt-1 px-3 py-2 rounded"></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="seo-desc" rows="2" class="w-full mt-1 px-3 py-2 text-sm"></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado</label><input id="seo-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
       <p id="sol-edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="sol-edit-order-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+      <button type="submit" id="sol-edit-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
     </form>
   </div>
 </div>
 
-<!-- ================= MODAL: FINALIZAR ETAPA COM FOTO (Operador) ================= -->
+<!-- ================= MODAL: FINALIZAR ETAPA ================= -->
 <div id="finish-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-md rounded max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg">Concluir Etapa</h3>
-      <button data-close-modal="finish-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="finish-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="finish-form" class="p-5 space-y-4">
+    <form id="finish-form" class="p-6 space-y-4">
       <p id="finish-title" class="text-sm font-medium"></p>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Foto do trabalho concluído (obrigatória)</label>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Foto do trabalho concluído (obrigatória)</label>
         <input id="finish-photo" type="file" accept="image/*" capture="environment" required class="w-full mt-1 text-sm">
-        <img id="finish-preview" class="hidden mt-3 rounded max-h-56 w-full object-contain" style="background:var(--surface-2)" alt="Pré-visualização">
+        <img id="finish-preview" class="hidden mt-3 rounded-lg max-h-56 w-full object-contain" style="background:var(--surface-2)" alt="Pré-visualização">
       </div>
       <p id="finish-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="finish-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--green);color:#06210f">Enviar foto e finalizar etapa</button>
+      <button type="submit" id="finish-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--green);color:#06210f">Enviar foto e finalizar etapa</button>
     </form>
   </div>
 </div>
 
-<!-- ================= SUPABASE SDK ================= -->
-<!-- ================= MODAL: PROJETO / OS (Admin) ================= -->
+<!-- ================= MODAL: PROJETO / OS ================= -->
 <div id="project-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-md rounded">
-    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--line)">
+  <div class="card w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
       <h3 class="font-display font-600 text-lg" id="project-modal-title">Novo Projeto / OS</h3>
-      <button data-close-modal="project-modal" class="text-sm" style="color:var(--muted)">Fechar ✕</button>
+      <button data-close-modal="project-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
     </div>
-    <form id="project-form" class="p-5 space-y-4">
+    <form id="project-form" class="p-6 space-y-4">
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">O.S. (Ordem de Serviço)</label>
-        <input id="pm-os" required class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S. (Ordem de Serviço)</label>
+        <input id="pm-os" required class="w-full mt-1 px-3 py-2 text-sm">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Nome do Projeto</label>
-        <input id="pm-project" required class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Nome do Projeto</label>
+        <input id="pm-project" required class="w-full mt-1 px-3 py-2 text-sm">
       </div>
-      <label class="flex items-center gap-2 text-sm"><input id="pm-active" type="checkbox" checked> Disponível para o solicitante escolher</label>
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="pm-active" type="checkbox" checked style="width:16px;height:16px"> Disponível para o solicitante escolher</label>
       <p id="project-modal-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="project-modal-submit" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Salvar</button>
+      <button type="submit" id="project-modal-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Salvar</button>
     </form>
   </div>
 </div>
@@ -342,7 +398,6 @@
 <script>
 /* =========================================================================
    1) CONFIGURAÇÃO DO SUPABASE
-   Pegue esses valores em: Project Settings > API, no seu projeto Supabase.
    ========================================================================= */
 const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
@@ -350,10 +405,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MACHINES = ["Corte a Laser", "Dobra CNC", "Centro de Usinagem", "Torno CNC"];
 
-let currentUser = null;      // { id, name, email, role, machine }
-let activeChannels = [];     // canais realtime ativos, limpos ao trocar de view/logout
-let bellChannel = null;      // canal do sino, independente das abas (nunca é limpo por clearChannels)
-let projectsCache = [];      // cache simples da lista de Projetos/OS cadastrados
+let currentUser = null;      
+let activeChannels = [];     
+let bellChannel = null;      
+let projectsCache = [];      
 
 /* =========================================================================
    2) HELPERS GERAIS
@@ -368,7 +423,6 @@ document.querySelectorAll('[data-close-modal]').forEach(btn=>{
 
 const BASE_TITLE = document.title;
 
-/* ============ Avisos e confirmações no padrão do sistema ============ */
 function notify(msg, type){
   const t = type || (/^(erro|não foi possível|falha)/i.test(msg) ? 'err' : 'info');
   let wrap = $('toast-wrap');
@@ -381,11 +435,11 @@ function askConfirm(msg){
     const danger = !/^(Confirmar|Voltar)/.test(msg);
     const ov = document.createElement('div');
     ov.className = 'fixed inset-0 modal-backdrop flex items-center justify-center p-4'; ov.style.zIndex = 60;
-    ov.innerHTML = `<div class="card w-full max-w-sm rounded p-5" role="dialog" aria-modal="true">
+    ov.innerHTML = `<div class="card w-full max-w-sm p-6" role="dialog" aria-modal="true">
       <p class="text-sm" style="white-space:pre-line"></p>
-      <div class="flex justify-end gap-2 mt-5">
-        <button type="button" data-no class="px-4 py-2 rounded border text-sm" style="border-color:var(--line)">Cancelar</button>
-        <button type="button" data-yes class="px-4 py-2 rounded text-sm font-medium" style="background:${danger ? 'var(--red)' : 'var(--blue)'};color:#fff">${danger ? 'Sim, continuar' : 'Confirmar'}</button>
+      <div class="flex justify-end gap-2 mt-6">
+        <button type="button" data-no class="px-4 py-2 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Cancelar</button>
+        <button type="button" data-yes class="px-4 py-2 rounded-lg text-sm font-medium shadow-md" style="background:${danger ? 'var(--red)' : 'var(--blue)'};color:#fff">${danger ? 'Sim, continuar' : 'Confirmar'}</button>
       </div></div>`;
     ov.querySelector('p').textContent = msg;
     const onKey = e => { if(e.key === 'Escape') done(false); };
@@ -397,17 +451,15 @@ function askConfirm(msg){
     document.body.appendChild(ov); yes.focus();
   });
 }
-// Mostra o erro na própria lista (em vez de deixar a tela vazia sem explicação)
 function showError(id, error){
   console.error(error);
   const el = $(id); if(!el) return;
-  el.innerHTML = `<div class="card rounded p-6 text-center" style="border-color:var(--red)">
+  el.innerHTML = `<div class="card p-6 text-center" style="border-color:var(--red)">
     <p class="text-sm font-medium" style="color:var(--red)">Não foi possível carregar os dados.</p>
     <p class="text-xs mt-1" style="color:var(--muted)">${escapeHtml((error && error.message) || '')}</p>
-    <button type="button" class="retry-btn mt-3 px-3 py-1.5 rounded border text-sm" style="border-color:var(--line)">Tentar de novo</button></div>`;
+    <button type="button" class="retry-btn mt-3 px-3 py-1.5 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Tentar de novo</button></div>`;
   el.querySelector('.retry-btn').onclick = () => location.reload();
 }
-// "10/11/2026 · vence em 3 dias" / "atrasado há 2 dias"
 function prazoTxt(o){
   if(!o.deadline) return '—';
   const base = fmtDate(o.deadline);
@@ -420,12 +472,11 @@ function prazoTxt(o){
   if(diff <= 7) return `${base} · vence em ${diff} dias`;
   return base;
 }
-// OS/Projeto como título (é assim que a equipe identifica o pedido); peça em segundo plano
 function cardTitleHTML(o){
-  const piece = `${escapeHtml(o.pieceName)} <span class="text-xs" style="color:var(--muted)">(qtd ${o.quantity})</span>`;
+  const piece = `${escapeHtml(o.pieceName)} <span class="text-xs font-normal" style="color:var(--muted)">(qtd ${o.quantity})</span>`;
   if(!o.osNumber) return piece;
   const head = `OS ${escapeHtml(o.osNumber)}${o.project ? ' — ' + escapeHtml(o.project) : ''}`;
-  return `${head}<span class="block text-xs font-normal" style="color:var(--muted)">${piece}</span>`;
+  return `${head}<span class="block text-xs font-normal mt-0.5" style="color:var(--muted)">${piece}</span>`;
 }
 
 function fmtDate(d){
@@ -445,9 +496,9 @@ function statusInfo(order){
   if(order.status === 'aguardando_analise')
     return { label: 'Aguardando Análise ADM', color: 'var(--slate)' };
   if(order.status === 'em_producao')
-    return { label: `Em Produção (Etapa ${order.currentStepIndex+1}: ${order.currentMachine})`, color: 'var(--blue)' };
+    return { label: `Em Produção (${order.currentStepIndex+1}ª Etapa: ${order.currentMachine})`, color: 'var(--blue)' };
   if(order.status === 'concluido')
-    return { label: 'Concluído / Pronto para Expedição', color: 'var(--green)' };
+    return { label: 'Concluído / Expedição', color: 'var(--green)' };
   return { label: order.status, color: 'var(--slate)' };
 }
 function roleLabel(r){
@@ -457,7 +508,6 @@ function historyRow(orderId, action, detail){
   return { order_id: orderId, by_uid: currentUser.id, by_name: currentUser.name, by_role: currentUser.role, action, detail };
 }
 
-// Converte uma linha do Postgres (com joins aninhados) para o formato usado nas telas.
 function normalizeOrder(row){
   return {
     id: row.id,
@@ -484,7 +534,6 @@ function normalizeOrder(row){
 
 const ORDER_SELECT = '*, order_routing(*), order_attachments(*), order_history(*)';
 
-/* --- Fotos, arquivos, recebimento e estatísticas --- */
 function isPhoto(a){ return (a.url || '').includes('/fotos/'); }
 function photosOf(o){ return o.attachments.filter(isPhoto); }
 function reqFilesOf(o){ return o.attachments.filter(a => !isPhoto(a) && a.uploadedBy === o.requesterName); }
@@ -492,8 +541,8 @@ function receiptOf(o){ return (o.history || []).find(h => h.action === 'recebime
 function receiptHTML(o){
   if(o.status !== 'concluido') return '';
   const r = receiptOf(o);
-  return r ? `<p class="text-sm" style="color:var(--green)">✔ Recebimento confirmado por ${r.byName} em ${fmtDateTime(r.at)}</p>`
-           : `<p class="text-sm" style="color:var(--amber)">Aguardando confirmação de recebimento pelo solicitante.</p>`;
+  return r ? `<p class="text-sm font-medium" style="color:var(--green)">✔ Recebimento confirmado por ${r.byName} em ${fmtDateTime(r.at)}</p>`
+           : `<p class="text-sm font-medium" style="color:var(--amber)">Aguardando confirmação de recebimento pelo solicitante.</p>`;
 }
 function statsOf(orders){
   const s = { total: orders.length, aguardando: 0, producao: 0, concluido: 0, recebidos: 0, atrasados: 0, arquivos: 0, fotos: 0 };
@@ -510,27 +559,26 @@ function statsHTML(s){
   const items = [['Pedidos', s.total, 'var(--text)'], ['Aguardando ADM', s.aguardando, 'var(--slate)'], ['Em produção', s.producao, 'var(--blue)'],
     ['Concluídos', s.concluido, 'var(--green)'], ['Recebidos', s.recebidos, 'var(--green)'], ['Atrasados', s.atrasados, 'var(--red)'],
     ['Arquivos enviados', s.arquivos, 'var(--amber)'], ['Fotos de conclusão', s.fotos, 'var(--amber)']];
-  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">` + items.map(([l, v, c]) =>
-    `<div class="card rounded p-3"><p class="text-xs" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
+  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">` + items.map(([l, v, c]) =>
+    `<div class="card p-4"><p class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl mt-1" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
 }
-// Rodapé dos cartões: contagem de arquivos + recebimento (+ editar/excluir para o ADM)
 function miniTimelineHTML(o){
   if(!o.history || !o.history.length) return '';
   const shown = o.history.slice(-3);
   const line = shown.map(h => `${escapeHtml(h.detail || h.action)} <span style="color:var(--muted)">(${fmtDateTime(h.at)})</span>`).join(' <span style="color:var(--muted)">→</span> ');
-  return `<p class="text-xs mt-2 leading-relaxed">${line}${o.history.length > 3 ? ' <span style="color:var(--blue)">· clique para ver tudo</span>' : ''}</p>`;
+  return `<p class="text-xs mt-2.5 leading-relaxed">${line}${o.history.length > 3 ? ' <span style="color:var(--blue);cursor:pointer">· ver histórico completo</span>' : ''}</p>`;
 }
 function itemsListHTML(o){
   const items = (o.items && o.items.length) ? o.items : [];
   if(items.length <= 1) return '';
-  return `<div class="mt-2 space-y-1 pl-3 border-l" style="border-color:var(--line)">` +
-    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
+  return `<div class="mt-3 space-y-1.5 pl-3 border-l-2" style="border-color:var(--line)">` +
+    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)" class="font-medium">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
     `</div>`;
 }
 function metaLine(o, inCard){
   const hide = inCard && o.osNumber;
   const bits = [!hide && o.osNumber && `O.S. ${escapeHtml(o.osNumber)}`, !hide && o.project && `Projeto: ${escapeHtml(o.project)}`, o.material && `Material: ${escapeHtml(o.material)}`].filter(Boolean);
-  const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2" style="background:#F2A93B33;color:var(--amber)">🔥 URGENTE</span>` : '';
+  const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2 inline-flex items-center" style="background:#F2A93B22;color:var(--amber)">🔥 URGENTE</span>` : '';
   return (bits.length || o.urgent) ? `<p class="text-xs mt-2" style="color:var(--muted)">${urg}${bits.join(' · ')}</p>` : '';
 }
 function lateFinal(o){
@@ -542,21 +590,21 @@ function cardFooterHTML(o, mode){
   const rec = receiptOf(o);
   let right = '';
   if(o.status === 'concluido'){
-    if(rec) right = `<span class="px-2 py-1 rounded font-medium" style="background:#22C55E22;color:var(--green)">✔ Recebido em ${fmtDateTime(rec.at)}</span>`;
-    else if(mode === 'sol') right = `<button data-receive="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--green);color:#06210f">Confirmar recebimento</button>`;
-    else right = `<span class="px-2 py-1 rounded" style="background:#F2A93B22;color:var(--amber)">Aguardando confirmação de recebimento</span>`;
+    if(rec) right = `<span class="px-2.5 py-1 rounded-md font-medium" style="background:#10B98122;color:var(--green)">✔ Recebido em ${fmtDateTime(rec.at)}</span>`;
+    else if(mode === 'sol') right = `<button data-receive="${o.id}" class="px-3 py-1.5 rounded-lg text-sm font-medium shadow" style="background:var(--green);color:#06210f">Confirmar recebimento</button>`;
+    else right = `<span class="px-2.5 py-1 rounded-md font-medium" style="background:#F59E0B22;color:var(--amber)">Aguardando confirmação de recebimento</span>`;
   }
   const adm = mode === 'adm'
-    ? `<button data-urgent="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
-       ${o.status === 'em_producao' ? `<button data-edit-routing="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--blue);color:var(--blue)">Editar etapas</button>` : ''}
-       <button data-edit-order="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
-       <button data-del-order="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
+    ? `<button data-urgent="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
+       ${o.status === 'em_producao' ? `<button data-edit-routing="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--blue);color:var(--blue)">Editar etapas</button>` : ''}
+       <button data-edit-order="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--line);color:var(--text)">Editar</button>
+       <button data-del-order="${o.id}" class="px-2.5 py-1 rounded-lg font-medium transition-opacity hover:opacity-90" style="background:var(--red);color:#fff">Excluir</button>` : '';
   const solActions = (mode === 'sol' && o.status === 'aguardando_analise')
-    ? `<button data-sol-edit="${o.id}" class="px-2 py-1 rounded border" style="border-color:var(--line);color:var(--text)">Editar</button>
-       <button data-sol-del="${o.id}" class="px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : '';
+    ? `<button data-sol-edit="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--line);color:var(--text)">Editar</button>
+       <button data-sol-del="${o.id}" class="px-2.5 py-1 rounded-lg font-medium transition-opacity hover:opacity-90" style="background:var(--red);color:#fff">Excluir</button>` : '';
   const posNote = (mode === 'sol' && ['aguardando_analise', 'em_producao'].includes(o.status)) ? `<p data-pos="${o.id}" hidden class="text-sm mt-3 font-medium" style="color:var(--amber)"></p>` : '';
-  return `${posNote}<div class="mt-3 flex items-center justify-between gap-2 flex-wrap text-xs" style="color:var(--muted)">
-    <span>📎 ${reqFilesOf(o).length} arquivo(s) enviado(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
+  return `${posNote}<div class="mt-4 pt-3 border-t flex items-center justify-between gap-2 flex-wrap text-xs" style="border-color:var(--line);color:var(--muted)">
+    <span>📎 ${reqFilesOf(o).length} arquivo(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
     <div class="flex items-center gap-2 flex-wrap">${right}${solActions}${adm}</div></div>`;
 }
 
@@ -582,18 +630,18 @@ function stepperHTML(order){
   if(!order.routing || order.routing.length === 0){
     return `<p class="text-sm" style="color:var(--muted)">Roteiro ainda não definido pelo ADM.</p>`;
   }
-  return `<div class="flex items-center flex-wrap gap-0">` + order.routing.map((step, i) => {
+  return `<div class="flex items-center flex-wrap gap-1 py-1">` + order.routing.map((step, i) => {
     const done = step.status === 'concluido';
     const current = i === order.currentStepIndex && order.status === 'em_producao';
     const circleStyle = done ? `background:var(--green);color:#06210f`
-                       : current ? `background:var(--blue);color:#fff`
+                       : current ? `background:var(--blue);color:#fff;box-shadow: 0 0 0 3px rgba(59,130,246,0.25);`
                        : `background:var(--surface-2);color:var(--muted);border:1px solid var(--line)`;
     const line = i < order.routing.length - 1
-      ? `<div class="step-line ${done ? 'done' : ''}" style="height:2px;width:28px;"></div>` : '';
+      ? `<div class="step-line ${done ? 'done' : ''}" style="height:2px;width:32px;margin:0 4px;"></div>` : '';
     return `<div class="flex items-center">
-        <div class="flex flex-col items-center gap-1 px-1">
+        <div class="flex flex-col items-center gap-1">
           <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="${circleStyle}">${i+1}</div>
-          <span class="text-xs text-center leading-tight max-w-[76px]" style="color:${current?'var(--text)':'var(--muted)'}">${step.machine}</span>
+          <span class="text-xs text-center font-medium leading-tight max-w-[80px]" style="color:${current?'var(--text)':done?'var(--text)':'var(--muted)'}">${step.machine}</span>
         </div>
         ${line}
       </div>`;
@@ -604,29 +652,29 @@ function historyHTML(order){
   if(!order.history || order.history.length === 0) return '<p class="text-sm" style="color:var(--muted)">Sem eventos.</p>';
   return `<div class="space-y-3">` + order.history.slice().reverse().map(h => `
     <div class="flex gap-3 text-sm">
-      <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
+      <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
       <div>
         <p><span class="font-medium">${escapeHtml(h.byName)}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${escapeHtml(h.detail)}</p>
-        <p class="text-xs" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
       </div>
     </div>`).join('') + `</div>`;
 }
 
 function attachmentsHTML(order){
   if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
-  return `<ul class="space-y-1.5">` + order.attachments.map(a => `
-    <li class="text-sm flex items-center justify-between card px-3 py-2 rounded">
-      <span>${isImage(a) ? `<img src="${escapeHtml(a.url)}" loading="lazy" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" onerror="this.remove()" style="width:44px;height:44px;object-fit:cover;border-radius:6px;cursor:zoom-in;vertical-align:middle;margin-right:8px">` : ''}${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)} <span class="text-xs" style="color:var(--muted)">— enviado por ${escapeHtml(a.uploadedBy)}</span></span>
-      <span class="flex items-center gap-2 shrink-0">
-        ${isImage(a) ? `<button type="button" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2 py-1 rounded" style="background:var(--blue,#2563eb);color:#fff">Ver</button>` : ''}
-        ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2 py-1 rounded" style="background:var(--blue,#2563eb);color:#fff">Prévia</button>` : ''}
-        <a href="${a.url}" target="_blank" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)">Baixar</a>
-        ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>` : ''}
+  return `<ul class="space-y-2">` + order.attachments.map(a => `
+    <li class="text-sm flex items-center justify-between card px-3.5 py-2.5">
+      <span class="flex items-center truncate">${isImage(a) ? `<img src="${escapeHtml(a.url)}" loading="lazy" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" onerror="this.remove()" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:zoom-in;margin-right:10px" class="shrink-0 border border-white/10">` : ''}<span class="truncate">${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)}</span> <span class="text-xs ml-2 shrink-0 hidden sm:inline" style="color:var(--muted)">— por ${escapeHtml(a.uploadedBy)}</span></span>
+      <span class="flex items-center gap-2 shrink-0 ml-2">
+        ${isImage(a) ? `<button type="button" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Ver</button>` : ''}
+        ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Prévia</button>` : ''}
+        <a href="${a.url}" target="_blank" class="text-xs px-2.5 py-1 rounded-md font-medium border" style="background:var(--surface-2);border-color:var(--line)">Baixar</a>
+        ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>` : ''}
       </span>
     </li>`).join('') + `</ul>`;
 }
 
-// ===== Prévia de DXF (ASCII): LINE, CIRCLE, ARC, LWPOLYLINE (com bulge) e POLYLINE =====
+// ===== Prévia de DXF (ASCII) =====
 function parseDxf(text){
   const L = text.split(/\r?\n/); const ents = []; let inEnt = false, cur = null;
   for(let i = 0; i + 1 < L.length; i += 2){
@@ -645,7 +693,6 @@ function parseDxf(text){
     } else if(!(c in cur.f)) cur.f[c] = n;
   }
   if(cur) ents.push(cur);
-  // POLYLINE clássico: junta os VERTEX seguintes na polilinha
   const out = []; let pl = null;
   for(const e of ents){
     if(e.type === 'POLYLINE'){ pl = e; e.pts = []; out.push(e); }
@@ -685,10 +732,10 @@ function dxfToSvg(ents){
 }
 async function openDxfPreview(url, title){
   const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML = `<div style="background:var(--surface,#151a23);border-radius:12px;width:min(900px,100%);height:min(640px,90vh);display:flex;flex-direction:column;overflow:hidden">
-    <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1)"><div><b>Prévia do DXF</b><div class="text-xs" style="opacity:.7" data-info>${escapeHtml(title)}</div></div><button type="button" data-x class="text-sm px-3 rounded" style="background:var(--surface-2)">Fechar</button></div>
-    <div data-body style="flex:1;min-height:0;padding:12px;display:flex;align-items:center;justify-content:center;background:#0b0f16">Carregando...</div></div>`;
+  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(5,7,10,0.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML = `<div style="background:var(--surface,#121821);border-radius:12px;border:1px solid var(--line);width:min(900px,100%);height:min(640px,90vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5)">
+    <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)"><div><b>Prévia do DXF</b><div class="text-xs" style="color:var(--muted)" data-info>${escapeHtml(title)}</div></div><button type="button" data-x class="text-sm px-3 rounded-md hover:bg-white/10" style="background:var(--surface-2)">Fechar</button></div>
+    <div data-body style="flex:1;min-height:0;padding:16px;display:flex;align-items:center;justify-content:center;background:#090d13">Carregando...</div></div>`;
   const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
   const esc = e => { if(e.key === 'Escape') close(); };
   ov.addEventListener('click', e => { if(e.target === ov || e.target.closest('[data-x]')) close(); });
@@ -707,7 +754,6 @@ document.addEventListener('click', ev => {
   ev.stopPropagation(); openDxfPreview(b.dataset.dxf, b.dataset.title || 'DXF');
 });
 
-// O solicitante só exclui anexos que ele mesmo enviou (nunca as fotos de conclusão) e enquanto o pedido não foi concluído
 function canDeleteAttachment(order, a){
   return !!(currentUser && currentUser.role === 'solicitante' && a.id && !isPhoto(a)
     && order.requesterId === currentUser.id && a.uploadedBy === currentUser.name && order.status !== 'concluido');
@@ -721,7 +767,7 @@ document.addEventListener('click', async (ev)=>{
   try{
     const { data, error } = await sb.from('order_attachments').delete().eq('id', btn.dataset.delAttach).select();
     if(error) throw error;
-    if(!data || data.length === 0) throw new Error('sem permissão para excluir (falta a política RLS de DELETE em order_attachments para o solicitante).');
+    if(!data || data.length === 0) throw new Error('sem permissão para excluir.');
     const path = decodeURIComponent((data[0].url.split('/attachments/')[1] || ''));
     if(path) await sb.storage.from('attachments').remove([path]);
     await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`));
@@ -735,26 +781,26 @@ document.addEventListener('click', async (ev)=>{
 function openDetailModal(order){
   const s = statusInfo(order);
   $('detail-modal-body').innerHTML = `
-    <div class="flex items-start justify-between">
+    <div class="flex items-start justify-between gap-3">
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
       </div>
-      <span class="text-xs px-2 py-1 rounded font-medium" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+      <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
     </div>
     ${metaLine(order)}${itemsListHTML(order)}
-    <p class="text-sm">${escapeHtml(order.description || '')}</p>
+    <p class="text-sm leading-relaxed">${escapeHtml(order.description || '')}</p>
     ${receiptHTML(order)}
     <div>
-      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Roteiro de produção</p>
+      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Roteiro de produção</p>
       ${stepperHTML(order)}
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos</p>
+      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos</p>
       ${attachmentsHTML(order)}
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Histórico de movimentação</p>
+      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Histórico de movimentação</p>
       ${historyHTML(order)}
     </div>
   `;
@@ -788,7 +834,7 @@ $('signup-form').addEventListener('submit', async (e)=>{
     const password = $('signup-password').value;
     const { data, error } = await sb.auth.signUp({ email, password });
     if(error) throw error;
-    if(!data.user) throw new Error('Confirme seu e-mail (verifique a caixa de entrada) e depois faça login.');
+    if(!data.user) throw new Error('Confirme seu e-mail e depois faça login.');
     await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
     e.target.reset();
   }catch(ex){
@@ -844,7 +890,6 @@ function routeToDashboard(){
   else $('main-content').innerHTML = '<p>Perfil não reconhecido.</p>';
 }
 
-// Assina mudanças nas 4 tabelas e re-executa fetchFn a cada alteração relevante.
 function liveRefresh(channelName, fetchFn){
   fetchFn();
   const channel = sb.channel(channelName)
@@ -856,7 +901,7 @@ function liveRefresh(channelName, fetchFn){
   activeChannels.push(channel);
 }
 
-/* ============ Sino de notificação (pedidos aguardando triagem) ============ */
+/* ============ Sino de notificação ============ */
 function goAdminTab(tab){
   const btn = document.querySelector(`.admin-tab[data-tab="${tab}"]`);
   if(btn) btn.click(); else renderAdmin();
@@ -874,14 +919,14 @@ async function refreshBell(){
 }
 function startBell(){
   refreshBell();
-  if(bellChannel) return; // já está assinado, não duplica
+  if(bellChannel) return;
   bellChannel = sb.channel('bell-admin')
     .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, refreshBell)
     .subscribe();
 }
 $('bell-btn').addEventListener('click', ()=> goAdminTab('fila'));
 
-/* ============ Seletor de Projeto/OS cadastrado (usado nos 3 formulários de pedido) ============ */
+/* ============ Seletor de Projeto/OS ============ */
 async function loadProjects(){
   const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
   if(error){ console.error(error); projectsCache = []; return []; }
@@ -918,15 +963,15 @@ async function setupOpPicker({ selectId, manualId, osId, projectId, matchOs, mat
 function renderSolicitante(container = $('main-content')){
   clearChannels();
   container.innerHTML = `
-    <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
       <div>
-        <h2 class="font-display font-700 text-xl">Meus Pedidos</h2>
-        <p class="text-sm" style="color:var(--muted)">Acompanhe o status dos pedidos que você enviou.</p>
+        <h2 class="font-display font-700 text-2xl tracking-tight">Meus Pedidos</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Acompanhe o status dos pedidos enviados.</p>
       </div>
-      <button id="btn-new-order" class="px-4 py-2 rounded font-medium" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
+      <button id="btn-new-order" class="px-4 py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 flex items-center gap-1.5" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
     </div>
     <div id="solicitante-summary"></div>
-    <div id="solicitante-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
+    <div id="solicitante-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
   `;
   $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
 
@@ -938,20 +983,20 @@ function renderSolicitante(container = $('main-content')){
     const list = $('solicitante-list');
     if($('solicitante-summary')) $('solicitante-summary').innerHTML = statsHTML(statsOf(orders));
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
       return;
     }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
-          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
         </div>
-        <div class="mt-3">${stepperHTML(o)}</div>
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
       </div>`;
     }).join('');
@@ -1023,7 +1068,6 @@ $('new-order-form').addEventListener('submit', async (e)=>{
 /* =========================================================================
    5) PAINEL — ADMINISTRADOR
    ========================================================================= */
-/* ===== Sidebar do ADM (ícones Lucide inline) ===== */
 const SB_ICONS = {
   inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
   layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
@@ -1056,7 +1100,7 @@ const PAGE_INFO = {
 function setPageHead(tab){
   const el = $('page-head'); if(!el) return;
   const i = PAGE_INFO[tab];
-  el.innerHTML = i ? `<h1 class="font-display font-700 text-xl">${i[0]}</h1><p class="text-sm" style="color:var(--muted)">${i[1]}</p>` : '';
+  el.innerHTML = i ? `<h1 class="font-display font-700 text-2xl tracking-tight">${i[0]}</h1><p class="text-sm mt-0.5" style="color:var(--muted)">${i[1]}</p>` : '';
   el.style.display = i ? '' : 'none';
 }
 
@@ -1103,16 +1147,16 @@ function renderAdminFila(){
     const orders = data.map(normalizeOrder);
     const list = $('fila-list');
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Tudo em dia: nenhum pedido aguardando triagem. 🎉</div>`;
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Tudo em dia: nenhum pedido aguardando triagem. 🎉</div>`;
       return;
     }
     list.innerHTML = orders.map(o=> `
-      <div class="card rounded p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
+      <div class="card p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
         <div>
-          <p class="font-medium">${cardTitleHTML(o)}</p>
-          <p class="text-xs mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${prazoTxt(o)}</p>
+          <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+          <p class="text-xs mt-1" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${prazoTxt(o)}</p>
         </div>
-        <button data-triar="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium shrink-0" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
+        <button data-triar="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
       </div>`).join('');
     list.querySelectorAll('[data-triar]').forEach(btn=>{
       btn.addEventListener('click', ()=> openTriagemModal(orders.find(o=>o.id===btn.dataset.triar)));
@@ -1126,27 +1170,27 @@ function openTriagemModal(order){
     $('triagem-body').innerHTML = `
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
         ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
       </div>
       <div>
-        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexos do solicitante</p>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos do solicitante</p>
         ${attachmentsHTML(order)}
       </div>
       <div>
-        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
         <input id="triagem-file" type="file" class="w-full text-sm">
       </div>
       <div>
-        <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
         <div class="flex flex-wrap gap-2 mb-3">
-          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3 py-1.5 rounded text-sm border" style="border-color:var(--line)">+ ${m}</button>`).join('')}
+          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3 py-1.5 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">+ ${m}</button>`).join('')}
         </div>
         <div id="routing-list" class="space-y-2"></div>
       </div>
       <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="triagem-urgent" type="checkbox" ${order.urgent ? 'checked' : ''} style="width:16px;height:16px"> 🔥 Marcar como URGENTE (destaque na fila do operador)</label>
       <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button id="btn-aprovar" class="w-full py-2.5 rounded font-medium" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
+      <button id="btn-aprovar" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
     `;
     renderRoutingList();
     $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
@@ -1184,12 +1228,12 @@ function openTriagemModal(order){
     const el = $('routing-list');
     if(routing.length === 0){ el.innerHTML = `<p class="text-sm" style="color:var(--muted)">Nenhuma etapa adicionada.</p>`; return; }
     el.innerHTML = routing.map((m,i)=> `
-      <div class="flex items-center justify-between card px-3 py-2 rounded">
-        <span class="text-sm">${i+1}. ${m}</span>
+      <div class="flex items-center justify-between card px-3.5 py-2">
+        <span class="text-sm font-medium">${i+1}. ${m}</span>
         <div class="flex items-center gap-1">
-          <button data-up="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
-          <button data-down="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--surface-2)" ${i===routing.length-1?'disabled style="opacity:.3"':''}>↓</button>
-          <button data-remove="${i}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">✕</button>
+          <button data-up="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
+          <button data-down="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===routing.length-1?'disabled style="opacity:.3"':''}>↓</button>
+          <button data-remove="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--red);color:#fff">✕</button>
         </div>
       </div>`).join('');
     el.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.up; [routing[i-1],routing[i]]=[routing[i],routing[i-1]]; renderRoutingList(); }));
@@ -1202,10 +1246,10 @@ function openTriagemModal(order){
 
 function renderAdminTodos(){
   clearChannels();
-  const fld = 'px-3 py-2 rounded text-sm';
+  const fld = 'px-3 py-2 text-sm';
   $('admin-tab-content').innerHTML = `
-    <div id="f-chips" class="flex flex-wrap gap-2 mb-3"></div>
-    <div class="card rounded p-3 mb-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2 items-center">
+    <div id="f-chips" class="flex flex-wrap gap-2 mb-4"></div>
+    <div class="card p-3 mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 items-center">
       <input id="f-q" placeholder="Buscar peça, O.S., projeto, solicitante..." class="sm:col-span-2 ${fld}">
       <select id="f-status" class="${fld}">
         <option value="">Todos os status</option><option value="aguardando_analise">Aguardando análise</option>
@@ -1215,8 +1259,8 @@ function renderAdminTodos(){
       <input id="f-to" type="date" title="Criado até" class="${fld}">
       <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="f-urg" type="checkbox" style="width:16px;height:16px"> Só urgentes</label>
     </div>
-    <p id="f-count" class="text-xs mb-2" style="color:var(--muted)"></p>
-    <div id="todos-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
+    <p id="f-count" class="text-xs mb-3 font-medium" style="color:var(--muted)"></p>
+    <div id="todos-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>`;
   let all = [];
   const draw = ()=>{
     const list = $('todos-list'); if(!list) return;
@@ -1236,19 +1280,19 @@ function renderAdminTodos(){
       return !(from && c < from) && !(to && c > to);
     });
     $('f-count').textContent = `${orders.length} de ${all.length} pedido(s)`;
-    if(orders.length === 0){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
+    if(orders.length === 0){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card rounded p-4 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
             ${metaLine(o, true)}
           </div>
-          <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
         </div>
-        <div class="mt-3">${stepperHTML(o)}</div>
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
       </div>`;
     }).join('');
@@ -1264,32 +1308,31 @@ function renderAdminTodos(){
   });
 }
 
-/* ============ ADMIN: Projetos / OS (lista que o solicitante escolhe) ============ */
 function renderAdminProjetos(){
   clearChannels();
   $('admin-tab-content').innerHTML = `
     <div class="flex items-center justify-between mb-4 gap-3">
-      <div><h2 class="font-display font-700 text-lg">Projetos / OS cadastrados</h2>
-        <p class="text-sm" style="color:var(--muted)">Essa lista aparece para o solicitante escolher ao criar ou editar um pedido, evitando OS/Projeto digitados errado.</p></div>
-      <button id="btn-new-project" class="px-4 py-2 rounded font-medium shrink-0" style="background:var(--blue);color:#fff">+ Novo</button>
+      <div><h2 class="font-display font-700 text-xl">Projetos / OS cadastrados</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Lista disponível para a escolha dos solicitantes.</p></div>
+      <button id="btn-new-project" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo</button>
     </div>
-    <div id="projects-list" class="space-y-2"><div class="skel"></div><div class="skel"></div></div>`;
+    <div id="projects-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
   $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
   liveRefresh('admin-projetos', async ()=>{
     const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
     if(error){ showError('projects-list', error); return; }
     const list = $('projects-list');
-    if(!data.length){ list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
+    if(!data.length){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
     list.innerHTML = data.map(p => `
-      <div class="card rounded p-3 flex items-center justify-between gap-3 flex-wrap">
+      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p class="font-medium text-sm">OS ${escapeHtml(p.os_number)} <span style="color:var(--muted)">— ${escapeHtml(p.project_name)}</span></p>
-          <p class="text-xs" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
+          <p class="text-xs mt-0.5" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button data-edit-project="${p.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">Editar</button>
-          <button data-toggle-project="${p.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
-          <button data-del-project="${p.id}" class="text-xs px-2 py-1 rounded" style="background:var(--red);color:#fff">Excluir</button>
+          <button data-edit-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
+          <button data-toggle-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
+          <button data-del-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>
         </div>
       </div>`).join('');
     list.querySelectorAll('[data-edit-project]').forEach(b => b.addEventListener('click', ()=> openProjectModal(data.find(p=>p.id===b.dataset.editProject))));
@@ -1299,12 +1342,13 @@ function renderAdminProjetos(){
       if(error) notify('Erro: ' + error.message);
     }));
     list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
-      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados — só deixa de aparecer para novas escolhas.')) return;
+      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados.')) return;
       const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
       if(error) notify('Erro: ' + error.message);
     }));
   });
 }
+
 let editProjectTarget = null;
 function openProjectModal(p){
   editProjectTarget = p;
@@ -1332,18 +1376,18 @@ $('project-form').addEventListener('submit', async (e)=>{
 
 function renderAdminUsuarios(){
   clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-2"><div class="skel"></div><div class="skel"></div></div>`;
+  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
   liveRefresh('admin-usuarios', async ()=>{
     const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
     if(error){ showError('users-list', error); return; }
     $('users-list').innerHTML = users.map(u=> `
-      <div class="card rounded p-3 flex items-center justify-between">
+      <div class="card p-4 flex items-center justify-between">
         <div>
-          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">${u.email}</span></p>
+          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">(${u.email})</span></p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-xs px-2 py-1 rounded" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
-          <button data-edit-user="${u.id}" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line)">Editar</button>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
+          <button data-edit-user="${u.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
         </div>
       </div>`).join('');
     $('users-list').querySelectorAll('[data-edit-user]').forEach(btn=>{
@@ -1384,7 +1428,7 @@ function openEditUserModal(user){
 }
 
 /* =========================================================================
-   6) PAINEL — OPERADOR (operador: suas máquinas | admin: todas as máquinas)
+   6) PAINEL — OPERADOR
    ========================================================================= */
 function renderOperador(container = $('main-content')){
   clearChannels();
@@ -1394,25 +1438,25 @@ function renderOperador(container = $('main-content')){
   let lastOrders = [];
 
   container.innerHTML = `
-    <div class="mb-5">
+    <div class="mb-6">
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <h2 class="font-display font-700 text-xl">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
-        <button id="op-reset-order" class="text-xs px-2 py-1 rounded border" style="border-color:var(--line);color:var(--muted)">↺ Ordem automática (prazo + urgência)</button>
+        <h2 class="font-display font-700 text-2xl tracking-tight">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
+        <button id="op-reset-order" class="text-xs px-2.5 py-1.5 rounded-lg border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--muted)">↺ Ordem automática (prazo + urgência)</button>
       </div>
-      <p class="text-sm" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
-      <div id="op-chips" class="flex flex-wrap gap-2 mt-3"></div>
+      <p class="text-sm mt-0.5" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
+      <div id="op-chips" class="flex flex-wrap gap-2 mt-4"></div>
     </div>
-    <div id="operador-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
+    <div id="operador-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
   `;
   if(available.length === 0){
-    $('operador-list').innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
+    $('operador-list').innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
     return;
   }
 
   function drawChips(){
     if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
     const opts = ['todas', ...available];
-    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3 py-1 rounded text-xs border" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'#2E6FEE22':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
+    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'rgba(59,130,246,0.16)':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
     $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
       filter = b.dataset.chip; drawChips(); fetchOp();
     }));
@@ -1434,40 +1478,40 @@ function renderOperador(container = $('main-content')){
       const u = (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
       if(u !== 0) return u;
       return new Date(a.deadline) - new Date(b.deadline);
-    }); // manual (setas) tem prioridade; senão urgente; senão prazo
+    }); 
     lastOrders = orders;
     if(orders.length === 0){
-      list.innerHTML = `<div class="card rounded p-8 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
       return;
     }
     list.innerHTML = orders.map((o, i)=>{
       const step = o.routing[o.currentStepIndex];
       const late = isLate(o);
-      return `<div class="card rounded p-4 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:#F2A93B12;':''}">
+      return `<div class="card p-5 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:rgba(245,158,11,0.06);':''}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-medium">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-0.5" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: ${o.currentMachine} · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: <span class="text-white font-medium">${o.currentMachine}</span> · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-xs px-2 py-1 rounded font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'#2E6FEE22':'#5B657722'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'rgba(59,130,246,0.16)':'rgba(100,116,139,0.16)'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
               ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
             </span>
-            ${isAdmin ? `<input data-pos-in="${o.id}" type="number" min="1" max="${orders.length}" value="${i + 1}" title="Posição na fila" class="w-12 h-8 rounded border text-xs text-center" style="border-color:var(--line);background:transparent;color:var(--text)">` : ''}
+            ${isAdmin ? `<input data-pos-in="${o.id}" type="number" min="1" max="${orders.length}" value="${i + 1}" title="Posição na fila" class="w-12 h-8 rounded-md border text-xs text-center font-medium" style="border-color:var(--line);background:transparent;color:var(--text)">` : ''}
             <div class="flex flex-col gap-0.5">
-              <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▲</button>
-              <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded border text-xs leading-none" style="border-color:var(--line)">▼</button>
+              <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▲</button>
+              <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▼</button>
             </div>
           </div>
         </div>
-        ${metaLine(o, true)}<p class="text-sm mt-2">${o.description || ''}</p>${itemsListHTML(o)}
-        <div class="mt-3">${stepperHTML(o)}</div>
+        ${metaLine(o, true)}<p class="text-sm mt-2 leading-relaxed">${o.description || ''}</p>${itemsListHTML(o)}
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         <div class="mt-3">${attachmentsHTML(o)}</div>
-        <div class="mt-3 flex gap-2">
-          <button data-detail="${o.id}" class="px-3 py-1.5 rounded text-sm border" style="border-color:var(--line)">Ver histórico</button>
+        <div class="mt-4 flex gap-2">
+          <button data-detail="${o.id}" class="px-3 py-2 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">Ver histórico</button>
           ${step.status === 'pendente'
-            ? `<button data-start="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--blue);color:#fff">Iniciar Etapa</button>`
-            : `<button data-finish="${o.id}" class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--green);color:#06210f">Finalizar Etapa</button>`}
+            ? `<button data-start="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Iniciar Etapa</button>`
+            : `<button data-finish="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--green);color:#06210f">Finalizar Etapa</button>`}
         </div>
       </div>`;
     }).join('');
@@ -1496,7 +1540,7 @@ async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, i
 
 async function resetQueueOrder(orders){
   if(!orders.length) return;
-  if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência), desfazendo as prioridades manuais?')) return;
+  if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência)?')) return;
   const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
   if(error) notify('Erro: ' + error.message);
 }
@@ -1509,7 +1553,6 @@ async function startStep(order){
   if(r2.error) notify('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
 }
 
-/* --- Finalizar etapa: foto obrigatória --- */
 $('finish-photo').addEventListener('change', ()=>{
   const f = $('finish-photo').files[0]; const img = $('finish-preview');
   if(f){ img.src = URL.createObjectURL(f); img.classList.remove('hidden'); } else img.classList.add('hidden');
@@ -1538,12 +1581,10 @@ async function finishStep(order, photo){
   const detail = `Finalizou a etapa "${order.currentMachine}" (foto anexada).` + (isLast ? ' Pedido concluído — aguardando confirmação de recebimento.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
   const ok = (r, msg)=>{ if(r.error) throw new Error(msg + ': ' + r.error.message); };
 
-  // 1) Foto primeiro: se falhar, nada é alterado.
   const att = await uploadFile(order.id, photo, 'fotos');
   ok(await sb.from('order_attachments').insert(att), 'Falha ao salvar a foto');
 
   ok(await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id), 'Erro ao finalizar etapa');
-  // Histórico ANTES de repassar o pedido (depois o operador perde acesso a ele).
   ok(await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail)), 'Erro ao registrar histórico');
 
   const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
@@ -1552,22 +1593,19 @@ async function finishStep(order, photo){
   ok(await sb.from('orders').update(updates).eq('id', order.id), 'Erro ao avançar o pedido');
 }
 
-/* --- Confirmação de recebimento (solicitante) --- */
 async function confirmReceipt(order){
   if(!await askConfirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
   const { error } = await sb.from('order_history').insert(historyRow(order.id, 'recebimento', 'Confirmou o recebimento da peça.'));
   if(error) notify('Erro ao confirmar recebimento: ' + error.message);
 }
 
-/* --- Admin: editar / excluir pedido --- */
-/* ===== Imagem sem baixar (miniatura + visualização ampliada) ===== */
 const IMG_RE = /\.(png|jpe?g|webp|gif)$/i;
 function isImage(a){ return IMG_RE.test(a.name || '') || IMG_RE.test((a.url || '').split('?')[0]) || isPhoto(a); }
 function openImagePreview(url, title){
   const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px';
-  ov.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="max-width:100%;max-height:82vh;object-fit:contain;border-radius:8px">
-    <div class="text-sm" style="color:#fff">${escapeHtml(title)} · <a href="${escapeHtml(url)}" target="_blank" style="text-decoration:underline">abrir em nova aba</a> · clique fora ou Esc para fechar</div>`;
+  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(5,7,10,0.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px';
+  ov.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="max-width:100%;max-height:82vh;object-fit:contain;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.6)">
+    <div class="text-sm font-medium" style="color:#fff">${escapeHtml(title)} · <a href="${escapeHtml(url)}" target="_blank" style="text-decoration:underline;color:var(--blue)">abrir em nova aba</a> · clique fora ou Esc para fechar</div>`;
   const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
   const esc = e => { if(e.key === 'Escape') close(); };
   ov.addEventListener('click', e => { if(e.target.tagName !== 'A') close(); });
@@ -1578,7 +1616,6 @@ document.addEventListener('click', ev => {
   ev.stopPropagation(); openImagePreview(b.dataset.img, b.dataset.title || 'Imagem');
 }, true);
 
-/* ===== Posição do pedido na fila (nota para o solicitante) ===== */
 async function fillPositions(root){
   for(const el of root.querySelectorAll('[data-pos]')){
     const { data, error } = await sb.rpc('queue_position', { p_order: el.dataset.pos });
@@ -1590,22 +1627,21 @@ async function fillPositions(root){
   }
 }
 
-/* ===== ADM: editar o roteiro depois da triagem ===== */
 function openRoutingEditor(order){
   const isLocked = s => s.status === 'concluido' || (s.status === 'em_andamento' && s.started_at);
   const locked = order.routing.filter(isLocked);
   let edit = order.routing.filter(s => !isLocked(s)).map(s => ({ id: s.id, machine: s.machine }));
   const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px';
-  const btn = 'class="px-2 py-1 rounded border text-xs" style="border-color:var(--line)"';
-  const draw = () => { ov.innerHTML = `<div style="background:var(--surface,#151a23);border-radius:12px;width:min(520px,100%);max-height:90vh;overflow:auto;padding:16px" class="space-y-2">
-    <b>Editar etapas — ${escapeHtml(order.pieceName)}</b>
+  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(5,7,10,0.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
+  const btn = 'class="px-2 py-1 rounded-md border text-xs hover:bg-white/5" style="border-color:var(--line)"';
+  const draw = () => { ov.innerHTML = `<div style="background:var(--surface,#121821);border-radius:12px;border:1px solid var(--line);width:min(520px,100%);max-height:90vh;overflow:auto;padding:20px" class="space-y-3">
+    <b class="text-base font-display">Editar etapas — ${escapeHtml(order.pieceName)}</b>
     <p class="text-xs" style="color:var(--muted)">Etapas concluídas ou já iniciadas ficam travadas (🔒). As demais podem ser reordenadas, removidas ou criadas.</p>
-    ${locked.map(s => `<div class="card rounded px-3 py-2 text-sm">🔒 ${escapeHtml(s.machine)} <span class="text-xs" style="color:var(--muted)">(${s.status === 'concluido' ? 'concluída' : 'em andamento'})</span></div>`).join('')}
-    ${edit.map((s, i) => `<div class="card rounded px-3 py-2 text-sm flex items-center justify-between"><span>${locked.length + i + 1}. ${escapeHtml(s.machine)}</span><span class="flex gap-1"><button type="button" ${btn} data-m="up" data-i="${i}">▲</button><button type="button" ${btn} data-m="dn" data-i="${i}">▼</button><button type="button" ${btn} data-m="rm" data-i="${i}">✕</button></span></div>`).join('')}
-    <div class="flex flex-wrap gap-2">${MACHINES.map(m => `<button type="button" ${btn} data-add="${m}">+ ${m}</button>`).join('')}</div>
+    ${locked.map(s => `<div class="card p-3 text-sm">🔒 ${escapeHtml(s.machine)} <span class="text-xs" style="color:var(--muted)">(${s.status === 'concluido' ? 'concluída' : 'em andamento'})</span></div>`).join('')}
+    ${edit.map((s, i) => `<div class="card p-3 text-sm flex items-center justify-between"><span>${locked.length + i + 1}. ${escapeHtml(s.machine)}</span><span class="flex gap-1"><button type="button" ${btn} data-m="up" data-i="${i}">▲</button><button type="button" ${btn} data-m="dn" data-i="${i}">▼</button><button type="button" ${btn} data-m="rm" data-i="${i}">✕</button></span></div>`).join('')}
+    <div class="flex flex-wrap gap-2 pt-2">${MACHINES.map(m => `<button type="button" ${btn} data-add="${m}">+ ${m}</button>`).join('')}</div>
     <p data-err class="text-sm" style="color:var(--red);display:none"></p>
-    <div class="flex justify-end gap-2"><button type="button" data-x class="px-3 py-1.5 rounded text-sm" style="background:var(--surface-2)">Cancelar</button><button type="button" data-save class="px-3 py-1.5 rounded text-sm font-medium" style="background:var(--blue);color:#fff">Salvar etapas</button></div></div>`; };
+    <div class="flex justify-end gap-2 pt-2"><button type="button" data-x class="px-3.5 py-2 rounded-lg text-sm hover:bg-white/5" style="background:var(--surface-2)">Cancelar</button><button type="button" data-save class="px-3.5 py-2 rounded-lg text-sm font-medium shadow" style="background:var(--blue);color:#fff">Salvar etapas</button></div></div>`; };
   const showErr = m => { const e = ov.querySelector('[data-err]'); e.textContent = 'Erro: ' + m; e.style.display = 'block'; };
   const chk = r => { if(r.error) throw r.error; };
   const save = async () => {
@@ -1673,7 +1709,7 @@ function openEditOrderModal(order){
       btn.disabled = true; btn.textContent = 'Salvando...';
       const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
       if(error) throw error;
-      if(!data || data.length === 0) throw new Error('sem permissão para editar (verifique as políticas RLS do admin).');
+      if(!data || data.length === 0) throw new Error('sem permissão para editar.');
       await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
@@ -1690,7 +1726,6 @@ function openEditOrderModal(order){
   openModal('edit-order-modal');
 }
 
-/* --- Solicitante: editar / excluir o PRÓPRIO pedido, só enquanto aguarda análise --- */
 function openSolEditModal(order){
   if(order.status !== 'aguardando_analise'){
     notify('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
@@ -1728,7 +1763,7 @@ function openSolEditModal(order){
       };
       const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
       if(error) throw error;
-      if(!data || data.length === 0) throw new Error('não deu para salvar — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
+      if(!data || data.length === 0) throw new Error('não deu para salvar.');
       await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
@@ -1750,7 +1785,7 @@ async function removeOldPieceAttachment(order, i, total){
     && (total > 1 ? a.name.startsWith(`Peça ${i + 1} - `) : true));
   if(!old.length) return;
   const { error } = await sb.from('order_attachments').delete().in('id', old.map(a => a.id));
-  if(error) return; // sem permissão: mantém o antigo em vez de falhar a edição
+  if(error) return; 
   const paths = old.map(a => decodeURIComponent(a.url.split('/attachments/')[1] || '')).filter(Boolean);
   if(paths.length) await sb.storage.from('attachments').remove(paths);
 }
@@ -1770,7 +1805,7 @@ async function deleteOwnOrder(order){
       r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
     }
     if(r.error) throw r.error;
-    if(!r.data || r.data.length === 0) throw new Error('não deu para excluir — o pedido pode já ter entrado em triagem, ou falta permissão (RLS).');
+    if(!r.data || r.data.length === 0) throw new Error('não deu para excluir.');
     const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
     if(paths.length) await sb.storage.from('attachments').remove(paths);
   }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
@@ -1780,21 +1815,19 @@ async function deleteOrder(order){
   if(!await askConfirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
   try{
     let r = await sb.from('orders').delete().eq('id', order.id).select();
-    if(r.error && r.error.code === '23503'){ // sem ON DELETE CASCADE: apaga os filhos e tenta de novo
+    if(r.error && r.error.code === '23503'){ 
       for(const t of ['order_history', 'order_attachments', 'order_routing']){
         const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
       }
       r = await sb.from('orders').delete().eq('id', order.id).select();
     }
     if(r.error) throw r.error;
-    if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir (verifique as políticas RLS do admin).');
+    if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir.');
     const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
     if(paths.length) await sb.storage.from('attachments').remove(paths);
   }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
 }
 
-/* --- Admin: resumo por solicitante --- */
-/* peças cortadas = quantidade dos pedidos cuja etapa "Corte a Laser" já foi concluída */
 const cutQtyOf = o => o.routing.some(r => r.machine === 'Corte a Laser' && r.status === 'concluido') ? (o.quantity || 0) : 0;
 function materialUsage(orders){
   const m = {};
@@ -1807,16 +1840,16 @@ function materialUsage(orders){
 function materialChartHTML(orders){
   const data = materialUsage(orders), total = data.reduce((a, d) => a + d[1], 0), max = data.length ? data[0][1] : 1;
   const bars = data.length === 0 ? '<p class="text-sm" style="color:var(--muted)">Sem dados ainda.</p>' : data.map(([name, q], i) => `
-    <div class="mb-2.5"><div class="flex justify-between gap-3 text-xs mb-1"><span>${i === 0 ? '🏆 ' : ''}${escapeHtml(name)}</span><span style="color:var(--muted)">${q} peça(s) · ${total ? Math.round(q / total * 100) : 0}%</span></div>
-    <div style="height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.max(3, q / max * 100)}%;border-radius:6px;background:${i === 0 ? 'var(--blue)' : '#4C6A9C'}"></div></div></div>`).join('');
-  return `<div class="card rounded p-4 mb-5"><p class="text-xs uppercase tracking-wide mb-3" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
+    <div class="mb-3"><div class="flex justify-between gap-3 text-xs font-medium mb-1.5"><span>${i === 0 ? '🏆 ' : ''}${escapeHtml(name)}</span><span style="color:var(--muted)">${q} peça(s) · ${total ? Math.round(q / total * 100) : 0}%</span></div>
+    <div style="height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.max(3, q / max * 100)}%;border-radius:6px;background:${i === 0 ? 'var(--blue)' : '#334155'}"></div></div></div>`).join('');
+  return `<div class="card p-5 mb-6"><p class="text-xs uppercase tracking-wide font-medium mb-4" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
 }
 
 function renderAdminResumo(){
   clearChannels();
   $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
-    <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--muted)">Por solicitante</p>
-    <div id="resumo-table" class="card rounded overflow-x-auto"></div>`;
+    <p class="text-xs uppercase tracking-wide font-medium mb-3" style="color:var(--muted)">Por solicitante</p>
+    <div id="resumo-table" class="card overflow-x-auto"></div>`;
   liveRefresh('admin-resumo', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT);
     if(error){ showError('resumo-table', error); return; }
@@ -1824,20 +1857,19 @@ function renderAdminResumo(){
     const orders = data.map(normalizeOrder);
     const cutTotal = orders.reduce((a, o) => a + cutQtyOf(o), 0);
     $('resumo-stats').innerHTML = statsHTML(statsOf(orders)) +
-      `<div class="card rounded p-4 mb-5 flex items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-wide" style="color:var(--muted)">Peças cortadas (Corte a Laser concluído)</p><p class="font-display text-3xl font-700 mt-1" style="color:var(--green)">${cutTotal}</p></div><span style="font-size:32px">✂️</span></div>` + materialChartHTML(orders);
+      `<div class="card p-5 mb-6 flex items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças cortadas (Corte a Laser concluído)</p><p class="font-display text-3xl font-700 mt-1" style="color:var(--green)">${cutTotal}</p></div><span style="font-size:32px">✂️</span></div>` + materialChartHTML(orders);
     const by = {};
     orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
     const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list), cut: g.list.reduce((a, o) => a + cutQtyOf(o), 0) })).sort((a, b) => b.s.total - a.s.total);
-    const th = h => `<th class="text-left font-medium px-3 py-2 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
-    const td = (v, c) => `<td class="px-3 py-2 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
-    $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-6 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
+    const th = h => `<th class="text-left font-medium px-4 py-3 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
+    const td = (v, c) => `<td class="px-4 py-3 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
+    $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-8 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
       `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Peças cortadas', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
       rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.cut, 'var(--green)')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
       `</tbody></table>`;
   });
 }
 
-/* --- Admin: relatório mensal em Excel --- */
 function renderAdminRelatorio(){
   clearChannels();
   const now = new Date();
@@ -1845,29 +1877,29 @@ function renderAdminRelatorio(){
   const toStr = d => d.toISOString().slice(0, 10);
   const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
   $('admin-tab-content').innerHTML = `
-    <div class="card rounded p-5 max-w-md space-y-4">
+    <div class="card p-6 max-w-md space-y-4">
       <div>
-        <h2 class="font-display font-700 text-lg">Relatório (Excel)</h2>
-        <p class="text-sm" style="color:var(--muted)">Inclui pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
+        <h2 class="font-display font-700 text-xl">Relatório (Excel)</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Inclui pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
       </div>
-      <div class="flex gap-4 text-sm">
-        <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="rep-mode" value="mes" checked style="width:15px;height:15px"> Por mês</label>
-        <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="rep-mode" value="periodo" style="width:15px;height:15px"> Por período livre</label>
+      <div class="flex gap-4 text-sm pt-1">
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="mes" checked style="width:16px;height:16px"> Por mês</label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="periodo" style="width:16px;height:16px"> Por período livre</label>
       </div>
       <div id="rep-mes-field">
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Mês</label>
-        <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 rounded">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Mês</label>
+        <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 text-sm">
       </div>
       <div id="rep-periodo-field" class="hidden grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">De</label><input id="rep-from" type="date" value="${toStr(monthAgo)}" class="w-full mt-1 px-3 py-2 rounded"></div>
-        <div><label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Até</label><input id="rep-to" type="date" value="${toStr(now)}" class="w-full mt-1 px-3 py-2 rounded"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">De</label><input id="rep-from" type="date" value="${toStr(monthAgo)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Até</label><input id="rep-to" type="date" value="${toStr(now)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wide" style="color:var(--muted)">Solicitante (opcional)</label>
-        <select id="rep-requester" class="w-full mt-1 px-3 py-2 rounded"><option value="">Todos os solicitantes</option></select>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Solicitante (opcional)</label>
+        <select id="rep-requester" class="w-full mt-1 px-3 py-2 text-sm"><option value="">Todos os solicitantes</option></select>
       </div>
       <p id="rep-msg" class="text-sm hidden"></p>
-      <button id="rep-btn" class="w-full py-2.5 rounded font-medium" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
+      <button id="rep-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 mt-2" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
     </div>`;
 
   document.querySelectorAll('input[name="rep-mode"]').forEach(r=> r.addEventListener('change', ()=>{
@@ -1969,7 +2001,6 @@ async function exportReport(from, to, requesterName, label){
   return orders.length;
 }
 
-/* --- Materiais (listas dos formulários) --- */
 const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm", "Chapa Aço Carbono #14 = 2mm",
   "Chapa Aço Carbono (1/8\") = 3,18mm (Xadrez)", "Chapa Aço Carbono (3/16\") = 4,76mm", "Chapa Aço Carbono (1/4\") = 6,35mm",
   "Chapa Aço Carbono (5/16\") = 7,94mm", "Chapa Aço Carbono (3/8\") = 9,53mm", "Chapa Aço Carbono (1/2\") = 12,70mm",
@@ -1983,16 +2014,15 @@ const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
 
 function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-/* --- Editor de peças (múltiplos itens por pedido, usado no Novo Pedido e na edição do solicitante) --- */
 function createItemsEditor(containerId){
   const wrap = $(containerId);
   let rows = [], removedIds = [];
   const hasFile = r => !!(r.file || (r.existingAttachmentName && !r.removeExisting));
   function fileAreaHTML(r){
-    if(hasFile(r)) return `<div class="flex items-center justify-between gap-2 mt-1 px-2 py-1.5 rounded text-xs" style="background:var(--surface-2)">
+    if(hasFile(r)) return `<div class="flex items-center justify-between gap-2 mt-1 px-3 py-2 rounded-md text-xs border" style="background:var(--surface-2);border-color:var(--line)">
         <span class="truncate">📎 ${escapeHtml(r.file ? r.file.name : r.existingAttachmentName)}${r.file ? '' : ' <em style="color:var(--muted)">(atual)</em>'}</span>
-        <button type="button" data-del-file style="color:var(--red)" class="shrink-0">Excluir arquivo</button></div>`;
-    return `<input data-f="file" type="file" class="w-full mt-1 text-xs">${r.removeExisting ? '<p class="text-xs mt-1" style="color:var(--amber)">O anexo atual será removido ao salvar. Escolha outro arquivo ou deixe sem anexo.</p>' : ''}`;
+        <button type="button" data-del-file style="color:var(--red)" class="shrink-0 font-medium hover:underline">Excluir</button></div>`;
+    return `<input data-f="file" type="file" class="w-full mt-1 text-xs">${r.removeExisting ? '<p class="text-xs mt-1" style="color:var(--amber)">O anexo atual será removido ao salvar.</p>' : ''}`;
   }
   function renderFileArea(r){
     const area = wrap.querySelector(`[data-row="${r.id}"] [data-file-area]`);
@@ -2001,20 +2031,20 @@ function createItemsEditor(containerId){
     if(inp) inp.addEventListener('change', e => {
       const f = e.target.files[0] || null, m = f ? validateFile(f) : '';
       if(m){ notify(m); e.target.value = ''; return; }
-      r.file = f; renderFileArea(r);   // um único arquivo por peça: depois de escolher, só dá para excluir
+      r.file = f; renderFileArea(r);
     });
     const del = area.querySelector('[data-del-file]');
     if(del) del.addEventListener('click', () => { if(r.file) r.file = null; else r.removeExisting = true; renderFileArea(r); });
   }
   function rowHTML(r){
-    return `<div class="card rounded p-3 space-y-2" data-row="${r.id}">
-      <div class="flex items-center justify-between"><span class="text-xs font-semibold" data-label style="color:var(--muted)"></span>
-        <button type="button" data-remove-item class="text-xs" style="color:var(--red)">Remover</button></div>
-      <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 rounded text-sm">
+    return `<div class="card p-4 space-y-3" data-row="${r.id}">
+      <div class="flex items-center justify-between"><span class="text-xs font-semibold uppercase tracking-wide" data-label style="color:var(--muted)"></span>
+        <button type="button" data-remove-item class="text-xs font-medium hover:underline" style="color:var(--red)">Remover</button></div>
+      <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 text-sm">
       <div class="grid grid-cols-2 gap-2">
-        <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 rounded text-sm">
-        <select data-f="material" class="w-full px-3 py-2 rounded text-sm">${ITEM_MATERIAL_OPTIONS}</select></div>
-      <div><label class="text-xs" style="color:var(--muted)">Anexo desta peça (1 arquivo, opcional)</label><div data-file-area></div></div></div>`;
+        <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 text-sm">
+        <select data-f="material" class="w-full px-3 py-2 text-sm">${ITEM_MATERIAL_OPTIONS}</select></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Anexo desta peça (opcional)</label><div data-file-area></div></div></div>`;
   }
   function refreshLabels(){
     rows.forEach((r, i) => {
@@ -2028,7 +2058,7 @@ function createItemsEditor(containerId){
     const r = { id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null,
       existingAttachmentName: data._attachmentName || '', existingAttachmentId: data._attachmentId || null, removeExisting: false };
     rows.push(r);
-    wrap.insertAdjacentHTML('beforeend', rowHTML(r));       // só acrescenta: as peças já preenchidas não são tocadas
+    wrap.insertAdjacentHTML('beforeend', rowHTML(r));
     const el = wrap.querySelector(`[data-row="${r.id}"]`);
     el.querySelector('[data-f="material"]').value = r.material;
     el.querySelector('[data-f="name"]').addEventListener('input', e => r.name = e.target.value);
@@ -2050,14 +2080,13 @@ function createItemsEditor(containerId){
     addBlank: () => addRow(),
     reset,
     getItems: () => rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file })),
-    // ids de anexos antigos a apagar ao salvar (peça removida, arquivo excluído ou substituído); zera depois de ler
     takeDeletes: () => { const ids = [...removedIds, ...rows.filter(r => r.existingAttachmentId && (r.removeExisting || r.file)).map(r => r.existingAttachmentId)]; removedIds = []; return ids; }
   };
 }
 async function deleteAttachmentsByIds(ids){
   if(!ids.length) return;
   const { data, error } = await sb.from('order_attachments').delete().in('id', ids).select();
-  if(error || !data) return;   // sem permissão: mantém os antigos em vez de falhar a edição
+  if(error || !data) return;
   const paths = data.map(a => decodeURIComponent((a.url.split('/attachments/')[1] || ''))).filter(Boolean);
   if(paths.length) await sb.storage.from('attachments').remove(paths);
 }
@@ -2071,22 +2100,20 @@ $('seo-add-item').addEventListener('click', ()=> solItemsEditor.addBlank());
 const eoItemsEditor = createItemsEditor('eo-items-editor');
 $('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
 
-/* --- Prioridade --- */
 async function toggleUrgent(o){
   const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
-  if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão') + ' (a coluna "urgent" já foi criada no banco?)'); return; }
+  if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão')); return; }
   await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
 }
 
-/* --- Gráficos (ADM) --- */
 function barsHTML(rows, fmt = v => v){
   const max = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
   return rows.map(r => {
     const tot = r.segs.reduce((a, s) => a + s.v, 0);
-    return `<div class="flex items-center gap-3 mb-2">
-      <span class="w-20 sm:w-32 shrink-0 text-xs truncate" style="color:var(--muted)" title="${r.label}">${r.label}</span>
-      <div class="flex-1 flex h-5 rounded overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
-      <span class="w-20 text-xs text-right">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
+    return `<div class="flex items-center gap-3 mb-2.5">
+      <span class="w-24 sm:w-32 shrink-0 text-xs font-medium truncate" style="color:var(--muted)" title="${r.label}">${r.label}</span>
+      <div class="flex-1 flex h-5 rounded-md overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
+      <span class="w-20 text-xs text-right font-medium">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
   }).join('');
 }
 function renderAdminGraficos(){
@@ -2108,7 +2135,7 @@ function renderAdminGraficos(){
     orders.forEach(o => o.routing.forEach(r => { if(r.startedAt && r.finishedAt) (acc[r.machine] = acc[r.machine] || []).push((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000); }));
     const tempo = MACHINES.map(m => { const a = acc[m] || [], avg = a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
       return { label: m, segs: [{ v: avg, color: 'var(--amber)', name: 'Média' }], text: a.length ? fmtMin(avg) : '—' }; });
-    const box = (t, sub, body) => `<div class="card rounded p-4"><p class="font-display font-600">${t}</p><p class="text-xs mb-4" style="color:var(--muted)">${sub}</p>${body}</div>`;
+    const box = (t, sub, body) => `<div class="card p-5"><p class="font-display font-600 text-lg">${t}</p><p class="text-xs mb-4" style="color:var(--muted)">${sub}</p>${body}</div>`;
     const abertos = orders.filter(o => o.status !== 'concluido' && isLate(o)).length;
     $('gr').innerHTML =
       box('Pedidos por mês', 'Últimos 6 meses (data de criação)', barsHTML(porMes)) +
