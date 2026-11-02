@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Almoxarifado — CIMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#0B0E14; --surface:#131822; --surface-2:#1A2230; --line:#242D3E;
+    --text:#F3F4F6; --muted:#9CA3AF; --blue:#3B82F6; --amber:#F59E0B; --green:#10B981; --red:#EF4444;
+  }
+  body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh;}
+  .font-display{font-family:'Space Grotesk',sans-serif;}
+  .card{background:var(--surface); border:1px solid var(--line); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);}
+  input,select,textarea{background:var(--surface-2); border:1px solid var(--line); color:var(--text); transition:all 0.2s;}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--blue); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+  .modal-backdrop{background:rgba(5, 7, 10, 0.85); backdrop-filter: blur(4px); position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:16px; animation: fadeIn 0.2s ease;}
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+
+  <!-- Cabeçalho Principal -->
+  <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b" style="border-color:var(--line)">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner" style="background:var(--surface-2); border:1px solid var(--line)">📦</div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-display font-700 text-xl tracking-tight text-white">Almoxarifado CIMA</h1>
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(59,130,246,0.15); color:var(--blue)">Indústria 4.0</span>
+        </div>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">Controle avançado de ferramentas, insumos e chapas (kg)</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2 bg-[#131822] p-1 rounded-xl border border-[#242D3E]">
+      <button type="button" onclick="switchTab('movimentacoes')" id="tab-btn-mov" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm" style="background:var(--blue); color:#fff">Retirada / Baixa</button>
+      <button type="button" onclick="switchTab('catalogo')" id="tab-btn-cat" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all" style="background:transparent; color:var(--muted)">Catálogo & Estoque</button>
+      <a href="../index.html" class="px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white border border-[#242D3E] transition">← Voltar ao CIMA</a>
+    </div>
+  </header>
+
+  <!-- Indicadores Rápidos (KPIs) -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="card p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-wider font-semibold" style="color:var(--muted)">Total de Itens Cadastrados</p>
+        <h4 id="kpi-total-itens" class="font-display font-700 text-2xl mt-1 text-white">0</h4>
+      </div>
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(59,130,246,0.1); color:var(--blue)">📋</div>
+    </div>
+    <div class="card p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-wider font-semibold" style="color:var(--muted)">Itens em Alerta / Crítico</p>
+        <h4 id="kpi-total-criticos" class="font-display font-700 text-2xl mt-1 text-amber-400">0</h4>
+      </div>
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(245,158,11,0.1); color:var(--amber)">⚠️</div>
+    </div>
+    <div class="card p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-wider font-semibold" style="color:var(--muted)">Movimentações Registradas</p>
+        <h4 id="kpi-total-mov" class="font-display font-700 text-2xl mt-1 text-emerald-400">0</h4>
+      </div>
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(16,185,129,0.1); color:var(--green)">🔄</div>
+    </div>
+  </div>
+
+  <!-- ABA 1: MOVIMENTAÇÕES & SAÍDAS -->
+  <div id="view-movimentacoes" class="space-y-4">
+    <div class="card p-5 rounded-xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-5 pb-4 border-b" style="border-color:var(--line)">
+        <div>
+          <h3 class="font-display font-600 text-base text-white">Histórico de Saídas e Entradas</h3>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Registro de consumo por O.S., reposições e devoluções</p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <input id="search-mov" type="text" placeholder="🔍 Pesquisar por O.S., Item, Operador..." oninput="atualizarTelas()" class="px-3.5 py-2 rounded-xl text-xs w-full sm:w-64">
+          <button type="button" onclick="abrirModalMovimentacao()" class="px-4 py-2.5 rounded-xl font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition hover:opacity-90 shrink-0" style="background:var(--blue); color:#fff">
+            <span>+</span> Registrar Movimentação
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr style="border-bottom:1px solid var(--line); color:var(--muted)" class="uppercase tracking-wider">
+              <th class="pb-3 font-semibold">Data/Hora</th>
+              <th class="pb-3 font-semibold">Operação</th>
+              <th class="pb-3 font-semibold">Item</th>
+              <th class="pb-3 font-semibold">Qtd / Peso</th>
+              <th class="pb-3 font-semibold">O.S. / Destino</th>
+              <th class="pb-3 font-semibold">Responsável</th>
+              <th class="pb-3 font-semibold text-right">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-movimentos" class="divide-y divide-[#242D3E]"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 2: CATÁLOGO & ESTOQUE -->
+  <div id="view-catalogo" class="hidden space-y-4">
+    <div class="card p-5 rounded-xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-5 pb-4 border-b" style="border-color:var(--line)">
+        <div>
+          <h3 class="font-display font-600 text-base text-white">Inventário Geral do Almoxarifado</h3>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Matérias-primas, ferramentas e consumíveis cadastrados</p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <input id="search-tool" type="text" placeholder="🔍 Pesquisar por Cód., Nome, Ref..." oninput="atualizarTelas()" class="px-3.5 py-2 rounded-xl text-xs w-full sm:w-64">
+          <button type="button" onclick="abrirModalCadastro()" class="px-4 py-2.5 rounded-xl font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition hover:opacity-90 shrink-0" style="background:var(--amber); color:#1a1204">
+            <span>+</span> Cadastrar Novo Item
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr style="border-bottom:1px solid var(--line); color:var(--muted)" class="uppercase tracking-wider">
+              <th class="pb-3 font-semibold">Foto</th>
+              <th class="pb-3 font-semibold">Cód. Almox. / Ref.</th>
+              <th class="pb-3 font-semibold">Descrição / Categoria</th>
+              <th class="pb-3 font-semibold">Estoque Atual</th>
+              <th class="pb-3 font-semibold">Valor Unit.</th>
+              <th class="pb-3 font-semibold text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-ferramentas" class="divide-y divide-[#242D3E]"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE MOVIMENTAÇÃO -->
+  <div id="mov-modal" class="hidden modal-backdrop">
+    <div class="card w-full max-w-md p-6 rounded-2xl space-y-4 max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--line)">
+        <h3 class="font-display font-600 text-sm text-white">Registrar Movimentação / Saída</h3>
+        <button type="button" onclick="fecharModalMovimentacao()" class="text-xs px-2 py-1 rounded bg-[#1A2230] text-gray-300 hover:bg-red-500 hover:text-white transition">✕</button>
+      </div>
+      <form id="mov-form" class="space-y-3">
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Item / Material</label>
+          <select id="mov-item" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs" onchange="atualizarRotuloUnidadeMov()"></select>
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Tipo de Operação</label>
+          <select id="mov-tipo" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+            <option value="Saida">Saída / Consumo (Baixa definitiva de estoque)</option>
+            <option value="Retirada">Retirada Temporária (Devoluções futuras)</option>
+            <option value="Devolucao">Devolução ao Almoxarifado</option>
+            <option value="Entrada">Entrada / Recomposição de Estoque</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label id="lbl-qtd-mov" class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Quantidade</label>
+            <input id="mov-qtd" type="number" step="any" min="0.01" value="1" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">O.S. / Projeto</label>
+            <input id="mov-os" placeholder="Ex: OS-1020" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Retirado por (Responsável)</label>
+          <input id="mov-operador" required placeholder="Ex: João Silva" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Máquina / Destino</label>
+          <select id="mov-maquina" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+            <option value="Corte a Laser">Corte a Laser</option>
+            <option value="Dobra CNC">Dobra CNC</option>
+            <option value="Centro de Usinagem">Centro de Usinagem</option>
+            <option value="Torno CNC">Torno CNC</option>
+            <option value="Bancada Geral">Bancada Geral / Outro</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Observações</label>
+          <input id="mov-obs" placeholder="Detalhes ou notas..." class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl font-medium text-xs mt-2 transition hover:opacity-90 shadow-sm" style="background:var(--blue); color:#fff">Confirmar Registro</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE CADASTRO -->
+  <div id="cad-modal" class="hidden modal-backdrop">
+    <div class="card w-full max-w-md p-6 rounded-2xl space-y-4 max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--line)">
+        <h3 class="font-display font-600 text-sm text-white">Cadastrar Item / Matéria-Prima</h3>
+        <button type="button" onclick="fecharModalCadastro()" class="text-xs px-2 py-1 rounded bg-[#1A2230] text-gray-300 hover:bg-red-500 hover:text-white transition">✕</button>
+      </div>
+      <form id="tool-form" class="space-y-3">
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Imagem do Item</label>
+          <input id="tool-img" type="file" accept="image/*" class="w-full mt-1 text-xs px-2 py-1.5 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Cód. Almoxarifado</label>
+            <input id="tool-codigo" required placeholder="Ex: ALM-01" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Cód. Referência</label>
+            <input id="tool-ref" placeholder="Ref. Fabricante" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Descrição do Item</label>
+          <input id="tool-nome" required placeholder="Ex: Chapa Aço Carbono #14 (2mm)" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Categoria</label>
+            <select id="tool-cat" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+              <option value="Matéria-Prima / Chapas">Matéria-Prima / Chapas (kg)</option>
+              <option value="Usinagem / Fresamento">Usinagem / Fresamento (un)</option>
+              <option value="Corte a Laser / Consumíveis">Laser / Consumíveis (un)</option>
+              <option value="Ferramentas Manuais">Ferramentas Manuais (un)</option>
+              <option value="Fixação e Dispositivos">Fixação / Dispositivos (un)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Estoque Inicial</label>
+            <input id="tool-qtd" type="number" step="any" min="0" value="1" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Valor Unit. / R$ por Kg</label>
+            <input id="tool-valor" type="number" step="0.01" placeholder="0.00" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Alerta Mínimo</label>
+            <input id="tool-min" type="number" step="any" min="0" value="2" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Nota / Prateleira</label>
+          <textarea id="tool-nota" rows="2" placeholder="Prateleira A2 ou fornecedor..." class="w-full mt-1 px-3 py-2 rounded-xl text-xs"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl font-medium text-xs mt-2 transition hover:opacity-90 shadow-sm" style="background:var(--amber); color:#1a1204">Salvar no Almoxarifado</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDIÇÃO -->
+  <div id="edit-modal" class="hidden modal-backdrop">
+    <div class="card w-full max-w-md p-6 rounded-2xl space-y-4 max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--line)">
+        <h3 class="font-display font-600 text-sm text-white">Editar Item</h3>
+        <button type="button" onclick="fecharModalEdicao()" class="text-xs px-2 py-1 rounded bg-[#1A2230] text-gray-300 hover:bg-red-500 hover:text-white transition">✕</button>
+      </div>
+      <form id="edit-form" class="space-y-3">
+        <input type="hidden" id="edit-id-original">
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Nova Imagem (Opcional)</label>
+          <input id="edit-img" type="file" accept="image/*" class="w-full mt-1 text-xs px-2 py-1.5 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Cód. Almoxarifado</label>
+            <input id="edit-codigo" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Cód. Referência</label>
+            <input id="edit-ref" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Descrição</label>
+          <input id="edit-nome" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Categoria</label>
+            <select id="edit-cat" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+              <option value="Matéria-Prima / Chapas">Matéria-Prima / Chapas (kg)</option>
+              <option value="Usinagem / Fresamento">Usinagem / Fresamento (un)</option>
+              <option value="Corte a Laser / Consumíveis">Laser / Consumíveis (un)</option>
+              <option value="Ferramentas Manuais">Ferramentas Manuais (un)</option>
+              <option value="Fixação e Dispositivos">Fixação / Dispositivos (un)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Estoque Atual</label>
+            <input id="edit-qtd" type="number" step="any" min="0" required class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Valor Unit. / R$ por Kg</label>
+            <input id="edit-valor" type="number" step="0.01" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Alerta Mínimo</label>
+            <input id="edit-min" type="number" step="any" min="0" class="w-full mt-1 px-3 py-2 rounded-xl text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="text-[11px] uppercase font-semibold tracking-wider" style="color:var(--muted)">Nota / Prateleira</label>
+          <textarea id="edit-nota" rows="2" class="w-full mt-1 px-3 py-2 rounded-xl text-xs"></textarea>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl font-medium text-xs mt-2 transition hover:opacity-90 shadow-sm" style="background:var(--blue); color:#fff">Salvar Alterações</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE IMAGEM AMPLIADA -->
+  <div id="image-modal" class="hidden modal-backdrop" onclick="fecharModalImagem()">
+    <div class="relative max-w-4xl max-h-[90vh] p-2 bg-[#131822] rounded-2xl border border-[#242D3E]" onclick="event.stopPropagation()">
+      <button type="button" onclick="fecharModalImagem()" class="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-xs bg-[#1A2230] text-gray-200 hover:bg-red-500 transition">✕ Fechar</button>
+      <img id="img-modal-src" src="" class="max-w-full max-h-[80vh] object-contain rounded-xl mt-8">
+    </div>
+  </div>
+
+<script>
+  let ferramentas = JSON.parse(localStorage.getItem('cima_ferramentas')) || [
+    { id: 'ALM-01', nome: 'Chapa Aço Carbono #14 (2mm)', ref: 'CH-20', cat: 'Matéria-Prima / Chapas', valor: '12.50', qtd: 250.5, min: 50, nota: 'Prateleira B1', img: '' },
+    { id: 'ALM-02', nome: 'Fresa de Topo Metal Duro 12mm', ref: 'FR-12', cat: 'Usinagem / Fresamento', valor: '150.00', qtd: 2, min: 2, nota: 'Gaveta Usinagem', img: '' }
+  ];
+
+  let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [
+    { data: new Date().toLocaleString('pt-BR'), tipo: 'Saída / Consumo', ferramenta: 'ALM-01 - Chapa Aço Carbono #14 (2mm)', qtd: '45.2 kg', os: 'OS-1020', operador: 'Carlos', maquina: 'Corte a Laser' }
+  ];
+
+  function salvarStorage(){
+    localStorage.setItem('cima_ferramentas', JSON.stringify(ferramentas));
+    localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
+  }
+
+  function switchTab(tab){
+    const vMov = document.getElementById('view-movimentacoes');
+    const vCat = document.getElementById('view-catalogo');
+    const btnMov = document.getElementById('tab-btn-mov');
+    const btnCat = document.getElementById('tab-btn-cat');
+
+    if(tab === 'movimentacoes'){
+      vMov.classList.remove('hidden');
+      vCat.classList.add('hidden');
+      btnMov.style.background = 'var(--blue)';
+      btnMov.style.color = '#fff';
+      btnCat.style.background = 'transparent';
+      btnCat.style.color = 'var(--muted)';
+    } else {
+      vCat.classList.remove('hidden');
+      vMov.classList.add('hidden');
+      btnCat.style.background = 'var(--blue)';
+      btnCat.style.color = '#fff';
+      btnMov.style.background = 'transparent';
+      btnMov.style.color = 'var(--muted)';
+    }
+    atualizarTelas();
+  }
+
+  function atualizarRotuloUnidadeMov(){
+    const idItem = document.getElementById('mov-item').value;
+    const item = ferramentas.find(f => f.id === idItem);
+    const lbl = document.getElementById('lbl-qtd-mov');
+    if(item && item.cat.includes('Matéria-Prima')){
+      lbl.textContent = "Quantidade (Quilos - kg)";
+    } else {
+      lbl.textContent = "Quantidade (Unidades)";
+    }
+  }
+
+  function atualizarTelas(){
+    document.getElementById('kpi-total-itens').textContent = ferramentas.length;
+    const criticos = ferramentas.filter(f => f.qtd <= (f.min || 2)).length;
+    document.getElementById('kpi-total-criticos').textContent = criticos;
+    document.getElementById('kpi-total-mov').textContent = movimentacoes.length;
+
+    const select = document.getElementById('mov-item');
+    if(ferramentas.length > 0){
+      select.innerHTML = ferramentas.map(f => {
+        let unidade = f.cat.includes('Matéria-Prima') ? 'kg' : 'un';
+        return `<option value="${f.id}">${f.id} - ${f.nome} (Sld: ${f.qtd} ${unidade})</option>`;
+      }).join('');
+      atualizarRotuloUnidadeMov();
+    } else {
+      select.innerHTML = `<option value="">Nenhum item cadastrado</option>`;
+    }
+
+    const termTool = (document.getElementById('search-tool')?.value || '').toLowerCase().trim();
+    const ferramentasFiltradas = ferramentas.filter(f => 
+      f.id.toLowerCase().includes(termTool) ||
+      f.nome.toLowerCase().includes(termTool) ||
+      (f.ref && f.ref.toLowerCase().includes(termTool)) ||
+      f.cat.toLowerCase().includes(termTool)
+    );
+
+    document.getElementById('tabela-ferramentas').innerHTML = ferramentasFiltradas.length > 0 ? ferramentasFiltradas.map(f => {
+      let isCritico = f.qtd <= (f.min || 2);
+      let stBg = f.qtd <= 0 ? 'rgba(239, 68, 68, 0.15)' : isCritico ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+      let stColor = f.qtd <= 0 ? 'var(--red)' : isCritico ? 'var(--amber)' : 'var(--green)';
+      let imgTag = f.img ? `<img src="${f.img}" class="w-10 h-10 object-cover rounded-xl cursor-pointer hover:opacity-80 transition shadow-sm" onclick="ampliarImagem('${f.img}')" title="Clique para ampliar">` : `<div class="w-10 h-10 rounded-xl flex items-center justify-center text-[10px]" style="background:var(--surface-2); color:var(--muted)">Sem foto</div>`;
+      let unidade = f.cat.includes('Matéria-Prima') ? 'kg' : 'un';
+      
+      return `<tr>
+        <td class="py-3.5">${imgTag}</td>
+        <td class="py-3.5 font-mono text-xs font-semibold text-white"><b>${f.id}</b><br><span class="font-sans font-normal" style="color:var(--muted)">Ref: ${f.ref || '—'}</span></td>
+        <td class="py-3.5"><b class="text-white">${f.nome}</b><br><span class="text-[11px] px-2 py-0.5 rounded-full inline-block mt-0.5" style="background:var(--surface-2); color:var(--muted)">${f.cat}</span></td>
+        <td class="py-3.5">
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1.5" style="background:${stBg}; color:${stColor}">
+            ${f.qtd} ${unidade} ${isCritico ? '⚠️' : ''}
+          </span>
+        </td>
+        <td class="py-3.5 text-xs text-gray-300">R$ ${f.valor ? Number(f.valor).toFixed(2) : '0.00'}</td>
+        <td class="py-3.5 text-right space-x-1.5">
+          <button type="button" onclick="abrirModalEdicao('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg border transition hover:bg-[#1A2230]" style="border-color:var(--line); color:var(--text)">Editar</button>
+          <button type="button" onclick="excluirItem('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="6" class="py-6 text-center text-xs" style="color:var(--muted)">Nenhum item encontrado.</td></tr>`;
+
+    const termMov = (document.getElementById('search-mov')?.value || '').toLowerCase().trim();
+    const movimentacoesFiltradas = movimentacoes.filter(m => 
+      m.ferramenta.toLowerCase().includes(termMov) ||
+      (m.os && m.os.toLowerCase().includes(termMov)) ||
+      m.operador.toLowerCase().includes(termMov) ||
+      m.maquina.toLowerCase().includes(termMov) ||
+      m.tipo.toLowerCase().includes(termMov)
+    );
+
+    document.getElementById('tabela-movimentos').innerHTML = movimentacoesFiltradas.length > 0 ? movimentacoesFiltradas.slice(0, 30).map((m, index) => `
+      <tr>
+        <td class="py-3.5 text-[11px]" style="color:var(--muted)">${m.data}</td>
+        <td class="py-3.5 font-semibold text-white">${m.tipo}</td>
+        <td class="py-3.5 text-gray-300">${m.ferramenta}</td>
+        <td class="py-3.5 font-bold text-white">${m.qtd}</td>
+        <td class="py-3.5 text-xs"><b class="text-white">${m.os || '—'}</b><br><span style="color:var(--muted)">${m.maquina}</span></td>
+        <td class="py-3.5 text-xs text-gray-300">${m.operador}</td>
+        <td class="py-3.5 text-right">
+          <button type="button" onclick="excluirMovimentacao(${index})" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>
+        </td>
+      </tr>
+    `).join('') : `<tr><td colspan="7" class="py-6 text-center text-xs" style="color:var(--muted)">Nenhuma movimentação encontrada.</td></tr>`;
+  }
+
+  function abrirModalMovimentacao(){
+    document.getElementById('mov-form').reset();
+    atualizarRotuloUnidadeMov();
+    document.getElementById('mov-modal').classList.remove('hidden');
+  }
+  function fecharModalMovimentacao(){ document.getElementById('mov-modal').classList.add('hidden'); }
+
+  function abrirModalCadastro(){
+    document.getElementById('tool-form').reset();
+    document.getElementById('cad-modal').classList.remove('hidden');
+  }
+  function fecharModalCadastro(){ document.getElementById('cad-modal').classList.add('hidden'); }
+
+  function ampliarImagem(src){
+    document.getElementById('img-modal-src').src = src;
+    document.getElementById('image-modal').classList.remove('hidden');
+  }
+  function fecharModalImagem(){ document.getElementById('image-modal').classList.add('hidden'); }
+
+  function abrirModalEdicao(id){
+    const f = ferramentas.find(item => item.id === id);
+    if(!f) return;
+    document.getElementById('edit-id-original').value = f.id;
+    document.getElementById('edit-codigo').value = f.id;
+    document.getElementById('edit-ref').value = f.ref || '';
+    document.getElementById('edit-nome').value = f.nome;
+    document.getElementById('edit-cat').value = f.cat;
+    document.getElementById('edit-qtd').value = f.qtd;
+    document.getElementById('edit-valor').value = f.valor || '';
+    document.getElementById('edit-min').value = f.min || 2;
+    document.getElementById('edit-nota').value = f.nota || '';
+    document.getElementById('edit-img').value = '';
+    document.getElementById('edit-modal').classList.remove('hidden');
+  }
+  function fecharModalEdicao(){ document.getElementById('edit-modal').classList.add('hidden'); }
+
+  document.getElementById('edit-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const idOriginal = document.getElementById('edit-id-original').value;
+    const novoId = document.getElementById('edit-codigo').value.trim();
+    const index = ferramentas.findIndex(item => item.id === idOriginal);
+    if(index === -1) return;
+
+    if(novoId !== idOriginal && ferramentas.some(item => item.id === novoId)){
+      alert('Já existe outro item com este Cód. de Almoxarifado!');
+      return;
+    }
+
+    const atualizarDados = (imgBase64) => {
+      ferramentas[index] = {
+        id: novoId,
+        nome: document.getElementById('edit-nome').value.trim(),
+        ref: document.getElementById('edit-ref').value.trim(),
+        cat: document.getElementById('edit-cat').value,
+        qtd: parseFloat(document.getElementById('edit-qtd').value) || 0,
+        valor: document.getElementById('edit-valor').value,
+        min: parseFloat(document.getElementById('edit-min').value) || 2,
+        nota: document.getElementById('edit-nota').value.trim(),
+        img: imgBase64 !== undefined ? imgBase64 : ferramentas[index].img
+      };
+      salvarStorage();
+      fecharModalEdicao();
+      atualizarTelas();
+      alert('Item atualizado com sucesso!');
+    };
+
+    const fileInput = document.getElementById('edit-img');
+    if (fileInput.files && fileInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) { atualizarDados(e.target.result); };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      atualizarDados(undefined);
+    }
+  });
+
+  document.getElementById('tool-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('tool-codigo').value.trim();
+    const nome = document.getElementById('tool-nome').value.trim();
+    const ref = document.getElementById('tool-ref').value.trim();
+    const cat = document.getElementById('tool-cat').value;
+    const qtd = parseFloat(document.getElementById('tool-qtd').value) || 0;
+    const min = parseFloat(document.getElementById('tool-min').value) || 2;
+    const valor = document.getElementById('tool-valor').value;
+    const nota = document.getElementById('tool-nota').value.trim();
+    const fileInput = document.getElementById('tool-img');
+
+    if(ferramentas.some(f => f.id === id)){
+      alert('Já existe um item cadastrado com este Cód. de Almoxarifado!');
+      return;
+    }
+
+    const salvarRegistro = (imgData) => {
+      ferramentas.push({ id, nome, ref, cat, qtd, min, valor, nota, img: imgData });
+      salvarStorage();
+      fecharModalCadastro();
+      atualizarTelas();
+      alert('Item cadastrado no estoque com sucesso!');
+    };
+
+    if (fileInput.files && fileInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) { salvarRegistro(e.target.result); };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      salvarRegistro('');
+    }
+  });
+
+  document.getElementById('mov-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const idItem = document.getElementById('mov-item').value;
+    const tipo = document.getElementById('mov-tipo').value;
+    const qtdMov = parseFloat(document.getElementById('mov-qtd').value) || 1;
+    const os = document.getElementById('mov-os').value.trim();
+    const operador = document.getElementById('mov-operador').value.trim();
+    const maquina = document.getElementById('mov-maquina').value;
+
+    const item = ferramentas.find(f => f.id === idItem);
+    if(!item) return;
+
+    if(tipo === 'Saida' || tipo === 'Retirada'){
+      if(item.qtd < qtdMov){
+        if(!confirm(`Atenção: O estoque atual (${item.qtd}) é menor do que a quantidade solicitada (${qtdMov}). Deseja continuar?`)){
+          return;
+        }
+      }
+      item.qtd -= qtdMov;
+    } else if(tipo === 'Devolucao' || tipo === 'Entrada'){
+      item.qtd += qtdMov;
+    }
+
+    let unidadeSufixo = item.cat.includes('Matéria-Prima') ? 'kg' : 'un';
+    let tipoRotulo = tipo === 'Saida' ? 'Saída / Consumo' : tipo === 'Retirada' ? 'Retirada Temp.' : tipo === 'Devolucao' ? 'Devolução' : 'Entrada';
+
+    movimentacoes.unshift({
+      data: new Date().toLocaleString('pt-BR'),
+      tipo: tipoRotulo,
+      ferramenta: `${item.id} - ${item.nome}`,
+      qtd: `${qtdMov} ${unidadeSufixo}`,
+      os,
+      operador,
+      maquina
+    });
+
+    salvarStorage();
+    fecharModalMovimentacao();
+    atualizarTelas();
+    alert('Movimentação registrada e saldo atualizado!');
+  });
+
+  function excluirMovimentacao(index){
+    if(confirm('Deseja realmente excluir este registro do histórico?')){
+      movimentacoes.splice(index, 1);
+      salvarStorage();
+      atualizarTelas();
+    }
+  }
+
+  function excluirItem(id){
+    if(confirm('Deseja realmente remover este item do almoxarifado?')){
+      ferramentas = ferramentas.filter(f => f.id !== id);
+      salvarStorage();
+      atualizarTelas();
+    }
+  }
+
+  atualizarTelas();
+</script>
+</body>
+</html>
