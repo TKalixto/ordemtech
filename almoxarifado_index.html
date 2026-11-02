@@ -341,21 +341,47 @@
 <!-- Importação do Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Conexão com o Supabase
   const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let ferramentas = [];
   let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [];
+  let usuarioAtual = null;
 
-  // Carregar dados direto do Supabase
-  async function carregarEstoque() {
-    const { data, error } = await sb.from('almoxarifado').select('*').order('item_name');
-    if (error) {
-      console.error('Erro ao buscar almoxarifado:', error);
+  // Verificar autenticação e perfil ao carregar a página
+  async function verificarPermissoes() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'index.html'; // Se não estiver logado, manda pra tela de login
       return;
     }
+
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    if (profile) {
+      usuarioAtual = profile;
+      
+      // Se NÃO for admin, esconde os botões de ação e edição
+      if (profile.role !== 'admin') {
+        esconderBotoesAdmin();
+      }
+    }
+    carregarEstoque();
+  }
+
+  function esconderBotoesAdmin() {
+    // Esconde o botão de registrar movimentação
+    const btnMov = document.querySelector('button[onclick="abrirModalMovimentacao()"]');
+    if (btnMov) btnMov.style.display = 'none';
+
+    // Esconde o botão de cadastrar novo item
+    const btnCad = document.querySelector('button[onclick="abrirModalCadastro()"]');
+    if (btnCad) btnCad.style.display = 'none';
+  }
+
+  async function carregarEstoque() {
+    const { data, error } = await sb.from('almoxarifado').select('*').order('item_name');
+    if (error) { console.error('Erro ao buscar almoxarifado:', error); return; }
     
     ferramentas = (data || []).map(item => ({
       id: item.id,
@@ -432,6 +458,9 @@
       f.cat.toLowerCase().includes(termTool)
     );
 
+    // Se não for admin, oculta as colunas/botões de Ação na tabela de catálogo
+    const isAdmin = usuarioAtual && usuarioAtual.role === 'admin';
+
     document.getElementById('tabela-ferramentas').innerHTML = ferramentasFiltradas.length > 0 ? ferramentasFiltradas.map(f => {
       let isCritico = f.qtd <= (f.min || 2);
       let stBg = f.qtd <= 0 ? 'rgba(239, 68, 68, 0.15)' : isCritico ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)';
@@ -439,6 +468,12 @@
       let imgTag = f.img ? `<img src="${f.img}" class="w-10 h-10 object-cover rounded-xl cursor-pointer hover:opacity-80 transition shadow-sm" onclick="ampliarImagem('${f.img}')" title="Clique para ampliar">` : `<div class="w-10 h-10 rounded-xl flex items-center justify-center text-[10px]" style="background:var(--surface-2); color:var(--muted)">Sem foto</div>`;
       let unidade = f.cat.includes('Matéria-Prima') ? 'kg' : 'un';
       
+      let acoesHtml = isAdmin ? `
+        <td class="py-3.5 text-right space-x-1.5">
+          <button type="button" onclick="abrirModalEdicao('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg border transition hover:bg-[#1A2230]" style="border-color:var(--line); color:var(--text)">Editar</button>
+          <button type="button" onclick="excluirItem('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>
+        </td>` : `<td class="py-3.5 text-right text-xs" style="color:var(--muted)">Somente leitura</td>`;
+
       return `<tr>
         <td class="py-3.5">${imgTag}</td>
         <td class="py-3.5 font-mono text-xs font-semibold text-white"><b>${f.id}</b><br><span class="font-sans font-normal" style="color:var(--muted)">Ref: ${f.ref || '—'}</span></td>
@@ -449,10 +484,7 @@
           </span>
         </td>
         <td class="py-3.5 text-xs text-gray-300">R$ ${f.valor ? Number(f.valor).toFixed(2) : '0.00'}</td>
-        <td class="py-3.5 text-right space-x-1.5">
-          <button type="button" onclick="abrirModalEdicao('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg border transition hover:bg-[#1A2230]" style="border-color:var(--line); color:var(--text)">Editar</button>
-          <button type="button" onclick="excluirItem('${f.id}')" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>
-        </td>
+        ${acoesHtml}
       </tr>`;
     }).join('') : `<tr><td colspan="6" class="py-6 text-center text-xs" style="color:var(--muted)">Nenhum item encontrado.</td></tr>`;
 
@@ -474,13 +506,14 @@
         <td class="py-3.5 text-xs"><b class="text-white">${m.os || '—'}</b><br><span style="color:var(--muted)">${m.maquina}</span></td>
         <td class="py-3.5 text-xs text-gray-300">${m.operador}</td>
         <td class="py-3.5 text-right">
-          <button type="button" onclick="excluirMovimentacao(${index})" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>
+          ${isAdmin ? `<button type="button" onclick="excluirMovimentacao(${index})" class="text-xs px-2.5 py-1 rounded-lg transition hover:bg-red-600" style="background:var(--red); color:#fff">Excluir</button>` : `<span class="text-xs" style="color:var(--muted)">—</span>`}
         </td>
       </tr>
     `).join('') : `<tr><td colspan="7" class="py-6 text-center text-xs" style="color:var(--muted)">Nenhuma movimentação encontrada.</td></tr>`;
   }
 
   function abrirModalMovimentacao(){
+    if(usuarioAtual && usuarioAtual.role !== 'admin') { alert('Acesso restrito a administradores.'); return; }
     document.getElementById('mov-form').reset();
     atualizarRotuloUnidadeMov();
     document.getElementById('mov-modal').classList.remove('hidden');
@@ -488,6 +521,7 @@
   function fecharModalMovimentacao(){ document.getElementById('mov-modal').classList.add('hidden'); }
 
   function abrirModalCadastro(){
+    if(usuarioAtual && usuarioAtual.role !== 'admin') { alert('Acesso restrito a administradores.'); return; }
     document.getElementById('tool-form').reset();
     document.getElementById('cad-modal').classList.remove('hidden');
   }
@@ -500,6 +534,7 @@
   function fecharModalImagem(){ document.getElementById('image-modal').classList.add('hidden'); }
 
   function abrirModalEdicao(id){
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     const f = ferramentas.find(item => item.id === id);
     if(!f) return;
     document.getElementById('edit-id-original').value = f.id;
@@ -516,9 +551,9 @@
   }
   function fecharModalEdicao(){ document.getElementById('edit-modal').classList.add('hidden'); }
 
-  // Salvar Edição no Supabase
   document.getElementById('edit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     const idOriginal = document.getElementById('edit-id-original').value;
     const novoId = document.getElementById('edit-codigo').value.trim();
 
@@ -559,9 +594,9 @@
     }
   });
 
-  // Salvar Novo Item no Supabase
   document.getElementById('tool-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     const id = document.getElementById('tool-codigo').value.trim();
     const nome = document.getElementById('tool-nome').value.trim();
     const ref = document.getElementById('tool-ref').value.trim();
@@ -574,21 +609,11 @@
 
     const salvarRegistro = async (imgData) => {
       const { error } = await sb.from('almoxarifado').insert({
-        id,
-        item_name: nome,
-        ref,
-        category: cat,
-        quantity: qtd,
-        min_alert: min,
-        unit_value: valor ? parseFloat(valor) : null,
-        notes: nota,
-        image_url: imgData
+        id, item_name: nome, ref, category: cat, quantity: qtd, min_alert: min,
+        unit_value: valor ? parseFloat(valor) : null, notes: nota, image_url: imgData
       });
 
-      if(error){
-        alert('Erro ao salvar no Supabase: ' + error.message);
-        return;
-      }
+      if(error){ alert('Erro ao salvar no Supabase: ' + error.message); return; }
 
       fecharModalCadastro();
       await carregarEstoque();
@@ -604,9 +629,9 @@
     }
   });
 
-  // Registrar Movimentação e Atualizar Quantidade no Supabase
   document.getElementById('mov-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     const idItem = document.getElementById('mov-item').value;
     const tipo = document.getElementById('mov-tipo').value;
     const qtdMov = parseFloat(document.getElementById('mov-qtd').value) || 1;
@@ -629,12 +654,8 @@
       novaQtd += qtdMov;
     }
 
-    // Atualiza quantidade diretamente no Supabase
     const { error } = await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', item.id);
-    if(error){
-      alert('Erro ao atualizar estoque: ' + error.message);
-      return;
-    }
+    if(error){ alert('Erro ao atualizar estoque: ' + error.message); return; }
 
     let unidadeSufixo = item.cat.includes('Matéria-Prima') ? 'kg' : 'un';
     let tipoRotulo = tipo === 'Saida' ? 'Saída / Consumo' : tipo === 'Retirada' ? 'Retirada Temp.' : tipo === 'Devolucao' ? 'Devolução' : 'Entrada';
@@ -644,9 +665,7 @@
       tipo: tipoRotulo,
       ferramenta: `${item.id} - ${item.nome}`,
       qtd: `${qtdMov} ${unidadeSufixo}`,
-      os,
-      operador,
-      maquina
+      os, operador, maquina
     });
     localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
 
@@ -656,6 +675,7 @@
   });
 
   function excluirMovimentacao(index){
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     if(confirm('Deseja realmente excluir este registro do histórico?')){
       movimentacoes.splice(index, 1);
       localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
@@ -664,18 +684,16 @@
   }
 
   async function excluirItem(id){
+    if(usuarioAtual && usuarioAtual.role !== 'admin') return;
     if(confirm('Deseja realmente remover este item do almoxarifado?')){
       const { error } = await sb.from('almoxarifado').delete().eq('id', id);
-      if(error){
-        alert('Erro ao excluir: ' + error.message);
-        return;
-      }
+      if(error){ alert('Erro ao excluir: ' + error.message); return; }
       await carregarEstoque();
     }
   }
 
-  // Inicializa carregando os dados do banco
-  carregarEstoque();
+  // Inicializa verificando permissões e carregando os dados
+  verificarPermissoes();
 </script>
 </body>
 </html>
