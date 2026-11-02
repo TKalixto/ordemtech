@@ -1081,7 +1081,12 @@ const SB_MENU = [
   { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
   { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
 ];
-const sbLink = ([t, label, ic]) => `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-count-fila">0</span>' : ''}</button>`;
+const sbLink = ([t, label, ic]) => {
+  if (t === 'almoxarifado') {
+    return `<a href="almoxarifado_index.html" class="sb-link" style="text-decoration: none;">${sbIcon(ic)}<span>${label}</span></a>`;
+  }
+  return `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-fila-count">0</span>' : ''}</button>`;
+};
 
 const PAGE_INFO = {
   fila: ['Fila de Triagem', 'Pedidos novos aguardando você definir o roteiro de máquinas.'],
