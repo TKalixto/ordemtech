@@ -410,6 +410,104 @@ let activeChannels = [];
 let bellChannel = null;      
 let projectsCache = [];      
 
+  let projectsCache = [];
+
+// Gerenciador dinâmico de múltiplos itens de peças
+class OrderItemsEditor {
+  constructor(containerId){
+    this.container = $(containerId);
+    this.items = [];
+  }
+  addItem(data = { name: '', quantity: 1, material: 'Chapa Aço Carbono 1020', file: null }){
+    this.items.push(data);
+    this.render();
+  }
+  removeItem(idx){
+    this.items.splice(idx, 1);
+    if(this.items.length === 0) this.addItem();
+    else this.render();
+  }
+  reset(){
+    this.items = [];
+    this.addItem();
+  }
+  getItems(){
+    const rows = this.container.querySelectorAll('.order-item-row');
+    rows.forEach((row, i)=>{
+      const nameIn = row.querySelector('.item-name');
+      const qtyIn = row.querySelector('.item-qty');
+      const matIn = row.querySelector('.item-mat');
+      const fileIn = row.querySelector('.item-file');
+      if(nameIn) this.items[i].name = nameIn.value.trim();
+      if(qtyIn) this.items[i].quantity = Math.max(1, parseInt(qtyIn.value) || 1);
+      if(matIn) this.items[i].material = matIn.value;
+      if(fileIn && fileIn.files[0]) this.items[i].file = fileIn.files[0];
+    });
+    return this.items;
+  }
+  render(){
+    if(this.items.length === 0) this.items.push({ name: '', quantity: 1, material: 'Chapa Aço Carbono 1020', file: null });
+    this.container.innerHTML = this.items.map((it, i) => `
+      <div class="card p-3 space-y-2 order-item-row" style="background:var(--surface-2)">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold" style="color:var(--muted)">Peça #${i+1}</span>
+          ${this.items.length > 1 ? `<button type="button" data-del-item="${i}" class="text-xs px-2 py-0.5 rounded text-white" style="background:var(--red)">Remover</button>` : ''}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div><label class="text-[11px]" style="color:var(--muted)">Nome da Peça</label><input type="text" value="${escapeHtml(it.name)}" class="w-full mt-1 px-2.5 py-1.5 text-xs item-name" required placeholder="Ex: Flange"></div>
+          <div><label class="text-[11px]" style="color:var(--muted)">Quantidade</label><input type="number" min="1" value="${it.quantity}" class="w-full mt-1 px-2.5 py-1.5 text-xs item-qty" required></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px]" style="color:var(--muted)">Material</label>
+            <select class="w-full mt-1 px-2.5 py-1.5 text-xs item-mat">
+              <option value="Chapa Aço Carbono 1020" ${it.material==='Chapa Aço Carbono 1020'?'selected':''}>Chapa Aço Carbono 1020</option>
+              <option value="Aço Inox 304" ${it.material==='Aço Inox 304'?'selected':''}>Aço Inox 304</option>
+              <option value="Alumínio Naval" ${it.material==='Alumínio Naval'?'selected':''}>Alumínio Naval</option>
+              <option value="Outro" ${it.material==='Outro'?'selected':''}>Outro</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px]" style="color:var(--muted)">Anexo (DXF, PDF)</label>
+            <input type="file" class="w-full mt-1 text-[11px] item-file">
+          </div>
+        </div>
+      </div>
+    `).join('');
+    this.container.querySelectorAll('[data-del-item]').forEach(b=>{
+      b.onclick = () => { this.getItems(); this.removeItem(parseInt(b.dataset.delItem)); };
+    });
+  }
+}
+
+const orderItemsEditor = new OrderItemsEditor('order-items-editor');
+$('order-add-item').onclick = () => { orderItemsEditor.getItems(); orderItemsEditor.addItem(); };
+
+async function loadProjects(){
+  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
+  if(error){ console.error(error); return []; }
+  projectsCache = data || []; return projectsCache;
+}
+
+function projectOptionsHTML(list, selectedValue){
+  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
+  return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
+}
+
+async function setupOpPicker({ selectId, manualId, osId, projectId }){
+  const list = await loadProjects();
+  const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
+  sel.innerHTML = projectOptionsHTML(list, '');
+  sel.onchange = () => {
+    if(sel.value === '__custom__'){ manual.classList.remove('hidden'); }
+    else{
+      manual.classList.add('hidden');
+      const p = list.find(x => x.id === sel.value);
+      osEl.value = p ? p.os_number : '';
+      projEl.value = p ? p.project_name : '';
+    }
+  };
+}
 /* =========================================================================
    2) HELPERS GERAIS
    ========================================================================= */
@@ -974,7 +1072,54 @@ function renderSolicitante(container = $('main-content')){
     <div id="solicitante-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
   `;
   $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
+// Ativar o botão de novo pedido para abrir o modal
+$('btn-new-order').onclick = () => {
+  orderItemsEditor.reset();
+  $('new-order-form').reset();
+  setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' });
+  openModal('new-order-modal');
+};
 
+// Listener para enviar o formulário do novo pedido para o Supabase
+$('new-order-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = $('new-order-submit'); const err = $('new-order-error');
+  err.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try{
+    const items = orderItemsEditor.getItems();
+    if(items.length === 0 || items.some(it => !it.name)) throw new Error('Preencha o nome de todas as peças.');
+    
+    const pieceName = items.length === 1 ? items[0].name : ($('order-project')?.value?.trim() || items[0].name);
+    const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+
+    const { error } = await sb.from('orders').insert({
+      piece_name: pieceName,
+      description: $('order-description').value.trim(),
+      quantity: totalQty,
+      deadline: $('order-deadline').value,
+      requester_id: currentUser.id,
+      requester_name: currentUser.name,
+      status: 'aguardando_analise',
+      os_number: $('order-os')?.value?.trim() || 'OS-01',
+      project: $('order-project')?.value?.trim() || 'Projeto Geral',
+      items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
+    }).select().single();
+    if(error) throw error;
+
+    notify('Pedido enviado com sucesso!', 'ok');
+    e.target.reset();
+    orderItemsEditor.reset();
+    closeModal('new-order-modal');
+    renderMainDashboard();
+  }catch(ex){
+    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
+    err.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
+  }
+});
+  
   liveRefresh('solicitante-orders', async ()=>{
     const { data, error } = await sb.from('orders').select(ORDER_SELECT)
       .eq('requester_id', currentUser.id).order('created_at', { ascending: false });
@@ -985,6 +1130,8 @@ function renderSolicitante(container = $('main-content')){
     if(orders.length === 0){
       list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
       return;
+
+      
     }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
@@ -2144,5 +2291,35 @@ function renderAdminGraficos(){
   });
 }
 </script>
+  <!-- ================= MODAL: NOVO PEDIDO ================= -->
+<div id="new-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+  <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+      <h3 class="font-display font-600 text-lg">Novo Pedido de Peça</h3>
+      <button data-close-modal="new-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+    </div>
+    <form id="new-order-form" class="p-6 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+        <select id="order-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
+        <p class="text-xs mt-1" style="color:var(--muted)">Não achou a OS/Projeto? Escolha "Outro" ou peça ao ADM para cadastrar.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="order-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+        <button type="button" id="order-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+      </div>
+      <div id="order-items-editor" class="space-y-3"></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 text-sm" placeholder="Tolerâncias, acabamento..."></textarea></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
+      <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
+    </form>
+  </div>
+</div>
+  
 </body>
 </html>
