@@ -34,7 +34,7 @@
           <h1 class="font-display font-700 text-xl tracking-tight text-white">Almoxarifado CIMA</h1>
           <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(59,130,246,0.15); color:var(--blue)">Indústria 4.0</span>
         </div>
-        <p class="text-xs mt-0.5" style="color:var(--muted)">Controle avançado de ferramentas, insumos e chapas (kg)</p>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">Controle avançado integrado ao Supabase</p>
       </div>
     </div>
     
@@ -338,19 +338,38 @@
     </div>
   </div>
 
+<!-- Importação do Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  let ferramentas = JSON.parse(localStorage.getItem('cima_ferramentas')) || [
-    { id: 'ALM-01', nome: 'Chapa Aço Carbono #14 (2mm)', ref: 'CH-20', cat: 'Matéria-Prima / Chapas', valor: '12.50', qtd: 250.5, min: 50, nota: 'Prateleira B1', img: '' },
-    { id: 'ALM-02', nome: 'Fresa de Topo Metal Duro 12mm', ref: 'FR-12', cat: 'Usinagem / Fresamento', valor: '150.00', qtd: 2, min: 2, nota: 'Gaveta Usinagem', img: '' }
-  ];
+  // Conexão com o Supabase
+  const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [
-    { data: new Date().toLocaleString('pt-BR'), tipo: 'Saída / Consumo', ferramenta: 'ALM-01 - Chapa Aço Carbono #14 (2mm)', qtd: '45.2 kg', os: 'OS-1020', operador: 'Carlos', maquina: 'Corte a Laser' }
-  ];
+  let ferramentas = [];
+  let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [];
 
-  function salvarStorage(){
-    localStorage.setItem('cima_ferramentas', JSON.stringify(ferramentas));
-    localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
+  // Carregar dados direto do Supabase
+  async function carregarEstoque() {
+    const { data, error } = await sb.from('almoxarifado').select('*').order('item_name');
+    if (error) {
+      console.error('Erro ao buscar almoxarifado:', error);
+      return;
+    }
+    
+    ferramentas = (data || []).map(item => ({
+      id: item.id,
+      nome: item.item_name,
+      ref: item.ref || '',
+      cat: item.category || 'Matéria-Prima / Chapas',
+      qtd: Number(item.quantity) || 0,
+      valor: item.unit_value || '',
+      min: item.min_alert || 2,
+      nota: item.notes || '',
+      img: item.image_url || ''
+    }));
+
+    atualizarTelas();
   }
 
   function switchTab(tab){
@@ -497,47 +516,51 @@
   }
   function fecharModalEdicao(){ document.getElementById('edit-modal').classList.add('hidden'); }
 
-  document.getElementById('edit-form').addEventListener('submit', (e) => {
+  // Salvar Edição no Supabase
+  document.getElementById('edit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const idOriginal = document.getElementById('edit-id-original').value;
     const novoId = document.getElementById('edit-codigo').value.trim();
-    const index = ferramentas.findIndex(item => item.id === idOriginal);
-    if(index === -1) return;
 
-    if(novoId !== idOriginal && ferramentas.some(item => item.id === novoId)){
-      alert('Já existe outro item com este Cód. de Almoxarifado!');
-      return;
-    }
-
-    const atualizarDados = (imgBase64) => {
-      ferramentas[index] = {
+    const atualizarDados = async (imgBase64) => {
+      const payload = {
         id: novoId,
-        nome: document.getElementById('edit-nome').value.trim(),
+        item_name: document.getElementById('edit-nome').value.trim(),
         ref: document.getElementById('edit-ref').value.trim(),
-        cat: document.getElementById('edit-cat').value,
-        qtd: parseFloat(document.getElementById('edit-qtd').value) || 0,
-        valor: document.getElementById('edit-valor').value,
-        min: parseFloat(document.getElementById('edit-min').value) || 2,
-        nota: document.getElementById('edit-nota').value.trim(),
-        img: imgBase64 !== undefined ? imgBase64 : ferramentas[index].img
+        category: document.getElementById('edit-cat').value,
+        quantity: parseFloat(document.getElementById('edit-qtd').value) || 0,
+        unit_value: document.getElementById('edit-valor').value ? parseFloat(document.getElementById('edit-valor').value) : null,
+        min_alert: parseFloat(document.getElementById('edit-min').value) || 2,
+        notes: document.getElementById('edit-nota').value.trim()
       };
-      salvarStorage();
+      if (imgBase64 !== undefined) payload.image_url = imgBase64;
+
+      if(novoId !== idOriginal){
+        await sb.from('almoxarifado').delete().eq('id', idOriginal);
+        const { error } = await sb.from('almoxarifado').insert(payload);
+        if(error){ alert('Erro ao atualizar: ' + error.message); return; }
+      } else {
+        const { error } = await sb.from('almoxarifado').update(payload).eq('id', idOriginal);
+        if(error){ alert('Erro ao atualizar: ' + error.message); return; }
+      }
+
       fecharModalEdicao();
-      atualizarTelas();
+      await carregarEstoque();
       alert('Item atualizado com sucesso!');
     };
 
     const fileInput = document.getElementById('edit-img');
     if (fileInput.files && fileInput.files[0]) {
       const reader = new FileReader();
-      reader.onload = function (e) { atualizarDados(e.target.result); };
+      reader.onload = async function (e) { await atualizarDados(e.target.result); };
       reader.readAsDataURL(fileInput.files[0]);
     } else {
-      atualizarDados(undefined);
+      await atualizarDados(undefined);
     }
   });
 
-  document.getElementById('tool-form').addEventListener('submit', (e) => {
+  // Salvar Novo Item no Supabase
+  document.getElementById('tool-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('tool-codigo').value.trim();
     const nome = document.getElementById('tool-nome').value.trim();
@@ -549,29 +572,40 @@
     const nota = document.getElementById('tool-nota').value.trim();
     const fileInput = document.getElementById('tool-img');
 
-    if(ferramentas.some(f => f.id === id)){
-      alert('Já existe um item cadastrado com este Cód. de Almoxarifado!');
-      return;
-    }
+    const salvarRegistro = async (imgData) => {
+      const { error } = await sb.from('almoxarifado').insert({
+        id,
+        item_name: nome,
+        ref,
+        category: cat,
+        quantity: qtd,
+        min_alert: min,
+        unit_value: valor ? parseFloat(valor) : null,
+        notes: nota,
+        image_url: imgData
+      });
 
-    const salvarRegistro = (imgData) => {
-      ferramentas.push({ id, nome, ref, cat, qtd, min, valor, nota, img: imgData });
-      salvarStorage();
+      if(error){
+        alert('Erro ao salvar no Supabase: ' + error.message);
+        return;
+      }
+
       fecharModalCadastro();
-      atualizarTelas();
+      await carregarEstoque();
       alert('Item cadastrado no estoque com sucesso!');
     };
 
     if (fileInput.files && fileInput.files[0]) {
       const reader = new FileReader();
-      reader.onload = function (e) { salvarRegistro(e.target.result); };
+      reader.onload = async function (e) { await salvarRegistro(e.target.result); };
       reader.readAsDataURL(fileInput.files[0]);
     } else {
-      salvarRegistro('');
+      await salvarRegistro('');
     }
   });
 
-  document.getElementById('mov-form').addEventListener('submit', (e) => {
+  // Registrar Movimentação e Atualizar Quantidade no Supabase
+  document.getElementById('mov-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const idItem = document.getElementById('mov-item').value;
     const tipo = document.getElementById('mov-tipo').value;
@@ -583,15 +617,23 @@
     const item = ferramentas.find(f => f.id === idItem);
     if(!item) return;
 
+    let novaQtd = item.qtd;
     if(tipo === 'Saida' || tipo === 'Retirada'){
       if(item.qtd < qtdMov){
         if(!confirm(`Atenção: O estoque atual (${item.qtd}) é menor do que a quantidade solicitada (${qtdMov}). Deseja continuar?`)){
           return;
         }
       }
-      item.qtd -= qtdMov;
+      novaQtd -= qtdMov;
     } else if(tipo === 'Devolucao' || tipo === 'Entrada'){
-      item.qtd += qtdMov;
+      novaQtd += qtdMov;
+    }
+
+    // Atualiza quantidade diretamente no Supabase
+    const { error } = await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', item.id);
+    if(error){
+      alert('Erro ao atualizar estoque: ' + error.message);
+      return;
     }
 
     let unidadeSufixo = item.cat.includes('Matéria-Prima') ? 'kg' : 'un';
@@ -606,30 +648,34 @@
       operador,
       maquina
     });
+    localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
 
-    salvarStorage();
     fecharModalMovimentacao();
-    atualizarTelas();
+    await carregarEstoque();
     alert('Movimentação registrada e saldo atualizado!');
   });
 
   function excluirMovimentacao(index){
     if(confirm('Deseja realmente excluir este registro do histórico?')){
       movimentacoes.splice(index, 1);
-      salvarStorage();
+      localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
       atualizarTelas();
     }
   }
 
-  function excluirItem(id){
+  async function excluirItem(id){
     if(confirm('Deseja realmente remover este item do almoxarifado?')){
-      ferramentas = ferramentas.filter(f => f.id !== id);
-      salvarStorage();
-      atualizarTelas();
+      const { error } = await sb.from('almoxarifado').delete().eq('id', id);
+      if(error){
+        alert('Erro ao excluir: ' + error.message);
+        return;
+      }
+      await carregarEstoque();
     }
   }
 
-  atualizarTelas();
+  // Inicializa carregando os dados do banco
+  carregarEstoque();
 </script>
 </body>
 </html>
