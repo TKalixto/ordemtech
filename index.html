@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão CIMA — Gestão de Produção</title>
+<title>Gestão CIMA — Gestão de Produção & Almoxarifado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -25,13 +25,11 @@
   body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
   .font-display{font-family:'Space Grotesk',sans-serif;}
   
-  /* Scrollbars mais elegantes */
   ::-webkit-scrollbar{width:6px;height:6px;}
   ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate);}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  /* Cartões com profundidade e bordas refinadas */
   .card{
     background:var(--surface);
     border:1px solid var(--line);
@@ -39,9 +37,7 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
     transition: border-color 0.2s ease, transform 0.1s ease;
   }
-  .card:hover{
-    border-color: rgba(59, 130, 246, 0.35);
-  }
+  .card:hover{border-color: rgba(59, 130, 246, 0.35);}
 
   .step-line{background:var(--line);}
   .step-line.done{background:var(--green);}
@@ -61,12 +57,7 @@
   ::placeholder{color:var(--muted); opacity: 0.7;}
   .hidden{display:none !important;}
 
-  /* Modais com efeito blur */
-  .modal-backdrop{
-    background:rgba(5, 7, 10, 0.8);
-    backdrop-filter: blur(4px);
-  }
-  
+  .modal-backdrop{background:rgba(5, 7, 10, 0.8);backdrop-filter: blur(4px);}
   .tag{border-left-width:5px; border-radius:0.75rem;}
 
   .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
@@ -92,7 +83,6 @@
   
   .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:16px;font-weight:700;text-align:center;}
   
-  /* ===== Sidebar do ADM ===== */
   #admin-sb{
     position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;
     display:flex;flex-direction:column;background:#0D131C;
@@ -897,6 +887,7 @@ function liveRefresh(channelName, fetchFn){
     .on('postgres_changes', { event: '*', schema: 'public', table: 'order_routing' }, fetchFn)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'order_attachments' }, fetchFn)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'order_history' }, fetchFn)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'almoxarifado' }, fetchFn)
     .subscribe();
   activeChannels.push(channel);
 }
@@ -988,7 +979,7 @@ function renderSolicitante(container = $('main-content')){
     }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':'s.color'}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium text-base">${cardTitleHTML(o)}</p>
@@ -1082,9 +1073,11 @@ const SB_ICONS = {
   folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>'
 };
 const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SB_ICONS[n]}</svg>`;
+
+// ---> ABA DE ALMOXARIFADO ADICIONADA AQUI NO MENU DO ADM:
 const SB_MENU = [
   { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
-  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
+  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder'], ['almoxarifado', 'Almoxarifado', 'sheet']] },
   { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
   { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
 ];
@@ -1094,6 +1087,8 @@ const PAGE_INFO = {
   fila: ['Fila de Triagem', 'Pedidos novos aguardando você definir o roteiro de máquinas.'],
   todos: ['Todos os Pedidos', 'Acompanhe, filtre e edite todos os pedidos do sistema.'],
   usuarios: ['Usuários', 'Aprove contas novas e defina o perfil e as máquinas de cada pessoa.'],
+  projetos: ['Projetos / OS', 'Gerencie as ordens de serviço e projetos disponíveis.'],
+  almoxarifado: ['Almoxarifado', 'Controle de estoque, materiais e insumos da oficina.'],
   graficos: ['Gráficos', 'Indicadores da produção em gráficos.'],
   resumo: ['Resumo por Solicitante', 'Pedidos, arquivos e fotos de cada solicitante.']
 };
@@ -1119,8 +1114,21 @@ function renderAdmin(){
     <div id="page-head" class="page-head"></div>
     <div id="admin-tab-content"></div>`;
   const sb = $('admin-sb'), grp = $('sb-dados');
-  const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, projetos: renderAdminProjetos, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
-    solicitante: () => renderSolicitante($('admin-tab-content')), operador: () => renderOperador($('admin-tab-content')) };
+  
+  // ---> ROTA DA ABA DE ALMOXARIFADO MAPEADA AQUI:
+  const views = { 
+    fila: renderAdminFila, 
+    todos: renderAdminTodos, 
+    usuarios: renderAdminUsuarios, 
+    projetos: renderAdminProjetos, 
+    almoxarifado: renderAdminAlmoxarifado,
+    graficos: renderAdminGraficos, 
+    resumo: renderAdminResumo, 
+    relatorio: renderAdminRelatorio,
+    solicitante: () => renderSolicitante($('admin-tab-content')), 
+    operador: () => renderOperador($('admin-tab-content')) 
+  };
+
   const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
   const go = tab => {
     document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
@@ -1210,6 +1218,9 @@ function openTriagemModal(order){
 
         await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
 
+        // ---> EXECUTA A BAIXA AUTOMÁTICA DOS ITENS NO ALMOXARIFADO:
+        await darBaixaAlmoxarifadoNaTriagem(order);
+
         const file = $('triagem-file').files[0];
         if(file){
           const att = await uploadFile(order.id, file);
@@ -1242,6 +1253,64 @@ function openTriagemModal(order){
   }
   renderBody();
   openModal('triagem-modal');
+}
+
+// ---> FUNÇÃO DE GERENCIAMENTO E VISUALIZAÇÃO DO ALMOXARIFADO NO PAINEL ADM:
+function renderAdminAlmoxarifado(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `
+    <div class="flex items-center justify-between mb-4 gap-3">
+      <div>
+        <h2 class="font-display font-700 text-xl">Controle de Almoxarifado</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Gerencie o estoque de chapas, tubos e insumos da oficina.</p>
+      </div>
+      <button id="btn-novo-item-almox" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo Item no Estoque</button>
+    </div>
+    <div id="almoxarifado-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
+  `;
+
+  liveRefresh('admin-almoxarifado', async ()=>{
+    const { data, error } = await sb.from('almoxarifado').select('*').order('item_name');
+    const list = $('almoxarifado-list');
+    if(error){ 
+      list.innerHTML = `<div class="card p-6 text-center" style="border-color:var(--amber)">
+        <p class="text-sm font-medium" style="color:var(--amber)">A tabela 'almoxarifado' não foi encontrada no Supabase.</p>
+        <p class="text-xs mt-1" style="color:var(--muted)">Crie uma tabela chamada 'almoxarifado' no Supabase com as colunas: id, item_name, quantity, unit.</p>
+      </div>`; 
+      return; 
+    }
+    if(!data.length){ 
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum item cadastrado no almoxarifado.</div>`; 
+      return; 
+    }
+    list.innerHTML = data.map(item => `
+      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p class="font-medium text-sm">${escapeHtml(item.item_name)}</p>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Estoque atual: <b style="color:var(--text)">${item.quantity} ${escapeHtml(item.unit || 'un')}</b></p>
+        </div>
+      </div>`).join('');
+  });
+}
+
+// ---> FUNÇÃO PARA DAR BAIXA AUTOMÁTICA NO ESTOQUE AO FAZER A TRIAGEM:
+async function darBaixaAlmoxarifadoNaTriagem(order){
+  try {
+    const materialUsado = order.material;
+    const qtdNecessaria = order.quantity || 1;
+    if (!materialUsado) return;
+
+    const { data: items, error: fetchErr } = await sb.from('almoxarifado').select('*').ilike('item_name', `%${materialUsado}%`);
+    if (fetchErr || !items || items.length === 0) return;
+
+    const itemEstoque = items[0];
+    const novaQtd = Math.max(0, Number(itemEstoque.quantity) - Number(qtdNecessaria));
+
+    await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', itemEstoque.id);
+    await sb.from('order_history').insert(historyRow(order.id, 'baixa_almoxarifado', `Baixa automática de ${qtdNecessaria} unidade(s) de "${itemEstoque.item_name}" realizada no almoxarifado.`));
+  } catch (err) {
+    console.error("Erro ao dar baixa no almoxarifado:", err);
+  }
 }
 
 function renderAdminTodos(){
