@@ -25,11 +25,13 @@
   body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
   .font-display{font-family:'Space Grotesk',sans-serif;}
   
+  /* Scrollbars mais elegantes */
   ::-webkit-scrollbar{width:6px;height:6px;}
   ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate);}
   ::-webkit-scrollbar-track{background:transparent;}
 
+  /* Cartões com profundidade e bordas refinadas */
   .card{
     background:var(--surface);
     border:1px solid var(--line);
@@ -59,6 +61,7 @@
   ::placeholder{color:var(--muted); opacity: 0.7;}
   .hidden{display:none !important;}
 
+  /* Modais com efeito blur */
   .modal-backdrop{
     background:rgba(5, 7, 10, 0.8);
     backdrop-filter: blur(4px);
@@ -248,7 +251,7 @@
   </div>
 </div>
 
-<!-- ================= MODAL: TRIAGEM COM ALMOXARIFADO ================= -->
+<!-- ================= MODAL: TRIAGEM ================= -->
 <div id="triagem-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
   <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
@@ -671,6 +674,7 @@ function attachmentsHTML(order){
     </li>`).join('') + `</ul>`;
 }
 
+// ===== Prévia de DXF (ASCII) =====
 function parseDxf(text){
   const L = text.split(/\r?\n/); const ents = []; let inEnt = false, cur = null;
   for(let i = 0; i + 1 < L.length; i += 2){
@@ -802,6 +806,7 @@ function openDetailModal(order){
   `;
   openModal('detail-modal');
 }
+
 /* =========================================================================
    3) AUTENTICAÇÃO
    ========================================================================= */
@@ -1095,7 +1100,7 @@ const PAGE_INFO = {
 function setPageHead(tab){
   const el = $('page-head'); if(!el) return;
   const i = PAGE_INFO[tab];
-  el.innerHTML = i ? `<div class="flex items-center justify-between flex-wrap gap-3"><div><h1 class="font-display font-700 text-2xl tracking-tight">${i[0]}</h1><p class="text-sm mt-0.5" style="color:var(--muted)">${i[1]}</p></div>${tab==='fila'?'<a href="almoxarifado_index.html" target="_blank" class="px-4 py-2.5 rounded-lg text-xs font-semibold shadow transition hover:opacity-90 flex items-center gap-2" style="background:var(--amber); color:#1a1204"><span>📦 Abrir Almoxarifado</span></a>':''}</div>` : '';
+  el.innerHTML = i ? `<h1 class="font-display font-700 text-2xl tracking-tight">${i[0]}</h1><p class="text-sm mt-0.5" style="color:var(--muted)">${i[1]}</p>` : '';
   el.style.display = i ? '' : 'none';
 }
 
@@ -1161,8 +1166,6 @@ function renderAdminFila(){
 
 function openTriagemModal(order){
   let routing = [];
-  let ferramentasEstoque = JSON.parse(localStorage.getItem('cima_ferramentas')) || [];
-  
   function renderBody(){
     $('triagem-body').innerHTML = `
       <div>
@@ -1174,29 +1177,6 @@ function openTriagemModal(order){
         <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos do solicitante</p>
         ${attachmentsHTML(order)}
       </div>
-
-      <div class="card p-4 space-y-3" style="background:var(--surface-2)">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <label class="text-xs uppercase tracking-wider font-semibold text-amber-400">📦 Baixar Material do Almoxarifado</label>
-          <a href="almoxarifado_index.html" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-medium shadow transition hover:opacity-90 flex items-center gap-1.5" style="background:var(--blue); color:#fff">
-            <span>Abrir Gestão do Almoxarifado ↗</span>
-          </a>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div>
-            <label class="text-[11px]" style="color:var(--muted)">Selecionar Material / Chapa</label>
-            <select id="triagem-almox-item" class="w-full mt-1 px-3 py-2 text-xs">
-              <option value="">Nenhum (Não debitar estoque)</option>
-              ${ferramentasEstoque.map(f => `<option value="${f.id}">${f.id} - ${f.nome} (Estoque: ${f.qtd})</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="text-[11px]" style="color:var(--muted)">Quantidade a Consumir / Baixar</label>
-            <input id="triagem-almox-qtd" type="number" step="any" min="0.01" value="1" class="w-full mt-1 px-3 py-2 text-xs">
-          </div>
-        </div>
-      </div>
-
       <div>
         <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
         <input id="triagem-file" type="file" class="w-full text-sm">
@@ -1204,7 +1184,7 @@ function openTriagemModal(order){
       <div>
         <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
         <div class="flex flex-wrap gap-2 mb-3">
-          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3.5 py-1.5 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">+ ${m}</button>`).join('')}
+          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3 py-1.5 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">+ ${m}</button>`).join('')}
         </div>
         <div id="routing-list" class="space-y-2"></div>
       </div>
@@ -1216,39 +1196,11 @@ function openTriagemModal(order){
     $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ routing.push(btn.dataset.addMachine); renderRoutingList(); });
     });
-    
     $('btn-aprovar').addEventListener('click', async ()=>{
       const err = $('triagem-error');
       if(routing.length === 0){ err.textContent = 'Defina ao menos uma máquina no roteiro.'; err.classList.remove('hidden'); return; }
-      
-      $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Processando...';
+      $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Enviando...';
       try{
-        const itemIdAlmox = $('triagem-almox-item').value;
-        const qtdBaixa = parseFloat($('triagem-almox-qtd').value) || 0;
-        
-        if(itemIdAlmox && qtdBaixa > 0){
-          let ferramentasEstoque = JSON.parse(localStorage.getItem('cima_ferramentas')) || [];
-          let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [];
-          
-          const idxItem = ferramentasEstoque.findIndex(f => f.id === itemIdAlmox);
-          if(idxItem !== -1){
-            ferramentasEstoque[idxItem].qtd -= qtdBaixa;
-            
-            movimentacoes.unshift({
-              data: new Date().toLocaleString('pt-BR'),
-              tipo: 'Saída / Consumo (Triagem)',
-              ferramenta: `${ferramentasEstoque[idxItem].id} - ${ferramentasEstoque[idxItem].nome}`,
-              qtd: `${qtdBaixa} ${ferramentasEstoque[idxItem].cat.includes('Matéria-Prima') ? 'kg' : 'un'}`,
-              os: order.osNumber || 'OS-Geral',
-              operador: currentUser.name,
-              maquina: routing[0] || 'Corte a Laser'
-            });
-            
-            localStorage.setItem('cima_ferramentas', JSON.stringify(ferramentasEstoque));
-            localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
-          }
-        }
-
         await sb.from('orders').update({
           status: 'em_producao', urgent: $('triagem-urgent').checked, current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
         }).eq('id', order.id);
@@ -1256,7 +1208,7 @@ function openTriagemModal(order){
         const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
         await sb.from('order_routing').insert(rows);
 
-        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção com baixa de material realizada.`));
+        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
 
         const file = $('triagem-file').files[0];
         if(file){
@@ -1272,7 +1224,6 @@ function openTriagemModal(order){
       }
     });
   }
-  
   function renderRoutingList(){
     const el = $('routing-list');
     if(routing.length === 0){ el.innerHTML = `<p class="text-sm" style="color:var(--muted)">Nenhuma etapa adicionada.</p>`; return; }
@@ -1292,121 +1243,905 @@ function openTriagemModal(order){
   renderBody();
   openModal('triagem-modal');
 }
-  function isLate(order){
-  if(order.status === 'concluido' || !order.deadline) return false;
-  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-  return new Date(order.deadline + 'T00:00:00') < hoje;
-}
-function statusInfo(o){
-  switch(o.status){
-    case 'aguardando_analise': return { label: 'Aguardando Análise', color: 'var(--amber)' };
-    case 'em_producao': return { label: 'Em Produção', color: 'var(--blue)' };
-    case 'concluido': return { label: 'Concluído', color: 'var(--green)' };
-    default: return { label: o.status, color: 'var(--slate)' };
-  }
-}
-function metaLine(o, requesterMode = false){
-  const userTxt = requesterMode ? `Para: ${escapeHtml(o.assignedOperator || 'Não atribuído')}` : `Por: ${escapeHtml(o.requesterName)}`;
-  const extra = o.osNumber ? ` · OS: ${escapeHtml(o.osNumber)}${o.project ? ' (' + escapeHtml(o.project) + ')' : ''}` : '';
-  const mat = o.material ? ` · Material: ${escapeHtml(o.material)}` : '';
-  return `<p class="text-xs mt-1" style="color:var(--muted)">${userTxt}${extra}${mat} · Enviado em ${fmtDateTime(o.createdAt)}</p>`;
-}
-function itemsListHTML(o){
-  if(!o.items || o.items.length <= 1) return '';
-  return `<div class="mt-2 text-xs p-2.5 rounded-lg" style="background:var(--surface-2);border:1px solid var(--line)">
-    <span class="font-medium" style="color:var(--muted)">Peças do pedido (${o.items.length}):</span>
-    <ul class="mt-1 space-y-1">${o.items.map(it => `<li>• <b>${escapeHtml(it.name)}</b> (Qtd: ${it.quantity}) — Material: ${escapeHtml(it.material || 'N/D')}</li>`).join('')}</ul>
-  </div>`;
-}
-function attachmentsHTML(o){
-  if(!o.attachments || o.attachments.length === 0) return '<p class="text-xs" style="color:var(--muted)">Nenhum arquivo anexado.</p>';
-  return `<div class="flex flex-wrap gap-2">${o.attachments.map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition hover:bg-white/5" style="border-color:var(--line);color:var(--blue)">📄 ${escapeHtml(a.name || 'Arquivo')}</a>`).join('')}</div>`;
-}
-function miniTimelineHTML(o){
-  if(!o.routing || o.routing.length === 0) return '';
-  return `<div class="mt-3 flex items-center gap-1.5 overflow-x-auto py-1">
-    ${o.routing.map((r, idx) => {
-      let bg = 'var(--surface-2)', fg = 'var(--muted)', border = 'var(--line)';
-      if(r.status === 'concluido'){ bg = 'rgba(16,185,129,0.15)'; fg = 'var(--green)'; border = 'rgba(16,185,129,0.3)'; }
-      else if(r.status === 'em_andamento'){ bg = 'rgba(59,130,246,0.15)'; fg = 'var(--blue)'; border = 'rgba(59,130,246,0.3)'; }
-      return `<div class="px-2.5 py-1 rounded text-[11px] font-medium whitespace-nowrap flex items-center gap-1" style="background:${bg};color:${fg};border:1px solid ${border}">
-        <span>${idx+1}. ${escapeHtml(r.machine)}</span>
-        <span>${r.status === 'concluido' ? '✓' : r.status === 'em_andamento' ? '⏳' : '•'}</span>
+
+function renderAdminTodos(){
+  clearChannels();
+  const fld = 'px-3 py-2 text-sm';
+  $('admin-tab-content').innerHTML = `
+    <div id="f-chips" class="flex flex-wrap gap-2 mb-4"></div>
+    <div class="card p-3 mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 items-center">
+      <input id="f-q" placeholder="Buscar peça, O.S., projeto, solicitante..." class="sm:col-span-2 ${fld}">
+      <select id="f-status" class="${fld}">
+        <option value="">Todos os status</option><option value="aguardando_analise">Aguardando análise</option>
+        <option value="em_producao">Em produção</option><option value="concluido">Concluído</option><option value="atrasado">Atrasados</option>
+      </select>
+      <input id="f-from" type="date" title="Criado a partir de" class="${fld}">
+      <input id="f-to" type="date" title="Criado até" class="${fld}">
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="f-urg" type="checkbox" style="width:16px;height:16px"> Só urgentes</label>
+    </div>
+    <p id="f-count" class="text-xs mb-3 font-medium" style="color:var(--muted)"></p>
+    <div id="todos-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>`;
+  let all = [];
+  const draw = ()=>{
+    const list = $('todos-list'); if(!list) return;
+    const cnt = { '': all.length, aguardando_analise: all.filter(o => o.status === 'aguardando_analise').length, em_producao: all.filter(o => o.status === 'em_producao').length,
+      concluido: all.filter(o => o.status === 'concluido').length, atrasado: all.filter(isLate).length };
+    $('f-chips').innerHTML = [['', 'Todos'], ['aguardando_analise', 'Aguardando análise'], ['em_producao', 'Em produção'], ['concluido', 'Concluídos'], ['atrasado', 'Atrasados']]
+      .map(([v, l]) => `<button type="button" data-chip-st="${v}" class="chip-st ${$('f-status').value === v ? 'on' : ''}">${l} <b>${cnt[v]}</b></button>`).join('');
+    $('f-chips').querySelectorAll('[data-chip-st]').forEach(b => b.onclick = () => { $('f-status').value = b.dataset.chipSt; draw(); });
+    const q = $('f-q').value.trim().toLowerCase(), st = $('f-status').value, urg = $('f-urg').checked;
+    const from = $('f-from').value ? new Date($('f-from').value + 'T00:00:00') : null;
+    const to = $('f-to').value ? new Date($('f-to').value + 'T23:59:59') : null;
+    const orders = all.filter(o=>{
+      if(q && ![o.pieceName, o.osNumber, o.project, o.material, o.requesterName, o.description].join(' ').toLowerCase().includes(q)) return false;
+      if(st === 'atrasado' ? !isLate(o) : (st && o.status !== st)) return false;
+      if(urg && !o.urgent) return false;
+      const c = new Date(o.createdAt);
+      return !(from && c < from) && !(to && c > to);
+    });
+    $('f-count').textContent = `${orders.length} de ${all.length} pedido(s)`;
+    if(orders.length === 0){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
+    list.innerHTML = orders.map(o=>{
+      const s = statusInfo(o); const late = isLate(o);
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            ${metaLine(o, true)}
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
+        </div>
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
+        ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
       </div>`;
-    }).join('')}
-  </div>`;
+    }).join('');
+    const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
+    list.querySelectorAll('[data-order-id]').forEach(el=> el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId))));
+    by('data-edit-order', openEditOrderModal); by('data-edit-routing', openRoutingEditor); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
+  };
+  ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
+  liveRefresh('admin-todos', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
+    if(error){ showError('todos-list', error); return; }
+    all = data.map(normalizeOrder); draw();
+  });
 }
-function stepperHTML(o){
-  if(!o.routing || o.routing.length === 0) return '<p class="text-xs" style="color:var(--muted)">Sem roteiro definido.</p>';
-  return `<div class="space-y-1.5">
-    <div class="flex items-center justify-between text-xs font-medium" style="color:var(--muted)">
-      <span>Progresso da Produção</span>
-      <span>${o.routing.filter(r=>r.status==='concluido').length} de ${o.routing.length} etapas</span>
+
+function renderAdminProjetos(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `
+    <div class="flex items-center justify-between mb-4 gap-3">
+      <div><h2 class="font-display font-700 text-xl">Projetos / OS cadastrados</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Lista disponível para a escolha dos solicitantes.</p></div>
+      <button id="btn-new-project" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo</button>
     </div>
-    <div class="grid gap-1" style="grid-template-columns: repeat(${o.routing.length}, minmax(0, 1fr))">
-      ${o.routing.map(r => `<div class="h-1.5 rounded-full ${r.status === 'concluido' ? 'done' : ''}" style="background:${r.status === 'concluido' ? 'var(--green)' : r.status === 'em_andamento' ? 'var(--blue)' : 'var(--line)'}"></div>`).join('')}
-    </div>
-  </div>`;
+    <div id="projects-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
+  $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
+  liveRefresh('admin-projetos', async ()=>{
+    const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
+    if(error){ showError('projects-list', error); return; }
+    const list = $('projects-list');
+    if(!data.length){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
+    list.innerHTML = data.map(p => `
+      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p class="font-medium text-sm">OS ${escapeHtml(p.os_number)} <span style="color:var(--muted)">— ${escapeHtml(p.project_name)}</span></p>
+          <p class="text-xs mt-0.5" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button data-edit-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
+          <button data-toggle-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
+          <button data-del-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('[data-edit-project]').forEach(b => b.addEventListener('click', ()=> openProjectModal(data.find(p=>p.id===b.dataset.editProject))));
+    list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
+      const p = data.find(x=>x.id===b.dataset.toggleProject);
+      const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
+      if(error) notify('Erro: ' + error.message);
+    }));
+    list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
+      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados.')) return;
+      const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
+      if(error) notify('Erro: ' + error.message);
+    }));
+  });
 }
-function cardFooterHTML(o, mode){
-  if(mode === 'sol'){
-    let acts = '';
-    if(o.status === 'aguardando_analise'){
-      acts = `<button type="button" data-sol-edit="${o.id}" class="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-white/5" style="border-color:var(--line)">Editar Pedido</button>
-              <button type="button" data-sol-del="${o.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white" style="background:var(--red)">Excluir</button>`;
-    } else if(o.status === 'concluido' && !o.receivedAt){
-      acts = `<button type="button" data-receive="${o.id}" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white" style="background:var(--green)">Confirmar Recebimento</button>`;
+
+let editProjectTarget = null;
+function openProjectModal(p){
+  editProjectTarget = p;
+  $('project-modal-title').textContent = p ? 'Editar Projeto / OS' : 'Novo Projeto / OS';
+  $('pm-os').value = p ? p.os_number : '';
+  $('pm-project').value = p ? p.project_name : '';
+  $('pm-active').checked = p ? p.active : true;
+  $('project-modal-error').classList.add('hidden');
+  openModal('project-modal');
+}
+$('project-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const err = $('project-modal-error'); err.classList.add('hidden');
+  const os_number = $('pm-os').value.trim(), project_name = $('pm-project').value.trim();
+  if(!os_number || !project_name){ err.textContent = 'Preencha a OS e o nome do projeto.'; err.classList.remove('hidden'); return; }
+  const btn = $('project-modal-submit'); btn.disabled = true; btn.textContent = 'Salvando...';
+  const payload = { os_number, project_name, active: $('pm-active').checked };
+  const { error } = editProjectTarget
+    ? await sb.from('projects').update(payload).eq('id', editProjectTarget.id)
+    : await sb.from('projects').insert(payload);
+  if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); }
+  else closeModal('project-modal');
+  btn.disabled = false; btn.textContent = 'Salvar';
+});
+
+function renderAdminUsuarios(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
+  liveRefresh('admin-usuarios', async ()=>{
+    const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+    if(error){ showError('users-list', error); return; }
+    $('users-list').innerHTML = users.map(u=> `
+      <div class="card p-4 flex items-center justify-between">
+        <div>
+          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">(${u.email})</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
+          <button data-edit-user="${u.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
+        </div>
+      </div>`).join('');
+    $('users-list').querySelectorAll('[data-edit-user]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openEditUserModal(users.find(u=>u.id===btn.dataset.editUser)));
+    });
+  });
+}
+
+$('eu-machines').innerHTML = MACHINES.map(m=>`
+  <label class="flex items-center gap-2 text-sm cursor-pointer">
+    <input type="checkbox" name="eu-machine-check" value="${m}" style="width:16px;height:16px"> ${m}
+  </label>`).join('');
+$('eu-role').addEventListener('change', ()=>{
+  $('eu-machine-wrap').classList.toggle('hidden', $('eu-role').value !== 'operador');
+});
+
+function openEditUserModal(user){
+  $('eu-name').textContent = `${user.name} — ${user.email}`;
+  $('eu-role').value = user.role;
+  $('eu-machine-wrap').classList.toggle('hidden', user.role !== 'operador');
+  const mine = user.machines || [];
+  document.querySelectorAll('input[name="eu-machine-check"]').forEach(cb=>{ cb.checked = mine.includes(cb.value); });
+  $('edit-user-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('edit-user-error'); err.classList.add('hidden');
+    const role = $('eu-role').value;
+    const machines = role === 'operador'
+      ? [...document.querySelectorAll('input[name="eu-machine-check"]:checked')].map(cb=>cb.value)
+      : [];
+    if(role === 'operador' && machines.length === 0){
+      err.textContent = 'Marque ao menos uma máquina para o operador.'; err.classList.remove('hidden'); return;
     }
-    return `<div class="mt-3 pt-3 border-t flex items-center justify-between gap-2" style="border-color:var(--line)">
-      <span class="text-xs" style="color:var(--muted)">ID: ${o.id.slice(0,8)}</span>
-      <div class="flex items-center gap-2">${acts}</div>
-    </div>`;
+    const { error } = await sb.from('profiles').update({ role, machines }).eq('id', user.id);
+    if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); return; }
+    closeModal('edit-user-modal');
+  };
+  openModal('edit-user-modal');
+}
+
+/* =========================================================================
+   6) PAINEL — OPERADOR
+   ========================================================================= */
+function renderOperador(container = $('main-content')){
+  clearChannels();
+  const isAdmin = currentUser.role === 'admin';
+  const available = isAdmin ? MACHINES : (currentUser.machines || []);
+  let filter = 'todas';
+  let lastOrders = [];
+
+  container.innerHTML = `
+    <div class="mb-6">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="font-display font-700 text-2xl tracking-tight">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
+        <button id="op-reset-order" class="text-xs px-2.5 py-1.5 rounded-lg border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--muted)">↺ Ordem automática (prazo + urgência)</button>
+      </div>
+      <p class="text-sm mt-0.5" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
+      <div id="op-chips" class="flex flex-wrap gap-2 mt-4"></div>
+    </div>
+    <div id="operador-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
+  `;
+  if(available.length === 0){
+    $('operador-list').innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
+    return;
   }
-  return '';
+
+  function drawChips(){
+    if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
+    const opts = ['todas', ...available];
+    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'rgba(59,130,246,0.16)':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
+    $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
+      filter = b.dataset.chip; drawChips(); fetchOp();
+    }));
+  }
+
+  const fetchOp = async ()=>{
+    const machinesFilter = filter === 'todas' ? available : [filter];
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('status', 'em_producao').in('current_machine', machinesFilter)
+      .order('deadline', { ascending: true });
+    if(error){ showError('operador-list', error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('operador-list');
+    if(!list) return;
+    orders.sort((a, b) => {
+      if(a.queueOrder != null && b.queueOrder != null) return a.queueOrder - b.queueOrder;
+      if(a.queueOrder != null) return -1;
+      if(b.queueOrder != null) return 1;
+      const u = (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
+      if(u !== 0) return u;
+      return new Date(a.deadline) - new Date(b.deadline);
+    }); 
+    lastOrders = orders;
+    if(orders.length === 0){
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
+      return;
+    }
+    list.innerHTML = orders.map((o, i)=>{
+      const step = o.routing[o.currentStepIndex];
+      const late = isLate(o);
+      return `<div class="card p-5 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:rgba(245,158,11,0.06);':''}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: <span class="text-white font-medium">${o.currentMachine}</span> · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'rgba(59,130,246,0.16)':'rgba(100,116,139,0.16)'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
+              ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
+            </span>
+            ${isAdmin ? `<input data-pos-in="${o.id}" type="number" min="1" max="${orders.length}" value="${i + 1}" title="Posição na fila" class="w-12 h-8 rounded-md border text-xs text-center font-medium" style="border-color:var(--line);background:transparent;color:var(--text)">` : ''}
+            <div class="flex flex-col gap-0.5">
+              <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▲</button>
+              <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▼</button>
+            </div>
+          </div>
+        </div>
+        ${metaLine(o, true)}<p class="text-sm mt-2 leading-relaxed">${o.description || ''}</p>${itemsListHTML(o)}
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
+        <div class="mt-3">${attachmentsHTML(o)}</div>
+        <div class="mt-4 flex gap-2">
+          <button data-detail="${o.id}" class="px-3 py-2 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">Ver histórico</button>
+          ${step.status === 'pendente'
+            ? `<button data-start="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Iniciar Etapa</button>`
+            : `<button data-finish="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--green);color:#06210f">Finalizar Etapa</button>`}
+        </div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
+    list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
+    list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
+    list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1)));
+    list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1)));
+    list.querySelectorAll('[data-pos-in]').forEach(inp=> inp.addEventListener('change', ()=> setQueuePosition(orders, inp.dataset.posIn, parseInt(inp.value, 10) - 1)));
+  };
+
+  drawChips();
+  liveRefresh('operador-fila', fetchOp);
+  $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders));
 }
-function statsOf(orders){
-  const total = orders.length;
-  const aguardando = orders.filter(o => o.status === 'aguardando_analise').length;
-  const producao = orders.filter(o => o.status === 'em_producao').length;
-  const concluidos = orders.filter(o => o.status === 'concluido').length;
-  return { total, aguardando, producao, concluidos };
+
+async function setQueuePosition(orders, id, to){
+  const from = orders.findIndex(o => o.id === id); if(from < 0 || isNaN(to)) return;
+  to = Math.max(0, Math.min(orders.length - 1, to));
+  const arr = orders.slice(); arr.splice(to, 0, arr.splice(from, 1)[0]);
+  const rs = await Promise.all(arr.map((o, k) => sb.from('orders').update({ queue_order: k }).eq('id', o.id)));
+  const bad = rs.find(r => r.error); if(bad) notify('Erro ao reordenar: ' + bad.error.message);
 }
-function statsHTML(s){
-  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Total de Pedidos</p><p class="font-display font-700 text-2xl mt-1">${s.total}</p></div>
-    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Aguardando Análise</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--amber)">${s.aguardando}</p></div>
-    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Em Produção</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--blue)">${s.producao}</p></div>
-    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Concluídos</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--green)">${s.concluidos}</p></div>
-  </div>`;
+async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir); }
+
+async function resetQueueOrder(orders){
+  if(!orders.length) return;
+  if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência)?')) return;
+  const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
+  if(error) notify('Erro: ' + error.message);
 }
-function normalizeOrder(raw){
+
+async function startStep(order){
+  const step = order.routing[order.currentStepIndex];
+  const r1 = await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
+  if(r1.error){ notify('Erro ao iniciar etapa: ' + r1.error.message); return; }
+  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
+  if(r2.error) notify('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
+}
+
+$('finish-photo').addEventListener('change', ()=>{
+  const f = $('finish-photo').files[0]; const img = $('finish-preview');
+  if(f){ img.src = URL.createObjectURL(f); img.classList.remove('hidden'); } else img.classList.add('hidden');
+});
+function openFinishModal(order){
+  $('finish-form').reset(); $('finish-preview').classList.add('hidden'); $('finish-error').classList.add('hidden');
+  $('finish-title').textContent = `${order.pieceName} — etapa "${order.currentMachine}"`;
+  $('finish-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('finish-error'); const btn = $('finish-submit'); err.classList.add('hidden');
+    const photo = $('finish-photo').files[0];
+    if(!photo){ err.textContent = 'Envie uma foto do trabalho concluído.'; err.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{ await finishStep(order, photo); closeModal('finish-modal'); }
+    catch(ex){ console.error(ex); err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Enviar foto e finalizar etapa'; }
+  };
+  openModal('finish-modal');
+}
+
+async function finishStep(order, photo){
+  const idx = order.currentStepIndex;
+  const step = order.routing[idx];
+  const nextIdx = idx + 1;
+  const isLast = nextIdx >= order.routing.length;
+  const detail = `Finalizou a etapa "${order.currentMachine}" (foto anexada).` + (isLast ? ' Pedido concluído — aguardando confirmação de recebimento.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
+  const ok = (r, msg)=>{ if(r.error) throw new Error(msg + ': ' + r.error.message); };
+
+  const att = await uploadFile(order.id, photo, 'fotos');
+  ok(await sb.from('order_attachments').insert(att), 'Falha ao salvar a foto');
+
+  ok(await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id), 'Erro ao finalizar etapa');
+  ok(await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail)), 'Erro ao registrar histórico');
+
+  const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
+  if(isLast){ updates.status = 'concluido'; updates.current_machine = null; }
+  else{ updates.current_machine = order.routing[nextIdx].machine; }
+  ok(await sb.from('orders').update(updates).eq('id', order.id), 'Erro ao avançar o pedido');
+}
+
+async function confirmReceipt(order){
+  if(!await askConfirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
+  const { error } = await sb.from('order_history').insert(historyRow(order.id, 'recebimento', 'Confirmou o recebimento da peça.'));
+  if(error) notify('Erro ao confirmar recebimento: ' + error.message);
+}
+
+const IMG_RE = /\.(png|jpe?g|webp|gif)$/i;
+function isImage(a){ return IMG_RE.test(a.name || '') || IMG_RE.test((a.url || '').split('?')[0]) || isPhoto(a); }
+function openImagePreview(url, title){
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(5,7,10,0.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px';
+  ov.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="max-width:100%;max-height:82vh;object-fit:contain;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.6)">
+    <div class="text-sm font-medium" style="color:#fff">${escapeHtml(title)} · <a href="${escapeHtml(url)}" target="_blank" style="text-decoration:underline;color:var(--blue)">abrir em nova aba</a> · clique fora ou Esc para fechar</div>`;
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+  const esc = e => { if(e.key === 'Escape') close(); };
+  ov.addEventListener('click', e => { if(e.target.tagName !== 'A') close(); });
+  document.addEventListener('keydown', esc); document.body.appendChild(ov);
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-img]'); if(!b) return;
+  ev.stopPropagation(); openImagePreview(b.dataset.img, b.dataset.title || 'Imagem');
+}, true);
+
+async function fillPositions(root){
+  for(const el of root.querySelectorAll('[data-pos]')){
+    const { data, error } = await sb.rpc('queue_position', { p_order: el.dataset.pos });
+    if(error || !data) continue;
+    el.textContent = data.kind === 'triagem'
+      ? `📍 Aguardando triagem do ADM — ${data.pos}º de ${data.total} na fila`
+      : `📍 Na fila de ${data.machine} — ${data.pos}º de ${data.total}${data.pos === 1 ? ' (próximo!)' : ''}`;
+    el.hidden = false;
+  }
+}
+
+function openRoutingEditor(order){
+  const isLocked = s => s.status === 'concluido' || (s.status === 'em_andamento' && s.started_at);
+  const locked = order.routing.filter(isLocked);
+  let edit = order.routing.filter(s => !isLocked(s)).map(s => ({ id: s.id, machine: s.machine }));
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(5,7,10,0.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
+  const btn = 'class="px-2 py-1 rounded-md border text-xs hover:bg-white/5" style="border-color:var(--line)"';
+  const draw = () => { ov.innerHTML = `<div style="background:var(--surface,#121821);border-radius:12px;border:1px solid var(--line);width:min(520px,100%);max-height:90vh;overflow:auto;padding:20px" class="space-y-3">
+    <b class="text-base font-display">Editar etapas — ${escapeHtml(order.pieceName)}</b>
+    <p class="text-xs" style="color:var(--muted)">Etapas concluídas ou já iniciadas ficam travadas (🔒). As demais podem ser reordenadas, removidas ou criadas.</p>
+    ${locked.map(s => `<div class="card p-3 text-sm">🔒 ${escapeHtml(s.machine)} <span class="text-xs" style="color:var(--muted)">(${s.status === 'concluido' ? 'concluída' : 'em andamento'})</span></div>`).join('')}
+    ${edit.map((s, i) => `<div class="card p-3 text-sm flex items-center justify-between"><span>${locked.length + i + 1}. ${escapeHtml(s.machine)}</span><span class="flex gap-1"><button type="button" ${btn} data-m="up" data-i="${i}">▲</button><button type="button" ${btn} data-m="dn" data-i="${i}">▼</button><button type="button" ${btn} data-m="rm" data-i="${i}">✕</button></span></div>`).join('')}
+    <div class="flex flex-wrap gap-2 pt-2">${MACHINES.map(m => `<button type="button" ${btn} data-add="${m}">+ ${m}</button>`).join('')}</div>
+    <p data-err class="text-sm" style="color:var(--red);display:none"></p>
+    <div class="flex justify-end gap-2 pt-2"><button type="button" data-x class="px-3.5 py-2 rounded-lg text-sm hover:bg-white/5" style="background:var(--surface-2)">Cancelar</button><button type="button" data-save class="px-3.5 py-2 rounded-lg text-sm font-medium shadow" style="background:var(--blue);color:#fff">Salvar etapas</button></div></div>`; };
+  const showErr = m => { const e = ov.querySelector('[data-err]'); e.textContent = 'Erro: ' + m; e.style.display = 'block'; };
+  const chk = r => { if(r.error) throw r.error; };
+  const save = async () => {
+    const cur = order.currentStepIndex;
+    if(cur >= locked.length + edit.length) return showErr('mantenha ao menos uma etapa pendente.');
+    const keepIds = edit.filter(s => s.id).map(s => s.id);
+    const removed = order.routing.filter(s => !isLocked(s) && !keepIds.includes(s.id));
+    try{
+      if(removed.length) chk(await sb.from('order_routing').delete().in('id', removed.map(s => s.id)));
+      for(const [k, id] of keepIds.entries()) chk(await sb.from('order_routing').update({ step_index: 1000 + k, status: 'pendente' }).eq('id', id));
+      for(const [i, s] of edit.entries()){
+        const idx = locked.length + i;
+        if(s.id) chk(await sb.from('order_routing').update({ step_index: idx }).eq('id', s.id));
+        else chk(await sb.from('order_routing').insert({ order_id: order.id, step_index: idx, machine: s.machine, status: 'pendente' }));
+      }
+      const all = [...locked.map(s => s.machine), ...edit.map(s => s.machine)];
+      chk(await sb.from('orders').update({ current_machine: all[cur], updated_at: new Date().toISOString() }).eq('id', order.id));
+      await sb.from('order_history').insert(historyRow(order.id, 'roteiro', `Roteiro alterado pelo ADM: ${all.join(' → ')}.`));
+      ov.remove();
+    }catch(ex){ showErr(ex.message); }
+  };
+  ov.addEventListener('click', e => {
+    const t = e.target, m = t.dataset && t.dataset.m, i = +t.dataset.i;
+    if(t === ov || t.closest('[data-x]')) return ov.remove();
+    if(t.dataset.save !== undefined) return save();
+    if(t.dataset.add) edit.push({ id: null, machine: t.dataset.add });
+    else if(m === 'rm') edit.splice(i, 1);
+    else if(m === 'up' && i > 0) edit.splice(i - 1, 0, edit.splice(i, 1)[0]);
+    else if(m === 'dn' && i < edit.length - 1) edit.splice(i + 1, 0, edit.splice(i, 1)[0]);
+    else return;
+    draw();
+  });
+  draw(); document.body.appendChild(ov);
+}
+
+function openEditOrderModal(order){
+  setupOpPicker({ selectId:'eo-op-select', manualId:'eo-op-manual', osId:'eo-os', projectId:'eo-project', matchOs: order.osNumber, matchProject: order.project });
+  $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
+  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
+  const withAttach = baseItems.map((it, i) => {
+    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
+    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
+    const att = tagged || fallback;
+    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
+  });
+  eoItemsEditor.reset(withAttach);
+  $('edit-order-error').classList.add('hidden');
+  $('edit-order-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
+    try{
+      const items = eoItemsEditor.getItems();
+      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      if(!$('eo-os').value.trim() || !$('eo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+      const pieceName = items.length === 1 ? items[0].name : ($('eo-project').value.trim() || items[0].name);
+      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+      const material = items.length === 1 ? items[0].material : null;
+      const v = {
+        os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(),
+        description: $('eo-desc').value.trim(), deadline: $('eo-deadline').value,
+        piece_name: pieceName, quantity: totalQty, material,
+        items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
+      };
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
+      if(error) throw error;
+      if(!data || data.length === 0) throw new Error('sem permissão para editar.');
+      await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
+      for(let i = 0; i < items.length; i++){
+        if(items[i].file){
+          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          const att = await uploadFile(order.id, items[i].file, 'itens', label);
+          await sb.from('order_attachments').insert(att);
+        }
+      }
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', `Pedido editado pelo ADM (${items.length} peça(s)).`));
+      closeModal('edit-order-modal');
+    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+  };
+  openModal('edit-order-modal');
+}
+
+function openSolEditModal(order){
+  if(order.status !== 'aguardando_analise'){
+    notify('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
+    return;
+  }
+  setupOpPicker({ selectId:'seo-op-select', manualId:'seo-op-manual', osId:'seo-os', projectId:'seo-project', matchOs: order.osNumber, matchProject: order.project });
+  $('seo-desc').value = order.description || ''; $('seo-deadline').value = order.deadline;
+  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
+  const withAttach = baseItems.map((it, i) => {
+    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
+    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
+    const att = tagged || fallback;
+    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
+  });
+  solItemsEditor.reset(withAttach);
+  $('sol-edit-order-error').classList.add('hidden');
+  $('sol-edit-order-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const err = $('sol-edit-order-error'); const btn = $('sol-edit-order-submit'); err.classList.add('hidden');
+    try{
+      const items = solItemsEditor.getItems();
+      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+      if(!$('seo-os').value.trim() || !$('seo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+      const pieceName = items.length === 1 ? items[0].name : ($('seo-project').value.trim() || items[0].name);
+      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+      const material = items.length === 1 ? items[0].material : null;
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      const v = {
+        os_number: $('seo-os').value.trim(), project: $('seo-project').value.trim(),
+        description: $('seo-desc').value.trim(), deadline: $('seo-deadline').value,
+        piece_name: pieceName, quantity: totalQty, material,
+        items: items.map(({ name, quantity, material }) => ({ name, quantity, material })),
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
+      if(error) throw error;
+      if(!data || data.length === 0) throw new Error('não deu para salvar.');
+      await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
+      for(let i = 0; i < items.length; i++){
+        if(items[i].file){
+          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+          const att = await uploadFile(order.id, items[i].file, 'itens', label);
+          await sb.from('order_attachments').insert(att);
+        }
+      }
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Solicitante editou o próprio pedido.'));
+      closeModal('sol-edit-order-modal');
+    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
+    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+  };
+  openModal('sol-edit-order-modal');
+}
+
+async function removeOldPieceAttachment(order, i, total){
+  const old = order.attachments.filter(a => a.id && !isPhoto(a) && a.uploadedBy === order.requesterName
+    && (total > 1 ? a.name.startsWith(`Peça ${i + 1} - `) : true));
+  if(!old.length) return;
+  const { error } = await sb.from('order_attachments').delete().in('id', old.map(a => a.id));
+  if(error) return; 
+  const paths = old.map(a => decodeURIComponent(a.url.split('/attachments/')[1] || '')).filter(Boolean);
+  if(paths.length) await sb.storage.from('attachments').remove(paths);
+}
+
+async function deleteOwnOrder(order){
+  if(order.status !== 'aguardando_analise'){
+    notify('Este pedido já entrou em triagem/produção. Peça ao ADM para excluir.');
+    return;
+  }
+  if(!await askConfirm(`Excluir seu pedido "${order.pieceName}"?\n\nIsso apaga também os anexos enviados. Não dá para desfazer.`)) return;
+  try{
+    let r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
+    if(r.error && r.error.code === '23503'){
+      for(const t of ['order_history', 'order_attachments', 'order_routing']){
+        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
+      }
+      r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
+    }
+    if(r.error) throw r.error;
+    if(!r.data || r.data.length === 0) throw new Error('não deu para excluir.');
+    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
+    if(paths.length) await sb.storage.from('attachments').remove(paths);
+  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
+}
+
+async function deleteOrder(order){
+  if(!await askConfirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
+  try{
+    let r = await sb.from('orders').delete().eq('id', order.id).select();
+    if(r.error && r.error.code === '23503'){ 
+      for(const t of ['order_history', 'order_attachments', 'order_routing']){
+        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
+      }
+      r = await sb.from('orders').delete().eq('id', order.id).select();
+    }
+    if(r.error) throw r.error;
+    if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir.');
+    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
+    if(paths.length) await sb.storage.from('attachments').remove(paths);
+  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
+}
+
+const cutQtyOf = o => o.routing.some(r => r.machine === 'Corte a Laser' && r.status === 'concluido') ? (o.quantity || 0) : 0;
+function materialUsage(orders){
+  const m = {};
+  orders.forEach(o => {
+    const its = (o.items && o.items.length) ? o.items : [{ quantity: o.quantity, material: o.material }];
+    its.forEach(it => { const k = it.material || 'Sem material'; m[k] = (m[k] || 0) + (Number(it.quantity) || 0); });
+  });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
+}
+function materialChartHTML(orders){
+  const data = materialUsage(orders), total = data.reduce((a, d) => a + d[1], 0), max = data.length ? data[0][1] : 1;
+  const bars = data.length === 0 ? '<p class="text-sm" style="color:var(--muted)">Sem dados ainda.</p>' : data.map(([name, q], i) => `
+    <div class="mb-3"><div class="flex justify-between gap-3 text-xs font-medium mb-1.5"><span>${i === 0 ? '🏆 ' : ''}${escapeHtml(name)}</span><span style="color:var(--muted)">${q} peça(s) · ${total ? Math.round(q / total * 100) : 0}%</span></div>
+    <div style="height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.max(3, q / max * 100)}%;border-radius:6px;background:${i === 0 ? 'var(--blue)' : '#334155'}"></div></div></div>`).join('');
+  return `<div class="card p-5 mb-6"><p class="text-xs uppercase tracking-wide font-medium mb-4" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
+}
+
+function renderAdminResumo(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
+    <p class="text-xs uppercase tracking-wide font-medium mb-3" style="color:var(--muted)">Por solicitante</p>
+    <div id="resumo-table" class="card overflow-x-auto"></div>`;
+  liveRefresh('admin-resumo', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    if(error){ showError('resumo-table', error); return; }
+    if(!$('resumo-stats')) return;
+    const orders = data.map(normalizeOrder);
+    const cutTotal = orders.reduce((a, o) => a + cutQtyOf(o), 0);
+    $('resumo-stats').innerHTML = statsHTML(statsOf(orders)) +
+      `<div class="card p-5 mb-6 flex items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças cortadas (Corte a Laser concluído)</p><p class="font-display text-3xl font-700 mt-1" style="color:var(--green)">${cutTotal}</p></div><span style="font-size:32px">✂️</span></div>` + materialChartHTML(orders);
+    const by = {};
+    orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
+    const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list), cut: g.list.reduce((a, o) => a + cutQtyOf(o), 0) })).sort((a, b) => b.s.total - a.s.total);
+    const th = h => `<th class="text-left font-medium px-4 py-3 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
+    const td = (v, c) => `<td class="px-4 py-3 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
+    $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-8 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
+      `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Peças cortadas', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
+      rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.cut, 'var(--green)')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
+      `</tbody></table>`;
+  });
+}
+
+function renderAdminRelatorio(){
+  clearChannels();
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const toStr = d => d.toISOString().slice(0, 10);
+  const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+  $('admin-tab-content').innerHTML = `
+    <div class="card p-6 max-w-md space-y-4">
+      <div>
+        <h2 class="font-display font-700 text-xl">Relatório (Excel)</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Inclui pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
+      </div>
+      <div class="flex gap-4 text-sm pt-1">
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="mes" checked style="width:16px;height:16px"> Por mês</label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="periodo" style="width:16px;height:16px"> Por período livre</label>
+      </div>
+      <div id="rep-mes-field">
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Mês</label>
+        <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 text-sm">
+      </div>
+      <div id="rep-periodo-field" class="hidden grid grid-cols-2 gap-3">
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">De</label><input id="rep-from" type="date" value="${toStr(monthAgo)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
+        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Até</label><input id="rep-to" type="date" value="${toStr(now)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Solicitante (opcional)</label>
+        <select id="rep-requester" class="w-full mt-1 px-3 py-2 text-sm"><option value="">Todos os solicitantes</option></select>
+      </div>
+      <p id="rep-msg" class="text-sm hidden"></p>
+      <button id="rep-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 mt-2" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
+    </div>`;
+
+  document.querySelectorAll('input[name="rep-mode"]').forEach(r=> r.addEventListener('change', ()=>{
+    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
+    $('rep-mes-field').classList.toggle('hidden', periodo);
+    $('rep-periodo-field').classList.toggle('hidden', !periodo);
+  }));
+
+  sb.from('orders').select('requester_name').then(({ data })=>{
+    if(!$('rep-requester') || !data) return;
+    const names = [...new Set(data.map(r => r.requester_name))].sort();
+    $('rep-requester').innerHTML = '<option value="">Todos os solicitantes</option>' +
+      names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n}</option>`).join('');
+  });
+
+  $('rep-btn').addEventListener('click', async ()=>{
+    const btn = $('rep-btn'); const msg = $('rep-msg');
+    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
+    let from, to, label;
+    if(periodo){
+      if(!$('rep-from').value || !$('rep-to').value) return;
+      from = new Date($('rep-from').value + 'T00:00:00'); to = new Date($('rep-to').value + 'T23:59:59');
+      label = `${$('rep-from').value}_a_${$('rep-to').value}`;
+    }else{
+      const month = $('rep-month').value; if(!month) return;
+      const [y, m] = month.split('-').map(Number);
+      from = new Date(y, m - 1, 1); to = new Date(y, m, 0, 23, 59, 59);
+      label = month;
+    }
+    const requesterName = $('rep-requester').value || null;
+    msg.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Gerando...';
+    try{
+      const n = await exportReport(from, to, requesterName, label);
+      msg.textContent = n ? `Relatório gerado com ${n} pedido(s).` : 'Nenhum pedido encontrado nesse filtro.';
+      msg.style.color = n ? 'var(--green)' : 'var(--muted)';
+    }catch(ex){ msg.textContent = 'Erro: ' + ex.message; msg.style.color = 'var(--red)'; }
+    msg.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Baixar Excel (.xlsx)';
+  });
+}
+
+async function exportReport(from, to, requesterName, label){
+  if(typeof XLSX === 'undefined') throw new Error('a biblioteca de Excel não carregou. Recarregue a página.');
+  let q = sb.from('orders').select(ORDER_SELECT)
+    .gte('created_at', from.toISOString()).lt('created_at', new Date(to.getTime() + 1000).toISOString())
+    .order('created_at', { ascending: true });
+  if(requesterName) q = q.eq('requester_name', requesterName);
+  const { data, error } = await q;
+  if(error) throw error;
+  const orders = data.map(normalizeOrder);
+  if(orders.length === 0) return 0;
+
+  const pedidos = orders.map(o => {
+    const last = o.routing[o.routing.length - 1];
+    const fim = (o.status === 'concluido' && last) ? last.finishedAt : null;
+    const atrasado = fim ? new Date(fim) > new Date(o.deadline + 'T23:59:59') : isLate(o);
+    const rec = receiptOf(o);
+    return {
+      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Material': o.material || '', 'Qtd Peças': (o.items && o.items.length) || 1, 'Urgente': o.urgent ? 'Sim' : 'Não', 'Peça': o.pieceName, 'Observações': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
+      'Criado em': fmtDateTime(o.createdAt), 'Prazo': fmtDate(o.deadline), 'Status': statusInfo(o).label,
+      'Roteiro': o.routing.map(r => r.machine).join(' → '), 'Concluído em': fim ? fmtDateTime(fim) : '',
+      'Atrasado': atrasado ? 'Sim' : 'Não', 'Recebimento confirmado': rec ? 'Sim' : (o.status === 'concluido' ? 'Pendente' : ''),
+      'Recebido em': rec ? fmtDateTime(rec.at) : '', 'Arquivos enviados': reqFilesOf(o).length, 'Fotos de conclusão': photosOf(o).length
+    };
+  });
+  const itens = [];
+  orders.forEach(o => {
+    const its = (o.items && o.items.length) ? o.items : [{ name: o.pieceName, quantity: o.quantity, material: o.material }];
+    its.forEach((it, i) => itens.push({
+      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Peça': it.name, 'Item nº': i + 1,
+      'Quantidade': it.quantity, 'Material': it.material || '', 'Solicitante': o.requesterName,
+      'Status do pedido': statusInfo(o).label, 'Prazo': fmtDate(o.deadline), 'Urgente': o.urgent ? 'Sim' : 'Não'
+    }));
+  });
+  const etapas = [];
+  orders.forEach(o => o.routing.forEach((r, i) => etapas.push({
+    'Peça': o.pieceName, 'Solicitante': o.requesterName, 'Etapa': i + 1, 'Máquina': r.machine,
+    'Status': { pendente: 'Aguardando', em_andamento: 'Em andamento', concluido: 'Concluída' }[r.status] || r.status,
+    'Início': r.startedAt ? fmtDateTime(r.startedAt) : '', 'Fim': r.finishedAt ? fmtDateTime(r.finishedAt) : '',
+    'Duração (min)': (r.startedAt && r.finishedAt) ? Math.round((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000) : ''
+  })));
+  const by = {};
+  orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
+  const resumo = Object.values(by).map(g => { const s = statsOf(g.list); return {
+    'Solicitante': g.name, 'Pedidos': s.total, 'Aguardando ADM': s.aguardando, 'Em produção': s.producao,
+    'Concluídos': s.concluido, 'Recebidos': s.recebidos, 'Atrasados': s.atrasados, 'Arquivos enviados': s.arquivos, 'Fotos': s.fotos }; });
+
+  const sheet = rows => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const keys = Object.keys(rows[0] || {});
+    ws['!cols'] = keys.map(k => ({ wch: Math.min(45, Math.max(k.length, ...rows.map(r => String(r[k] == null ? '' : r[k]).length)) + 2) }));
+    return ws;
+  };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheet(pedidos), 'Pedidos');
+  XLSX.utils.book_append_sheet(wb, sheet(itens), 'Itens');
+  XLSX.utils.book_append_sheet(wb, sheet(etapas), 'Etapas');
+  XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
+  XLSX.writeFile(wb, `relatorio-pedidos-${label}.xlsx`);
+  return orders.length;
+}
+
+const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm", "Chapa Aço Carbono #14 = 2mm",
+  "Chapa Aço Carbono (1/8\") = 3,18mm (Xadrez)", "Chapa Aço Carbono (3/16\") = 4,76mm", "Chapa Aço Carbono (1/4\") = 6,35mm",
+  "Chapa Aço Carbono (5/16\") = 7,94mm", "Chapa Aço Carbono (3/8\") = 9,53mm", "Chapa Aço Carbono (1/2\") = 12,70mm",
+  "Chapa Aço Carbono (5/8\") = 15,88mm", "Chapa Inox #18 = 1.2mm", "Chapa Inox = 3mm", "Chapa Alumínio = 3mm"];
+function materialOptionsHTML(placeholder){
+  return `<option value="">${placeholder}</option>` + MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
+}
+if($('eo-material')) $('eo-material').innerHTML = materialOptionsHTML('— sem material —');
+$('order-deadline').min = new Date().toLocaleDateString('sv-SE');
+const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
+
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function createItemsEditor(containerId){
+  const wrap = $(containerId);
+  let rows = [], removedIds = [];
+  const hasFile = r => !!(r.file || (r.existingAttachmentName && !r.removeExisting));
+  function fileAreaHTML(r){
+    if(hasFile(r)) return `<div class="flex items-center justify-between gap-2 mt-1 px-3 py-2 rounded-md text-xs border" style="background:var(--surface-2);border-color:var(--line)">
+        <span class="truncate">📎 ${escapeHtml(r.file ? r.file.name : r.existingAttachmentName)}${r.file ? '' : ' <em style="color:var(--muted)">(atual)</em>'}</span>
+        <button type="button" data-del-file style="color:var(--red)" class="shrink-0 font-medium hover:underline">Excluir</button></div>`;
+    return `<input data-f="file" type="file" class="w-full mt-1 text-xs">${r.removeExisting ? '<p class="text-xs mt-1" style="color:var(--amber)">O anexo atual será removido ao salvar.</p>' : ''}`;
+  }
+  function renderFileArea(r){
+    const area = wrap.querySelector(`[data-row="${r.id}"] [data-file-area]`);
+    area.innerHTML = fileAreaHTML(r);
+    const inp = area.querySelector('[data-f="file"]');
+    if(inp) inp.addEventListener('change', e => {
+      const f = e.target.files[0] || null, m = f ? validateFile(f) : '';
+      if(m){ notify(m); e.target.value = ''; return; }
+      r.file = f; renderFileArea(r);
+    });
+    const del = area.querySelector('[data-del-file]');
+    if(del) del.addEventListener('click', () => { if(r.file) r.file = null; else r.removeExisting = true; renderFileArea(r); });
+  }
+  function rowHTML(r){
+    return `<div class="card p-4 space-y-3" data-row="${r.id}">
+      <div class="flex items-center justify-between"><span class="text-xs font-semibold uppercase tracking-wide" data-label style="color:var(--muted)"></span>
+        <button type="button" data-remove-item class="text-xs font-medium hover:underline" style="color:var(--red)">Remover</button></div>
+      <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 text-sm">
+      <div class="grid grid-cols-2 gap-2">
+        <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 text-sm">
+        <select data-f="material" class="w-full px-3 py-2 text-sm">${ITEM_MATERIAL_OPTIONS}</select></div>
+      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Anexo desta peça (opcional)</label><div data-file-area></div></div></div>`;
+  }
+  function refreshLabels(){
+    rows.forEach((r, i) => {
+      const el = wrap.querySelector(`[data-row="${r.id}"]`);
+      el.querySelector('[data-label]').textContent = `Peça ${i + 1}`;
+      el.querySelector('[data-remove-item]').style.display = rows.length > 1 ? '' : 'none';
+    });
+  }
+  function addRow(data){
+    data = data || {};
+    const r = { id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null,
+      existingAttachmentName: data._attachmentName || '', existingAttachmentId: data._attachmentId || null, removeExisting: false };
+    rows.push(r);
+    wrap.insertAdjacentHTML('beforeend', rowHTML(r));
+    const el = wrap.querySelector(`[data-row="${r.id}"]`);
+    el.querySelector('[data-f="material"]').value = r.material;
+    el.querySelector('[data-f="name"]').addEventListener('input', e => r.name = e.target.value);
+    el.querySelector('[data-f="qty"]').addEventListener('input', e => r.qty = Number(e.target.value));
+    el.querySelector('[data-f="material"]').addEventListener('change', e => r.material = e.target.value);
+    el.querySelector('[data-remove-item]').addEventListener('click', () => removeRow(r.id));
+    renderFileArea(r); refreshLabels();
+  }
+  function removeRow(rid){
+    if(rows.length <= 1) return;
+    const r = rows.find(x => x.id === rid);
+    if(r.existingAttachmentId) removedIds.push(r.existingAttachmentId);
+    rows = rows.filter(x => x.id !== rid);
+    wrap.querySelector(`[data-row="${rid}"]`).remove(); refreshLabels();
+  }
+  function reset(items){ rows = []; removedIds = []; wrap.innerHTML = ''; (items && items.length ? items : [{}]).forEach(addRow); }
+  reset();
   return {
-    id: raw.id,
-    pieceName: raw.piece_name,
-    description: raw.description,
-    quantity: raw.quantity,
-    deadline: raw.deadline,
-    requesterId: raw.requester_id,
-    requesterName: raw.requester_name,
-    status: raw.status,
-    osNumber: raw.os_number,
-    project: raw.project,
-    material: raw.material,
-    items: raw.items || [],
-    createdAt: raw.created_at,
-    assignedOperator: raw.assigned_operator,
-    receivedAt: raw.received_at,
-    routing: raw.order_routing ? raw.order_routing.sort((a,b)=>a.step_index - b.step_index).map(r=>({ machine: r.machine, status: r.status })) : [],
-    attachments: raw.order_attachments || []
+    addBlank: () => addRow(),
+    reset,
+    getItems: () => rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file })),
+    takeDeletes: () => { const ids = [...removedIds, ...rows.filter(r => r.existingAttachmentId && (r.removeExisting || r.file)).map(r => r.existingAttachmentId)]; removedIds = []; return ids; }
   };
 }
-async function uploadFile(orderId, file, folder = 'geral', customName = null){
-  const cleanName = (customName || file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const filePath = `${orderId}/${Date.now()}_${cleanName}`;
-  const { error: uploadError } = await sb.storage.from('order-files').upload(filePath, file);
-  if(uploadError) throw uploadError;
-  const { data } = sb.storage.from('order-files').getPublicUrl(filePath);
-  return { order_id: orderId, name: customName || file.name, url: data.publicUrl };
+async function deleteAttachmentsByIds(ids){
+  if(!ids.length) return;
+  const { data, error } = await sb.from('order_attachments').delete().in('id', ids).select();
+  if(error || !data) return;
+  const paths = data.map(a => decodeURIComponent((a.url.split('/attachments/')[1] || ''))).filter(Boolean);
+  if(paths.length) await sb.storage.from('attachments').remove(paths);
+}
+
+const orderItemsEditor = createItemsEditor('order-items-editor');
+$('order-add-item').addEventListener('click', ()=> orderItemsEditor.addBlank());
+
+const solItemsEditor = createItemsEditor('seo-items-editor');
+$('seo-add-item').addEventListener('click', ()=> solItemsEditor.addBlank());
+
+const eoItemsEditor = createItemsEditor('eo-items-editor');
+$('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
+
+async function toggleUrgent(o){
+  const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
+  if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão')); return; }
+  await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
+}
+
+function barsHTML(rows, fmt = v => v){
+  const max = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
+  return rows.map(r => {
+    const tot = r.segs.reduce((a, s) => a + s.v, 0);
+    return `<div class="flex items-center gap-3 mb-2.5">
+      <span class="w-24 sm:w-32 shrink-0 text-xs font-medium truncate" style="color:var(--muted)" title="${r.label}">${r.label}</span>
+      <div class="flex-1 flex h-5 rounded-md overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
+      <span class="w-20 text-xs text-right font-medium">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
+  }).join('');
+}
+function renderAdminGraficos(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="gr" class="grid gap-4 lg:grid-cols-2"></div>`;
+  liveRefresh('admin-graficos', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    if(error){ showError('gr', error); return; }
+    if(!$('gr')) return;
+    const orders = data.map(normalizeOrder);
+    const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const now = new Date(), months = [];
+    for(let i = 5; i >= 0; i--){ const x = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ key: key(x), label: `${String(x.getMonth() + 1).padStart(2, '0')}/${x.getFullYear()}` }); }
+    const inMonth = m => orders.filter(o => key(new Date(o.createdAt)) === m.key);
+    const porMes = months.map(m => ({ label: m.label, segs: [{ v: inMonth(m).length, color: 'var(--blue)', name: 'Pedidos' }] }));
+    const atrasos = months.map(m => { const l = inMonth(m), late = l.filter(lateFinal).length;
+      return { label: m.label, segs: [{ v: l.length - late, color: 'var(--green)', name: 'No prazo' }, { v: late, color: 'var(--red)', name: 'Atrasados' }], text: `${late} de ${l.length}` }; });
+    const acc = {};
+    orders.forEach(o => o.routing.forEach(r => { if(r.startedAt && r.finishedAt) (acc[r.machine] = acc[r.machine] || []).push((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000); }));
+    const tempo = MACHINES.map(m => { const a = acc[m] || [], avg = a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+      return { label: m, segs: [{ v: avg, color: 'var(--amber)', name: 'Média' }], text: a.length ? fmtMin(avg) : '—' }; });
+    const box = (t, sub, body) => `<div class="card p-5"><p class="font-display font-600 text-lg">${t}</p><p class="text-xs mb-4" style="color:var(--muted)">${sub}</p>${body}</div>`;
+    const abertos = orders.filter(o => o.status !== 'concluido' && isLate(o)).length;
+    $('gr').innerHTML =
+      box('Pedidos por mês', 'Últimos 6 meses (data de criação)', barsHTML(porMes)) +
+      box('Tempo médio por máquina', 'Duração das etapas concluídas (início → fim)', barsHTML(tempo)) +
+      box('Atrasos por mês', `<span style="color:var(--green)">■</span> no prazo &nbsp;<span style="color:var(--red)">■</span> atrasados · ${abertos} pedido(s) em aberto com prazo vencido agora`, barsHTML(atrasos));
+  });
 }
 </script>
 </body>
