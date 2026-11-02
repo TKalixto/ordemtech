@@ -1,2325 +1,969 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Gestão CIMA — Gestão de Produção</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
+
   :root{
+
     --bg:#090D13; 
+
     --surface:#121821; 
+
     --surface-2:#1A222D; 
+
     --line:#263244;
+
     --text:#F3F4F6; 
+
     --muted:#9CA3AF;
+
     --blue:#3B82F6; 
+
     --amber:#F59E0B; 
+
     --green:#10B981; 
+
     --red:#EF4444; 
+
     --slate:#64748B;
+
   }
+
   html,body{overflow-x:hidden;}
+
   body{font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
+
   .font-display{font-family:'Space Grotesk',sans-serif;}
+
   
+
   /* Scrollbars mais elegantes */
+
   ::-webkit-scrollbar{width:6px;height:6px;}
+
   ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+
   ::-webkit-scrollbar-thumb:hover{background:var(--slate);}
+
   ::-webkit-scrollbar-track{background:transparent;}
 
+
+
   /* Cartões com profundidade e bordas refinadas */
+
   .card{
+
     background:var(--surface);
+
     border:1px solid var(--line);
+
     border-radius:0.75rem;
+
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+
     transition: border-color 0.2s ease, transform 0.1s ease;
+
   }
+
   .card:hover{
+
     border-color: rgba(59, 130, 246, 0.35);
+
   }
+
+
 
   .step-line{background:var(--line);}
+
   .step-line.done{background:var(--green);}
 
+
+
   input,textarea,select{
+
     background:var(--surface-2);
+
     border:1px solid var(--line);
+
     color:var(--text);
+
     border-radius: 0.5rem;
+
     transition: border-color 0.15s, box-shadow 0.15s;
+
   }
+
   input:focus,textarea:focus,select:focus{
+
     outline:none;
+
     border-color:var(--blue);
+
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+
   }
+
   ::placeholder{color:var(--muted); opacity: 0.7;}
+
   .hidden{display:none !important;}
 
+
+
   /* Modais com efeito blur */
+
   .modal-backdrop{
+
     background:rgba(5, 7, 10, 0.8);
+
     backdrop-filter: blur(4px);
+
   }
+
   
+
   .tag{border-left-width:5px; border-radius:0.75rem;}
 
+
+
   .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:transparent;transition:background .15s,color .15s;}
+
   .bell-btn:hover{background:var(--surface-2);color:var(--text);}
+
   
+
   .toast-wrap{position:fixed;right:16px;bottom:16px;z-index:70;display:flex;flex-direction:column;gap:8px;max-width:min(92vw,380px)}
+
   .toast{padding:12px 16px;border-radius:8px;font-size:13px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-left:4px solid var(--blue);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+
   .toast.err{border-left-color:var(--red)} .toast.ok{border-left-color:var(--green)}
+
   
+
   .skel{height:84px;border-radius:12px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel 1.2s infinite}
+
   @keyframes skel{to{background-position:-200% 0}}
+
   
+
   .nav-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:20px;font-weight:700;text-align:center}
+
   .page-head{margin-bottom:20px}
+
   
+
   .chip-st{padding:6px 14px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);background:transparent;transition:background .15s,color .15s,border-color .15s}
+
   .chip-st b{color:var(--text);margin-left:4px}
+
   .chip-st:hover{background:var(--surface-2);color:var(--text)}
+
   .chip-st.on{background:rgba(59, 130, 246, 0.16);border-color:var(--blue);color:var(--text)}
+
   
+
   [data-start],[data-finish]{min-height:44px;padding-left:18px !important;padding-right:18px !important;font-size:14px !important;border-radius: 0.5rem;}
+
   @media (min-width:1024px){ body:has(#admin-sb) .brand-top{display:none} }
+
   
+
   .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;line-height:16px;font-weight:700;text-align:center;}
+
   
+
   /* ===== Sidebar do ADM ===== */
+
   #admin-sb{
+
     position:fixed;top:0;left:0;bottom:0;width:260px;z-index:30;
+
     display:flex;flex-direction:column;background:#0D131C;
+
     border-right:1px solid var(--line);
+
     box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+
   }
+
   .sb-logo{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
+
   .sb-logo small,.sb-foot small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+
   .sb-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;font-weight:800;box-shadow: 0 2px 8px rgba(59,130,246,0.4);}
+
   .sb-nav{flex:1;overflow-y:auto;padding:12px 10px 16px}
+
   .sb-sec{margin-bottom:8px}
+
   .sb-title{padding:12px 10px 6px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);font-weight:600}
+
   .sb-link{
+
     position:relative;display:flex;align-items:center;gap:11px;width:100%;
+
     padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:500;
+
     color:var(--muted);text-align:left;transition:all .15s ease;
+
   }
+
   .sb-link:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+
   .sb-link.active{background:rgba(59, 130, 246, 0.12);color:#60A5FA;font-weight:600;}
+
   .sb-link.active::before{content:"";position:absolute;left:-10px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
+
   .sb-link.active .sb-ic{color:#60A5FA}
+
   .sb-ic{width:18px;height:18px;flex-shrink:0}
+
   .sb-group{margin-top:6px}.sb-group .sb-chev{margin-left:auto;width:16px;height:16px;transition:transform .2s}
+
   .sb-group.open .sb-chev{transform:rotate(180deg)}
+
   .sb-sub{display:none;margin:2px 0 4px 18px;padding-left:8px;border-left:1px solid var(--line)}
+
   .sb-group.open + .sb-sub{display:block}
+
   .sb-foot{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:500}
+
   .sb-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700;border:1px solid var(--line)}
+
   #sb-toggle,#sb-backdrop{display:none}
+
   #main-content:has(#admin-sb){max-width:none;margin:0;padding-left:calc(260px + 1.5rem)}
+
   body:has(#admin-sb) header{padding-left:calc(260px + 1.5rem)}
+
   @media (max-width:1023px){
+
     #admin-sb{transform:translateX(-100%);transition:transform .22s}#admin-sb.show{transform:none}
+
     #sb-toggle{display:grid;place-items:center;position:fixed;top:10px;left:10px;z-index:25;width:38px;height:38px;border-radius:8px;background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+
     #sb-backdrop.show{display:block;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);}
+
     #main-content:has(#admin-sb){padding-left:.75rem}
+
     body:has(#admin-sb) header{padding-left:3.5rem}
+
   }
+
 </style>
+
 </head>
+
 <body class="min-h-screen">
 
+
+
 <!-- ================= LOGIN / CADASTRO ================= -->
+
 <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+
   <div class="w-full max-w-sm">
+
     <div class="mb-8 text-center">
+
       <div class="inline-flex items-center gap-2 mb-2">
+
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
         <span class="font-display font-700 text-xl tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
+
       </div>
+
       <p class="text-sm" style="color:var(--muted)">Centro de Inovação de Manufatura Avançada</p>
+
     </div>
+
+
 
     <form id="login-form" class="card p-6 space-y-4">
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">E-mail</label>
+
         <input id="login-email" type="email" required class="w-full mt-1 px-3 py-2 text-sm" placeholder="voce@oficina.com">
+
       </div>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Senha</label>
+
         <input id="login-password" type="password" required class="w-full mt-1 px-3 py-2 text-sm" placeholder="••••••••">
+
       </div>
+
       <p id="login-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="login-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Entrar</button>
+
       <button type="button" id="show-signup" class="w-full text-xs hover:underline" style="color:var(--muted)">Ainda não tenho conta — criar conta</button>
+
     </form>
+
+
 
     <form id="signup-form" class="card p-6 space-y-4 hidden">
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Nome completo</label>
+
         <input id="signup-name" required class="w-full mt-1 px-3 py-2 text-sm">
+
       </div>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">E-mail</label>
+
         <input id="signup-email" type="email" required class="w-full mt-1 px-3 py-2 text-sm">
+
       </div>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Senha</label>
+
         <input id="signup-password" type="password" required minlength="6" class="w-full mt-1 px-3 py-2 text-sm" placeholder="mín. 6 caracteres">
+
       </div>
+
       <p class="text-xs" style="color:var(--muted)">Sua conta será criada com acesso pendente até um administrador definir sua função (solicitante, operador ou admin).</p>
+
       <p id="signup-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="signup-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Criar conta</button>
+
       <button type="button" id="show-login" class="w-full text-xs hover:underline" style="color:var(--muted)">Já tenho conta — entrar</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= TELA: PENDENTE DE APROVAÇÃO ================= -->
+
 <div id="pending-screen" class="hidden min-h-screen flex items-center justify-center px-4">
+
   <div class="card max-w-sm w-full p-6 text-center">
+
     <p class="font-display font-600 text-lg mb-2">Conta aguardando aprovação</p>
+
     <p class="text-sm mb-5" style="color:var(--muted)">Sua conta foi criada. Peça a um administrador para acessar a aba "Usuários" e definir sua função (solicitante, operador ou admin) e, se for operador, a sua máquina.</p>
+
     <button id="pending-logout" class="px-4 py-2 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Sair</button>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= APP SHELL ================= -->
+
 <div id="app-shell" class="hidden min-h-screen">
+
   <header class="flex items-center justify-between px-3 sm:px-6 py-3.5 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
+
     <div class="flex items-center gap-2 min-w-0">
+
       <svg class="brand-top" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
       <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
+
       <span id="role-badge" class="ml-2 text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--line)"></span>
+
     </div>
+
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+
       <button id="bell-btn" type="button" class="bell-btn hidden" title="Pedidos aguardando triagem" aria-label="Notificações">
+
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+
         <span id="bell-dot" class="bell-dot hidden">0</span>
+
       </button>
+
       <span id="user-name" class="text-sm font-medium truncate max-w-[90px] sm:max-w-none" style="color:var(--muted)"></span>
+
       <button id="logout-btn" class="text-sm px-3 py-1.5 rounded-lg border shrink-0 transition-colors hover:bg-white/5" style="border-color:var(--line)">Sair</button>
+
     </div>
+
   </header>
+
   <main id="main-content" class="p-4 sm:p-6 max-w-7xl mx-auto"></main>
+
 </div>
+
+
 
 <!-- ================= MODAL: DETALHE / HISTÓRICO ================= -->
+
 <div id="detail-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Detalhes do Pedido</h3>
+
       <button data-close-modal="detail-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <div id="detail-modal-body" class="p-6 space-y-5"></div>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: NOVO PEDIDO ================= -->
+
 <div id="new-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Novo Pedido de Peça</h3>
+
       <button data-close-modal="new-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="new-order-form" class="p-6 space-y-4">
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+
         <select id="order-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
+
         <p class="text-xs mt-1" style="color:var(--muted)">Não achou a OS/Projeto? Escolha "Outro" ou peça ao ADM para cadastrar em Projetos / OS.</p>
+
       </div>
+
       <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S. (Ordem de Serviço)</label><input id="order-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       </div>
+
       <div class="flex items-center justify-between">
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+
         <button type="button" id="order-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+
       </div>
+
       <div id="order-items-editor" class="space-y-3"></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 text-sm" placeholder="Tolerâncias, acabamento, observações..."></textarea></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado (para o pedido inteiro)</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: TRIAGEM ================= -->
+
 <div id="triagem-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Triagem do Pedido</h3>
+
       <button data-close-modal="triagem-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <div id="triagem-body" class="p-6 space-y-5"></div>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: EDITAR USUÁRIO ================= -->
+
 <div id="edit-user-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-md">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Definir Função do Usuário</h3>
+
       <button data-close-modal="edit-user-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="edit-user-form" class="p-6 space-y-4">
+
       <p id="eu-name" class="text-sm font-medium"></p>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Perfil</label>
+
         <select id="eu-role" class="w-full mt-1 px-3 py-2 text-sm">
+
           <option value="pendente">Pendente</option>
+
           <option value="solicitante">Solicitante</option>
+
           <option value="operador">Operador</option>
+
           <option value="admin">Administrador</option>
+
         </select>
+
       </div>
+
       <div id="eu-machine-wrap">
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Máquinas / setores (marque uma ou mais)</label>
+
         <div id="eu-machines" class="mt-2 space-y-2"></div>
+
       </div>
+
       <p id="edit-user-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: EDITAR PEDIDO (ADMIN) ================= -->
+
 <div id="edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Editar Pedido</h3>
+
       <button data-close-modal="edit-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="edit-order-form" class="p-6 space-y-4">
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+
         <select id="eo-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
+
       </div>
+
       <div class="grid grid-cols-2 gap-3 hidden" id="eo-op-manual">
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="eo-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="eo-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       </div>
+
       <div class="flex items-center justify-between">
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+
         <button type="button" id="eo-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+
       </div>
+
       <div id="eo-items-editor" class="space-y-3"></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações</label><textarea id="eo-desc" rows="2" class="w-full mt-1 px-3 py-2 text-sm"></textarea></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo limite</label><input id="eo-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       <p id="edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="edit-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: EDITAR MEU PEDIDO ================= -->
+
 <div id="sol-edit-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Editar Meu Pedido</h3>
+
       <button data-close-modal="sol-edit-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="sol-edit-order-form" class="p-6 space-y-4">
+
       <p class="text-xs" style="color:var(--muted)">Só é possível editar enquanto o pedido está aguardando análise do ADM.</p>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
+
         <select id="seo-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
+
       </div>
+
       <div class="grid grid-cols-2 gap-3 hidden" id="seo-op-manual">
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="seo-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
         <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="seo-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       </div>
+
       <div class="flex items-center justify-between">
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
+
         <button type="button" id="seo-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
+
       </div>
+
       <div id="seo-items-editor" class="space-y-3"></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="seo-desc" rows="2" class="w-full mt-1 px-3 py-2 text-sm"></textarea></div>
+
       <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado</label><input id="seo-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
+
       <p id="sol-edit-order-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="sol-edit-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Salvar alterações</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: FINALIZAR ETAPA ================= -->
+
 <div id="finish-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-md max-h-[90vh] overflow-y-auto">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg">Concluir Etapa</h3>
+
       <button data-close-modal="finish-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="finish-form" class="p-6 space-y-4">
+
       <p id="finish-title" class="text-sm font-medium"></p>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Foto do trabalho concluído (obrigatória)</label>
+
         <input id="finish-photo" type="file" accept="image/*" capture="environment" required class="w-full mt-1 text-sm">
+
         <img id="finish-preview" class="hidden mt-3 rounded-lg max-h-56 w-full object-contain" style="background:var(--surface-2)" alt="Pré-visualização">
+
       </div>
+
       <p id="finish-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="finish-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--green);color:#06210f">Enviar foto e finalizar etapa</button>
+
     </form>
+
   </div>
+
 </div>
+
+
 
 <!-- ================= MODAL: PROJETO / OS ================= -->
+
 <div id="project-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+
   <div class="card w-full max-w-md">
+
     <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
+
       <h3 class="font-display font-600 text-lg" id="project-modal-title">Novo Projeto / OS</h3>
+
       <button data-close-modal="project-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
+
     </div>
+
     <form id="project-form" class="p-6 space-y-4">
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S. (Ordem de Serviço)</label>
+
         <input id="pm-os" required class="w-full mt-1 px-3 py-2 text-sm">
+
       </div>
+
       <div>
+
         <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Nome do Projeto</label>
+
         <input id="pm-project" required class="w-full mt-1 px-3 py-2 text-sm">
+
       </div>
+
       <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="pm-active" type="checkbox" checked style="width:16px;height:16px"> Disponível para o solicitante escolher</label>
+
       <p id="project-modal-error" class="text-sm hidden" style="color:var(--red)"></p>
+
       <button type="submit" id="project-modal-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Salvar</button>
+
     </form>
+
   </div>
+
 </div>
 
+
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+
+
 <script>
+
 /* =========================================================================
+
    1) CONFIGURAÇÃO DO SUPABASE
+
    ========================================================================= */
+
 const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
+
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
+
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
 
 const MACHINES = ["Corte a Laser", "Dobra CNC", "Centro de Usinagem", "Torno CNC"];
 
+
+
 let currentUser = null;      
+
 let activeChannels = [];     
+
 let bellChannel = null;      
+
 let projectsCache = [];      
 
-  let projectsCache = [];
 
-// Gerenciador dinâmico de múltiplos itens de peças
-class OrderItemsEditor {
-  constructor(containerId){
-    this.container = $(containerId);
-    this.items = [];
-  }
-  addItem(data = { name: '', quantity: 1, material: 'Chapa Aço Carbono 1020', file: null }){
-    this.items.push(data);
-    this.render();
-  }
-  removeItem(idx){
-    this.items.splice(idx, 1);
-    if(this.items.length === 0) this.addItem();
-    else this.render();
-  }
-  reset(){
-    this.items = [];
-    this.addItem();
-  }
-  getItems(){
-    const rows = this.container.querySelectorAll('.order-item-row');
-    rows.forEach((row, i)=>{
-      const nameIn = row.querySelector('.item-name');
-      const qtyIn = row.querySelector('.item-qty');
-      const matIn = row.querySelector('.item-mat');
-      const fileIn = row.querySelector('.item-file');
-      if(nameIn) this.items[i].name = nameIn.value.trim();
-      if(qtyIn) this.items[i].quantity = Math.max(1, parseInt(qtyIn.value) || 1);
-      if(matIn) this.items[i].material = matIn.value;
-      if(fileIn && fileIn.files[0]) this.items[i].file = fileIn.files[0];
-    });
-    return this.items;
-  }
-  render(){
-    if(this.items.length === 0) this.items.push({ name: '', quantity: 1, material: 'Chapa Aço Carbono 1020', file: null });
-    this.container.innerHTML = this.items.map((it, i) => `
-      <div class="card p-3 space-y-2 order-item-row" style="background:var(--surface-2)">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold" style="color:var(--muted)">Peça #${i+1}</span>
-          ${this.items.length > 1 ? `<button type="button" data-del-item="${i}" class="text-xs px-2 py-0.5 rounded text-white" style="background:var(--red)">Remover</button>` : ''}
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div><label class="text-[11px]" style="color:var(--muted)">Nome da Peça</label><input type="text" value="${escapeHtml(it.name)}" class="w-full mt-1 px-2.5 py-1.5 text-xs item-name" required placeholder="Ex: Flange"></div>
-          <div><label class="text-[11px]" style="color:var(--muted)">Quantidade</label><input type="number" min="1" value="${it.quantity}" class="w-full mt-1 px-2.5 py-1.5 text-xs item-qty" required></div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <label class="text-[11px]" style="color:var(--muted)">Material</label>
-            <select class="w-full mt-1 px-2.5 py-1.5 text-xs item-mat">
-              <option value="Chapa Aço Carbono 1020" ${it.material==='Chapa Aço Carbono 1020'?'selected':''}>Chapa Aço Carbono 1020</option>
-              <option value="Aço Inox 304" ${it.material==='Aço Inox 304'?'selected':''}>Aço Inox 304</option>
-              <option value="Alumínio Naval" ${it.material==='Alumínio Naval'?'selected':''}>Alumínio Naval</option>
-              <option value="Outro" ${it.material==='Outro'?'selected':''}>Outro</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-[11px]" style="color:var(--muted)">Anexo (DXF, PDF)</label>
-            <input type="file" class="w-full mt-1 text-[11px] item-file">
-          </div>
-        </div>
-      </div>
-    `).join('');
-    this.container.querySelectorAll('[data-del-item]').forEach(b=>{
-      b.onclick = () => { this.getItems(); this.removeItem(parseInt(b.dataset.delItem)); };
-    });
-  }
-}
 
-const orderItemsEditor = new OrderItemsEditor('order-items-editor');
-$('order-add-item').onclick = () => { orderItemsEditor.getItems(); orderItemsEditor.addItem(); };
-
-async function loadProjects(){
-  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
-  if(error){ console.error(error); return []; }
-  projectsCache = data || []; return projectsCache;
-}
-
-function projectOptionsHTML(list, selectedValue){
-  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
-  return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
-}
-
-async function setupOpPicker({ selectId, manualId, osId, projectId }){
-  const list = await loadProjects();
-  const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
-  sel.innerHTML = projectOptionsHTML(list, '');
-  sel.onchange = () => {
-    if(sel.value === '__custom__'){ manual.classList.remove('hidden'); }
-    else{
-      manual.classList.add('hidden');
-      const p = list.find(x => x.id === sel.value);
-      osEl.value = p ? p.os_number : '';
-      projEl.value = p ? p.project_name : '';
-    }
-  };
-}
 /* =========================================================================
+
    2) HELPERS GERAIS
+
    ========================================================================= */
+
 function $(id){ return document.getElementById(id); }
+
 function clearChannels(){ activeChannels.forEach(c => sb.removeChannel(c)); activeChannels = []; }
+
 function closeModal(id){ $(id).classList.add('hidden'); }
+
 function openModal(id){ $(id).classList.remove('hidden'); }
+
 document.querySelectorAll('[data-close-modal]').forEach(btn=>{
+
   btn.addEventListener('click', ()=> closeModal(btn.dataset.closeModal));
+
 });
+
+
 
 const BASE_TITLE = document.title;
 
+
+
 function notify(msg, type){
+
   const t = type || (/^(erro|não foi possível|falha)/i.test(msg) ? 'err' : 'info');
+
   let wrap = $('toast-wrap');
+
   if(!wrap){ wrap = document.createElement('div'); wrap.id = 'toast-wrap'; wrap.className = 'toast-wrap'; document.body.appendChild(wrap); }
+
   const el = document.createElement('div'); el.className = 'toast ' + t; el.setAttribute('role', 'alert'); el.textContent = msg;
+
   wrap.appendChild(el); setTimeout(() => el.remove(), t === 'err' ? 7000 : 4500);
+
 }
+
 function askConfirm(msg){
+
   return new Promise(resolve => {
+
     const danger = !/^(Confirmar|Voltar)/.test(msg);
+
     const ov = document.createElement('div');
+
     ov.className = 'fixed inset-0 modal-backdrop flex items-center justify-center p-4'; ov.style.zIndex = 60;
+
     ov.innerHTML = `<div class="card w-full max-w-sm p-6" role="dialog" aria-modal="true">
+
       <p class="text-sm" style="white-space:pre-line"></p>
+
       <div class="flex justify-end gap-2 mt-6">
+
         <button type="button" data-no class="px-4 py-2 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Cancelar</button>
+
         <button type="button" data-yes class="px-4 py-2 rounded-lg text-sm font-medium shadow-md" style="background:${danger ? 'var(--red)' : 'var(--blue)'};color:#fff">${danger ? 'Sim, continuar' : 'Confirmar'}</button>
+
       </div></div>`;
+
     ov.querySelector('p').textContent = msg;
+
     const onKey = e => { if(e.key === 'Escape') done(false); };
+
     const done = v => { document.removeEventListener('keydown', onKey); ov.remove(); resolve(v); };
+
     ov.addEventListener('click', e => { if(e.target === ov) done(false); });
+
     ov.querySelector('[data-no]').onclick = () => done(false);
+
     const yes = ov.querySelector('[data-yes]'); yes.onclick = () => done(true);
+
     document.addEventListener('keydown', onKey);
+
     document.body.appendChild(ov); yes.focus();
+
   });
+
 }
+
 function showError(id, error){
+
   console.error(error);
+
   const el = $(id); if(!el) return;
+
   el.innerHTML = `<div class="card p-6 text-center" style="border-color:var(--red)">
+
     <p class="text-sm font-medium" style="color:var(--red)">Não foi possível carregar os dados.</p>
+
     <p class="text-xs mt-1" style="color:var(--muted)">${escapeHtml((error && error.message) || '')}</p>
+
     <button type="button" class="retry-btn mt-3 px-3 py-1.5 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Tentar de novo</button></div>`;
+
   el.querySelector('.retry-btn').onclick = () => location.reload();
+
 }
+
 function prazoTxt(o){
+
   if(!o.deadline) return '—';
+
   const base = fmtDate(o.deadline);
+
   if(o.status === 'concluido') return base;
+
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+
   const diff = Math.round((new Date(o.deadline + 'T00:00:00') - hoje) / 86400000);
+
   if(diff < 0) return `${base} · atrasado há ${-diff} dia${-diff > 1 ? 's' : ''}`;
+
   if(diff === 0) return `${base} · vence hoje`;
+
   if(diff === 1) return `${base} · vence amanhã`;
+
   if(diff <= 7) return `${base} · vence em ${diff} dias`;
+
   return base;
+
 }
+
 function cardTitleHTML(o){
+
   const piece = `${escapeHtml(o.pieceName)} <span class="text-xs font-normal" style="color:var(--muted)">(qtd ${o.quantity})</span>`;
+
   if(!o.osNumber) return piece;
+
   const head = `OS ${escapeHtml(o.osNumber)}${o.project ? ' — ' + escapeHtml(o.project) : ''}`;
+
   return `${head}<span class="block text-xs font-normal mt-0.5" style="color:var(--muted)">${piece}</span>`;
+
 }
+
+
 
 function fmtDate(d){
+
   if(!d) return '—';
+
   const date = new Date(d+'T00:00:00');
-  return date.toLocaleDateString('pt-BR');
-}
-function fmtDateTime(iso){
-  if(!iso) return '—';
-  return new Date(iso).toLocaleString('pt-BR');
-}
-function isLate(order){
-  if(order.status === 'concluido' || !order.deadline) return false;
-  return new Date(order.deadline+'T23:59:59') < new Date();
-}
-function statusInfo(order){
-  if(order.status === 'aguardando_analise')
-    return { label: 'Aguardando Análise ADM', color: 'var(--slate)' };
-  if(order.status === 'em_producao')
-    return { label: `Em Produção (${order.currentStepIndex+1}ª Etapa: ${order.currentMachine})`, color: 'var(--blue)' };
-  if(order.status === 'concluido')
-    return { label: 'Concluído / Expedição', color: 'var(--green)' };
-  return { label: order.status, color: 'var(--slate)' };
-}
-function roleLabel(r){
-  return { solicitante:'Solicitante', admin:'Administrador', operador:'Operador', pendente:'Pendente' }[r] || r;
-}
-function historyRow(orderId, action, detail){
-  return { order_id: orderId, by_uid: currentUser.id, by_name: currentUser.name, by_role: currentUser.role, action, detail };
-}
 
-function normalizeOrder(row){
-  return {
-    id: row.id,
-    pieceName: (Array.isArray(row.items) && row.items.length > 1 && row.project) ? row.project : row.piece_name,
-    description: row.description,
-    quantity: row.quantity,
-    deadline: row.deadline,
-    requesterId: row.requester_id,
-    requesterName: row.requester_name,
-    status: row.status,
-    currentStepIndex: row.current_step_index,
-    currentMachine: row.current_machine,
-    osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent, queueOrder: row.queue_order,
-    items: Array.isArray(row.items) ? row.items : [],
-    createdAt: row.created_at,
-    routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
-      .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
-    attachments: (row.order_attachments || [])
-      .map(a => ({ name:a.name, url:a.url, uploadedBy:a.uploaded_by, uploadedAt:a.uploaded_at, id:a.id })),
-    history: (row.order_history || []).slice().sort((a,b)=> new Date(a.at) - new Date(b.at))
-      .map(h => ({ at:h.at, byName:h.by_name, byRole:h.by_role, action:h.action, detail:h.detail }))
-  };
-}
-
-const ORDER_SELECT = '*, order_routing(*), order_attachments(*), order_history(*)';
-
-function isPhoto(a){ return (a.url || '').includes('/fotos/'); }
-function photosOf(o){ return o.attachments.filter(isPhoto); }
-function reqFilesOf(o){ return o.attachments.filter(a => !isPhoto(a) && a.uploadedBy === o.requesterName); }
-function receiptOf(o){ return (o.history || []).find(h => h.action === 'recebimento'); }
-function receiptHTML(o){
-  if(o.status !== 'concluido') return '';
-  const r = receiptOf(o);
-  return r ? `<p class="text-sm font-medium" style="color:var(--green)">✔ Recebimento confirmado por ${r.byName} em ${fmtDateTime(r.at)}</p>`
-           : `<p class="text-sm font-medium" style="color:var(--amber)">Aguardando confirmação de recebimento pelo solicitante.</p>`;
-}
-function statsOf(orders){
-  const s = { total: orders.length, aguardando: 0, producao: 0, concluido: 0, recebidos: 0, atrasados: 0, arquivos: 0, fotos: 0 };
-  orders.forEach(o => {
-    if(o.status === 'aguardando_analise') s.aguardando++;
-    else if(o.status === 'em_producao') s.producao++;
-    else if(o.status === 'concluido'){ s.concluido++; if(receiptOf(o)) s.recebidos++; }
-    if(isLate(o)) s.atrasados++;
-    s.arquivos += reqFilesOf(o).length; s.fotos += photosOf(o).length;
-  });
-  return s;
-}
-function statsHTML(s){
-  const items = [['Pedidos', s.total, 'var(--text)'], ['Aguardando ADM', s.aguardando, 'var(--slate)'], ['Em produção', s.producao, 'var(--blue)'],
-    ['Concluídos', s.concluido, 'var(--green)'], ['Recebidos', s.recebidos, 'var(--green)'], ['Atrasados', s.atrasados, 'var(--red)'],
-    ['Arquivos enviados', s.arquivos, 'var(--amber)'], ['Fotos de conclusão', s.fotos, 'var(--amber)']];
-  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">` + items.map(([l, v, c]) =>
-    `<div class="card p-4"><p class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">${l}</p><p class="font-display font-700 text-2xl mt-1" style="color:${c}">${v}</p></div>`).join('') + `</div>`;
-}
-function miniTimelineHTML(o){
-  if(!o.history || !o.history.length) return '';
-  const shown = o.history.slice(-3);
-  const line = shown.map(h => `${escapeHtml(h.detail || h.action)} <span style="color:var(--muted)">(${fmtDateTime(h.at)})</span>`).join(' <span style="color:var(--muted)">→</span> ');
-  return `<p class="text-xs mt-2.5 leading-relaxed">${line}${o.history.length > 3 ? ' <span style="color:var(--blue);cursor:pointer">· ver histórico completo</span>' : ''}</p>`;
-}
-function itemsListHTML(o){
-  const items = (o.items && o.items.length) ? o.items : [];
-  if(items.length <= 1) return '';
-  return `<div class="mt-3 space-y-1.5 pl-3 border-l-2" style="border-color:var(--line)">` +
-    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)" class="font-medium">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
-    `</div>`;
-}
-function metaLine(o, inCard){
-  const hide = inCard && o.osNumber;
-  const bits = [!hide && o.osNumber && `O.S. ${escapeHtml(o.osNumber)}`, !hide && o.project && `Projeto: ${escapeHtml(o.project)}`, o.material && `Material: ${escapeHtml(o.material)}`].filter(Boolean);
-  const urg = o.urgent ? `<span class="text-xs px-2 py-0.5 rounded font-semibold mr-2 inline-flex items-center" style="background:#F2A93B22;color:var(--amber)">🔥 URGENTE</span>` : '';
-  return (bits.length || o.urgent) ? `<p class="text-xs mt-2" style="color:var(--muted)">${urg}${bits.join(' · ')}</p>` : '';
-}
-function lateFinal(o){
-  if(o.status === 'concluido'){ const l = o.routing[o.routing.length - 1]; return !!(l && l.finishedAt && new Date(l.finishedAt) > new Date(o.deadline + 'T23:59:59')); }
-  return isLate(o);
-}
-function fmtMin(m){ return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; }
-function cardFooterHTML(o, mode){
-  const rec = receiptOf(o);
-  let right = '';
-  if(o.status === 'concluido'){
-    if(rec) right = `<span class="px-2.5 py-1 rounded-md font-medium" style="background:#10B98122;color:var(--green)">✔ Recebido em ${fmtDateTime(rec.at)}</span>`;
-    else if(mode === 'sol') right = `<button data-receive="${o.id}" class="px-3 py-1.5 rounded-lg text-sm font-medium shadow" style="background:var(--green);color:#06210f">Confirmar recebimento</button>`;
-    else right = `<span class="px-2.5 py-1 rounded-md font-medium" style="background:#F59E0B22;color:var(--amber)">Aguardando confirmação de recebimento</span>`;
-  }
-  const adm = mode === 'adm'
-    ? `<button data-urgent="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--amber);color:var(--amber)">${o.urgent ? 'Remover urgência' : '🔥 Marcar urgente'}</button>
-       ${o.status === 'em_producao' ? `<button data-edit-routing="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--blue);color:var(--blue)">Editar etapas</button>` : ''}
-       <button data-edit-order="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--line);color:var(--text)">Editar</button>
-       <button data-del-order="${o.id}" class="px-2.5 py-1 rounded-lg font-medium transition-opacity hover:opacity-90" style="background:var(--red);color:#fff">Excluir</button>` : '';
-  const solActions = (mode === 'sol' && o.status === 'aguardando_analise')
-    ? `<button data-sol-edit="${o.id}" class="px-2.5 py-1 rounded-lg border transition-colors hover:bg-white/5" style="border-color:var(--line);color:var(--text)">Editar</button>
-       <button data-sol-del="${o.id}" class="px-2.5 py-1 rounded-lg font-medium transition-opacity hover:opacity-90" style="background:var(--red);color:#fff">Excluir</button>` : '';
-  const posNote = (mode === 'sol' && ['aguardando_analise', 'em_producao'].includes(o.status)) ? `<p data-pos="${o.id}" hidden class="text-sm mt-3 font-medium" style="color:var(--amber)"></p>` : '';
-  return `${posNote}<div class="mt-4 pt-3 border-t flex items-center justify-between gap-2 flex-wrap text-xs" style="border-color:var(--line);color:var(--muted)">
-    <span>📎 ${reqFilesOf(o).length} arquivo(s) · 📷 ${photosOf(o).length} foto(s) de conclusão</span>
-    <div class="flex items-center gap-2 flex-wrap">${right}${solActions}${adm}</div></div>`;
-}
-
-const MAX_FILE_MB = 20;
-const ALLOWED_EXT = ['dxf','dwg','pdf','png','jpg','jpeg','webp','gif','heic','step','stp'];
-function validateFile(file){
-  const ext = (file.name.split('.').pop() || '').toLowerCase();
-  if(!ALLOWED_EXT.includes(ext)) return `Tipo de arquivo não permitido (.${ext}). Use: ${ALLOWED_EXT.join(', ')}.`;
-  if(file.size > MAX_FILE_MB * 1024 * 1024) return `Arquivo muito grande (${(file.size / 1048576).toFixed(1)} MB). Limite: ${MAX_FILE_MB} MB.`;
-  return '';
-}
-async function uploadFile(orderId, file, folder = '', displayName = null){
-  const fileErr = validateFile(file); if(fileErr) throw new Error(`"${file.name}": ${fileErr}`);
-  const safe = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\-]+/g, '_');
-  const path = `${orderId}/${folder ? folder + '/' : ''}${Date.now()}_${safe}`;
-  const { error: upErr } = await sb.storage.from('attachments').upload(path, file);
-  if(upErr) throw upErr;
-  const { data } = sb.storage.from('attachments').getPublicUrl(path);
-  return { order_id: orderId, name: displayName || file.name, url: data.publicUrl, uploaded_by: currentUser.name };
-}
-
-function stepperHTML(order){
-  if(!order.routing || order.routing.length === 0){
-    return `<p class="text-sm" style="color:var(--muted)">Roteiro ainda não definido pelo ADM.</p>`;
-  }
-  return `<div class="flex items-center flex-wrap gap-1 py-1">` + order.routing.map((step, i) => {
-    const done = step.status === 'concluido';
-    const current = i === order.currentStepIndex && order.status === 'em_producao';
-    const circleStyle = done ? `background:var(--green);color:#06210f`
-                       : current ? `background:var(--blue);color:#fff;box-shadow: 0 0 0 3px rgba(59,130,246,0.25);`
-                       : `background:var(--surface-2);color:var(--muted);border:1px solid var(--line)`;
-    const line = i < order.routing.length - 1
-      ? `<div class="step-line ${done ? 'done' : ''}" style="height:2px;width:32px;margin:0 4px;"></div>` : '';
-    return `<div class="flex items-center">
-        <div class="flex flex-col items-center gap-1">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="${circleStyle}">${i+1}</div>
-          <span class="text-xs text-center font-medium leading-tight max-w-[80px]" style="color:${current?'var(--text)':done?'var(--text)':'var(--muted)'}">${step.machine}</span>
-        </div>
-        ${line}
-      </div>`;
-  }).join('') + `</div>`;
-}
-
-function historyHTML(order){
-  if(!order.history || order.history.length === 0) return '<p class="text-sm" style="color:var(--muted)">Sem eventos.</p>';
-  return `<div class="space-y-3">` + order.history.slice().reverse().map(h => `
-    <div class="flex gap-3 text-sm">
-      <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
-      <div>
-        <p><span class="font-medium">${escapeHtml(h.byName)}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${escapeHtml(h.detail)}</p>
-        <p class="text-xs mt-0.5" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
-      </div>
-    </div>`).join('') + `</div>`;
-}
-
-function attachmentsHTML(order){
-  if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
-  return `<ul class="space-y-2">` + order.attachments.map(a => `
-    <li class="text-sm flex items-center justify-between card px-3.5 py-2.5">
-      <span class="flex items-center truncate">${isImage(a) ? `<img src="${escapeHtml(a.url)}" loading="lazy" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" onerror="this.remove()" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:zoom-in;margin-right:10px" class="shrink-0 border border-white/10">` : ''}<span class="truncate">${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)}</span> <span class="text-xs ml-2 shrink-0 hidden sm:inline" style="color:var(--muted)">— por ${escapeHtml(a.uploadedBy)}</span></span>
-      <span class="flex items-center gap-2 shrink-0 ml-2">
-        ${isImage(a) ? `<button type="button" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Ver</button>` : ''}
-        ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Prévia</button>` : ''}
-        <a href="${a.url}" target="_blank" class="text-xs px-2.5 py-1 rounded-md font-medium border" style="background:var(--surface-2);border-color:var(--line)">Baixar</a>
-        ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>` : ''}
-      </span>
-    </li>`).join('') + `</ul>`;
-}
-
-// ===== Prévia de DXF (ASCII) =====
-function parseDxf(text){
-  const L = text.split(/\r?\n/); const ents = []; let inEnt = false, cur = null;
-  for(let i = 0; i + 1 < L.length; i += 2){
-    const c = parseInt(L[i].trim(), 10), v = L[i + 1].trim();
-    if(c === 0){
-      if(cur) ents.push(cur); cur = null;
-      if(v === 'ENDSEC') inEnt = false;
-      else if(inEnt && v !== 'SEQEND') cur = { type: v, f: {}, pts: [] };
-      continue;
-    }
-    if(c === 2 && v === 'ENTITIES' && !cur) { inEnt = true; continue; }
-    if(!cur) continue;
-    const n = parseFloat(v);
-    if((cur.type === 'LWPOLYLINE' || cur.type === 'POLYLINE' || cur.type === 'VERTEX') && (c === 10 || c === 20 || c === 42)){
-      if(c === 10) cur.pts.push({ x: n, y: 0, b: 0 }); else if(cur.pts.length){ const p = cur.pts[cur.pts.length - 1]; if(c === 20) p.y = n; else p.b = n; }
-    } else if(!(c in cur.f)) cur.f[c] = n;
-  }
-  if(cur) ents.push(cur);
-  const out = []; let pl = null;
-  for(const e of ents){
-    if(e.type === 'POLYLINE'){ pl = e; e.pts = []; out.push(e); }
-    else if(e.type === 'VERTEX' && pl){ if(e.pts[0]) { e.pts[0].b = e.f[42] || 0; pl.pts.push(e.pts[0]); } }
-    else { pl = null; out.push(e); }
-  }
-  return out;
-}
-function dxfToSvg(ents){
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, d = '', found = 0;
-  const box = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
-  const f2 = v => +v.toFixed(3);
-  for(const e of ents){
-    const f = e.f;
-    if(e.type === 'LINE'){ box(f[10], f[20]); box(f[11], f[21]); d += `M${f2(f[10])} ${f2(f[20])}L${f2(f[11])} ${f2(f[21])}`; found++; }
-    else if(e.type === 'CIRCLE'){ const r = f[40]; box(f[10] - r, f[20] - r); box(f[10] + r, f[20] + r);
-      d += `M${f2(f[10] - r)} ${f2(f[20])}A${f2(r)} ${f2(r)} 0 1 1 ${f2(f[10] + r)} ${f2(f[20])}A${f2(r)} ${f2(r)} 0 1 1 ${f2(f[10] - r)} ${f2(f[20])}`; found++; }
-    else if(e.type === 'ARC'){ const r = f[40], a = f[50] * Math.PI / 180, b = f[51] * Math.PI / 180;
-      const sx = f[10] + r * Math.cos(a), sy = f[20] + r * Math.sin(a), ex = f[10] + r * Math.cos(b), ey = f[20] + r * Math.sin(b);
-      box(f[10] - r, f[20] - r); box(f[10] + r, f[20] + r);
-      d += `M${f2(sx)} ${f2(sy)}A${f2(r)} ${f2(r)} 0 ${((f[51] - f[50] + 360) % 360) > 180 ? 1 : 0} 1 ${f2(ex)} ${f2(ey)}`; found++; }
-    else if((e.type === 'LWPOLYLINE' || e.type === 'POLYLINE') && e.pts.length > 1){
-      const closed = ((e.f[70] || 0) & 1) === 1, P = e.pts, n = closed ? P.length : P.length - 1;
-      d += `M${f2(P[0].x)} ${f2(P[0].y)}`; box(P[0].x, P[0].y);
-      for(let i = 0; i < n; i++){
-        const p = P[i], q = P[(i + 1) % P.length]; box(q.x, q.y);
-        if(p.b){ const th = 4 * Math.atan(p.b), r = Math.hypot(q.x - p.x, q.y - p.y) / 2 / Math.abs(Math.sin(th / 2));
-          d += `A${f2(r)} ${f2(r)} 0 ${Math.abs(p.b) > 1 ? 1 : 0} ${p.b > 0 ? 1 : 0} ${f2(q.x)} ${f2(q.y)}`; }
-        else d += `L${f2(q.x)} ${f2(q.y)}`;
-      }
-      found++;
-    }
-  }
-  if(!found) return null;
-  const w = x1 - x0, h = y1 - y0, pad = Math.max(w, h) * 0.05 || 1;
-  return { w, h, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0 - pad} ${-y1 - pad} ${w + 2 * pad} ${h + 2 * pad}" style="width:100%;height:100%"><g transform="scale(1,-1)"><path d="${d}" fill="none" stroke="#5eead4" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></g></svg>` };
-}
-async function openDxfPreview(url, title){
-  const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(5,7,10,0.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML = `<div style="background:var(--surface,#121821);border-radius:12px;border:1px solid var(--line);width:min(900px,100%);height:min(640px,90vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5)">
-    <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)"><div><b>Prévia do DXF</b><div class="text-xs" style="color:var(--muted)" data-info>${escapeHtml(title)}</div></div><button type="button" data-x class="text-sm px-3 rounded-md hover:bg-white/10" style="background:var(--surface-2)">Fechar</button></div>
-    <div data-body style="flex:1;min-height:0;padding:16px;display:flex;align-items:center;justify-content:center;background:#090d13">Carregando...</div></div>`;
-  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
-  const esc = e => { if(e.key === 'Escape') close(); };
-  ov.addEventListener('click', e => { if(e.target === ov || e.target.closest('[data-x]')) close(); });
-  document.addEventListener('keydown', esc); document.body.appendChild(ov);
-  const body = ov.querySelector('[data-body]');
-  try{
-    const res = await fetch(url); if(!res.ok) throw new Error('não foi possível baixar o arquivo');
-    const r = dxfToSvg(parseDxf(await res.text()));
-    if(!r) throw new Error('nenhuma linha, arco ou círculo reconhecido (o DXF pode ser binário ou usar blocos/splines)');
-    body.innerHTML = r.svg;
-    ov.querySelector('[data-info]').textContent = `${title} · ${r.w.toFixed(1)} × ${r.h.toFixed(1)} (unidades do desenho)`;
-  }catch(ex){ body.textContent = 'Prévia indisponível: ' + ex.message + '. Use o botão Baixar.'; }
-}
-document.addEventListener('click', ev => {
-  const b = ev.target.closest('[data-dxf]'); if(!b) return;
-  ev.stopPropagation(); openDxfPreview(b.dataset.dxf, b.dataset.title || 'DXF');
-});
-
-function canDeleteAttachment(order, a){
-  return !!(currentUser && currentUser.role === 'solicitante' && a.id && !isPhoto(a)
-    && order.requesterId === currentUser.id && a.uploadedBy === currentUser.name && order.status !== 'concluido');
-}
-document.addEventListener('click', async (ev)=>{
-  const btn = ev.target.closest('[data-del-attach]'); if(!btn) return;
-  ev.stopPropagation();
-  if(!await askConfirm('Excluir este anexo? Não dá para desfazer.')) return;
-  const li = btn.closest('li'); const name = li ? li.querySelector('span').textContent.trim() : 'anexo';
-  btn.disabled = true; btn.textContent = 'Excluindo...';
-  try{
-    const { data, error } = await sb.from('order_attachments').delete().eq('id', btn.dataset.delAttach).select();
-    if(error) throw error;
-    if(!data || data.length === 0) throw new Error('sem permissão para excluir.');
-    const path = decodeURIComponent((data[0].url.split('/attachments/')[1] || ''));
-    if(path) await sb.storage.from('attachments').remove([path]);
-    await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`));
-    if(li) li.remove();
-  }catch(ex){
-    notify('Erro ao excluir anexo: ' + ex.message);
-    btn.disabled = false; btn.textContent = 'Excluir';
-  }
-});
-
-function openDetailModal(order){
-  const s = statusInfo(order);
-  $('detail-modal-body').innerHTML = `
-    <div class="flex items-start justify-between gap-3">
-      <div>
-        <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
-      </div>
-      <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
-    </div>
-    ${metaLine(order)}${itemsListHTML(order)}
-    <p class="text-sm leading-relaxed">${escapeHtml(order.description || '')}</p>
-    ${receiptHTML(order)}
-    <div>
-      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Roteiro de produção</p>
-      ${stepperHTML(order)}
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos</p>
-      ${attachmentsHTML(order)}
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Histórico de movimentação</p>
-      ${historyHTML(order)}
-    </div>
-  `;
-  openModal('detail-modal');
-}
-
-/* =========================================================================
-   3) AUTENTICAÇÃO
-   ========================================================================= */
-$('show-signup').addEventListener('click', ()=>{ $('login-form').classList.add('hidden'); $('signup-form').classList.remove('hidden'); });
-$('show-login').addEventListener('click', ()=>{ $('signup-form').classList.add('hidden'); $('login-form').classList.remove('hidden'); });
-
-$('login-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = $('login-email').value.trim();
-  const password = $('login-password').value;
-  const btn = $('login-btn'); const err = $('login-error');
-  err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Entrando...';
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){ err.textContent = 'E-mail ou senha inválidos.'; err.classList.remove('hidden'); }
-  btn.disabled = false; btn.textContent = 'Entrar';
-});
-
-$('signup-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const err = $('signup-error'); err.classList.add('hidden');
-  const btn = $('signup-btn'); btn.disabled = true; btn.textContent = 'Criando...';
-  try{
-    const name = $('signup-name').value.trim();
-    const email = $('signup-email').value.trim();
-    const password = $('signup-password').value;
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if(error) throw error;
-    if(!data.user) throw new Error('Confirme seu e-mail e depois faça login.');
-    await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
-    e.target.reset();
-  }catch(ex){
-    err.textContent = 'Erro ao criar conta: ' + ex.message;
-    err.classList.remove('hidden');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Criar conta';
-  }
-});
-
-$('logout-btn').addEventListener('click', ()=> sb.auth.signOut());
-$('pending-logout').addEventListener('click', ()=> sb.auth.signOut());
-
-async function handleSession(session){
-  clearChannels();
-  document.title = BASE_TITLE;
-  if(!session){
-    currentUser = null;
-    $('app-shell').classList.add('hidden');
-    $('pending-screen').classList.add('hidden');
-    $('login-screen').classList.remove('hidden');
-    return;
-  }
-  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-  if(error || !profile){
-    notify('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
-    sb.auth.signOut();
-    return;
-  }
-  currentUser = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, machines: profile.machines || [] };
-
-  $('login-screen').classList.add('hidden');
-  if(currentUser.role === 'pendente'){
-    $('pending-screen').classList.remove('hidden');
-    return;
-  }
-  $('pending-screen').classList.add('hidden');
-  $('app-shell').classList.remove('hidden');
-  $('user-name').textContent = currentUser.name;
-  $('role-badge').textContent = roleLabel(currentUser.role) + (currentUser.machines.length ? ` · ${currentUser.machines.join(', ')}` : '');
-  if(currentUser.role === 'admin'){ $('bell-btn').classList.remove('hidden'); startBell(); }
-  else { $('bell-btn').classList.add('hidden'); if(bellChannel){ sb.removeChannel(bellChannel); bellChannel = null; } }
-  routeToDashboard();
-}
-
-sb.auth.onAuthStateChange((_event, session)=> handleSession(session));
-sb.auth.getSession().then(({ data })=> handleSession(data.session));
-
-function routeToDashboard(){
-  if(currentUser.role === 'solicitante') renderSolicitante();
-  else if(currentUser.role === 'admin') renderAdmin();
-  else if(currentUser.role === 'operador') renderOperador();
-  else $('main-content').innerHTML = '<p>Perfil não reconhecido.</p>';
-}
-
-function liveRefresh(channelName, fetchFn){
-  fetchFn();
-  const channel = sb.channel(channelName)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_routing' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_attachments' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_history' }, fetchFn)
-    .subscribe();
-  activeChannels.push(channel);
-}
-
-/* ============ Sino de notificação ============ */
-function goAdminTab(tab){
-  const btn = document.querySelector(`.admin-tab[data-tab="${tab}"]`);
-  if(btn) btn.click(); else renderAdmin();
-}
-async function refreshBell(){
-  if(!currentUser || currentUser.role !== 'admin') return;
-  const { count, error } = await sb.from('orders').select('id', { count:'exact', head:true }).eq('status','aguardando_analise');
-  if(error){ console.error(error); return; }
-  const dot = $('bell-dot'), txt = count > 99 ? '99+' : String(count);
-  if(count > 0){ dot.textContent = txt; dot.classList.remove('hidden'); }
-  else dot.classList.add('hidden');
-  const nc = $('nav-count-fila');
-  if(nc){ nc.textContent = txt; nc.classList.toggle('hidden', !(count > 0)); }
-  document.title = count > 0 ? `(${count}) ${BASE_TITLE}` : BASE_TITLE;
-}
-function startBell(){
-  refreshBell();
-  if(bellChannel) return;
-  bellChannel = sb.channel('bell-admin')
-    .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, refreshBell)
-    .subscribe();
-}
-$('bell-btn').addEventListener('click', ()=> goAdminTab('fila'));
-
-/* ============ Seletor de Projeto/OS ============ */
-async function loadProjects(){
-  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
-  if(error){ console.error(error); projectsCache = []; return []; }
-  projectsCache = data; return data;
-}
-function projectOptionsHTML(list, selectedValue){
-  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
-  return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
-}
-async function setupOpPicker({ selectId, manualId, osId, projectId, matchOs, matchProject }){
-  const list = await loadProjects();
-  const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
-  const match = (matchOs && matchProject) ? list.find(p => p.os_number === matchOs && p.project_name === matchProject) : null;
-  const initial = match ? match.id : ((matchOs || matchProject) ? '__custom__' : '');
-  sel.innerHTML = projectOptionsHTML(list, initial);
-  sel.value = initial;
-  if(initial === '__custom__'){ osEl.value = matchOs || ''; projEl.value = matchProject || ''; }
-  const apply = ()=>{
-    if(sel.value === '__custom__'){ manual.classList.remove('hidden'); }
-    else{
-      manual.classList.add('hidden');
-      const p = list.find(x => x.id === sel.value);
-      osEl.value = p ? p.os_number : '';
-      projEl.value = p ? p.project_name : '';
-    }
-  };
-  sel.onchange = apply;
-  apply();
-}
-
-/* =========================================================================
-   4) PAINEL — SOLICITANTE
-   ========================================================================= */
-function renderSolicitante(container = $('main-content')){
-  clearChannels();
-  container.innerHTML = `
-    <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
-      <div>
-        <h2 class="font-display font-700 text-2xl tracking-tight">Meus Pedidos</h2>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Acompanhe o status dos pedidos enviados.</p>
-      </div>
-      <button id="btn-new-order" class="px-4 py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 flex items-center gap-1.5" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
-    </div>
-    <div id="solicitante-summary"></div>
-    <div id="solicitante-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
-  `;
-  $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
-// Ativar o botão de novo pedido para abrir o modal
-$('btn-new-order').onclick = () => {
-  orderItemsEditor.reset();
-  $('new-order-form').reset();
-  setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' });
-  openModal('new-order-modal');
-};
-
-// Listener para enviar o formulário do novo pedido para o Supabase
-$('new-order-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const btn = $('new-order-submit'); const err = $('new-order-error');
-  err.classList.add('hidden');
-  btn.disabled = true; btn.textContent = 'Enviando...';
-  try{
-    const items = orderItemsEditor.getItems();
-    if(items.length === 0 || items.some(it => !it.name)) throw new Error('Preencha o nome de todas as peças.');
-    
-    const pieceName = items.length === 1 ? items[0].name : ($('order-project')?.value?.trim() || items[0].name);
-    const totalQty = items.reduce((a, it) => a + it.quantity, 0);
-
-    const { error } = await sb.from('orders').insert({
-      piece_name: pieceName,
-      description: $('order-description').value.trim(),
-      quantity: totalQty,
-      deadline: $('order-deadline').value,
-      requester_id: currentUser.id,
-      requester_name: currentUser.name,
-      status: 'aguardando_analise',
-      os_number: $('order-os')?.value?.trim() || 'OS-01',
-      project: $('order-project')?.value?.trim() || 'Projeto Geral',
-      items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
-    }).select().single();
-    if(error) throw error;
-
-    notify('Pedido enviado com sucesso!', 'ok');
-    e.target.reset();
-    orderItemsEditor.reset();
-    closeModal('new-order-modal');
-    renderMainDashboard();
-  }catch(ex){
-    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
-    err.classList.remove('hidden');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
-  }
-});
-  
-  liveRefresh('solicitante-orders', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
-      .eq('requester_id', currentUser.id).order('created_at', { ascending: false });
-    if(error){ showError('solicitante-list', error); return; }
-    const orders = data.map(normalizeOrder);
-    const list = $('solicitante-list');
-    if($('solicitante-summary')) $('solicitante-summary').innerHTML = statsHTML(statsOf(orders));
-    if(orders.length === 0){
-      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
-      return;
-
-      
-    }
-    list.innerHTML = orders.map(o=>{
-      const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
-          </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
-        </div>
-        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
-        ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
-      </div>`;
-    }).join('');
-    list.querySelectorAll('[data-order-id]').forEach(el=>{
-      el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
-    });
-    list.querySelectorAll('[data-receive]').forEach(b=> b.addEventListener('click', (ev)=>{
-      ev.stopPropagation(); confirmReceipt(orders.find(o=>o.id===b.dataset.receive));
-    }));
-    list.querySelectorAll('[data-sol-edit]').forEach(b=> b.addEventListener('click', (ev)=>{
-      ev.stopPropagation(); openSolEditModal(orders.find(o=>o.id===b.dataset.solEdit));
-    }));
-    list.querySelectorAll('[data-sol-del]').forEach(b=> b.addEventListener('click', (ev)=>{
-      ev.stopPropagation(); deleteOwnOrder(orders.find(o=>o.id===b.dataset.solDel));
-    }));
-    fillPositions(list);
-  });
-}
-
-$('new-order-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const btn = $('new-order-submit'); const err = $('new-order-error');
-  err.classList.add('hidden');
-  if($('order-deadline').value < new Date().toLocaleDateString('sv-SE')){ err.textContent = 'O prazo não pode ser uma data que já passou.'; err.classList.remove('hidden'); return; }
-  btn.disabled = true; btn.textContent = 'Enviando...';
-  try{
-    const items = orderItemsEditor.getItems();
-    if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
-    if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-    if(!$('order-os').value.trim() || !$('order-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
-    const pieceName = items.length === 1 ? items[0].name : ($('order-project').value.trim() || items[0].name);
-    const totalQty = items.reduce((a, it) => a + it.quantity, 0);
-    const material = items.length === 1 ? items[0].material : null;
-
-    const { data: order, error } = await sb.from('orders').insert({
-      piece_name: pieceName,
-      description: $('order-description').value.trim(),
-      quantity: totalQty,
-      deadline: $('order-deadline').value,
-      requester_id: currentUser.id,
-      requester_name: currentUser.name,
-      status: 'aguardando_analise',
-      os_number: $('order-os').value.trim(), project: $('order-project').value.trim(), material,
-      items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
-    }).select().single();
-    if(error) throw error;
-
-    await sb.from('order_history').insert(historyRow(order.id, 'criado', `Pedido criado com ${items.length} peça(s) e enviado para triagem do ADM.`));
-
-    for(let i = 0; i < items.length; i++){
-      if(items[i].file){
-        const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
-        const att = await uploadFile(order.id, items[i].file, 'itens', label);
-        await sb.from('order_attachments').insert(att);
-      }
-    }
-    e.target.reset();
-    orderItemsEditor.reset();
-    closeModal('new-order-modal');
-  }catch(ex){
-    console.error(ex);
-    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
-    err.classList.remove('hidden');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
-  }
-});
-
-/* =========================================================================
-   5) PAINEL — ADMINISTRADOR
-   ========================================================================= */
-const SB_ICONS = {
-  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-  layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
-  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  chart: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
-  pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
-  usercheck: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>',
-  sheet: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>',
-  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
-  down: '<path d="m6 9 6 6 6-6"/>', menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
-  folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>'
-};
-const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SB_ICONS[n]}</svg>`;
-const SB_MENU = [
-  { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
-  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
-  { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
-  { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
-];
-const sbLink = ([t, label, ic]) => `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-count-fila">0</span>' : ''}</button>`;
-
-const PAGE_INFO = {
-  fila: ['Fila de Triagem', 'Pedidos novos aguardando você definir o roteiro de máquinas.'],
-  todos: ['Todos os Pedidos', 'Acompanhe, filtre e edite todos os pedidos do sistema.'],
-  usuarios: ['Usuários', 'Aprove contas novas e defina o perfil e as máquinas de cada pessoa.'],
-  graficos: ['Gráficos', 'Indicadores da produção em gráficos.'],
-  resumo: ['Resumo por Solicitante', 'Pedidos, arquivos e fotos de cada solicitante.']
-};
-function setPageHead(tab){
-  const el = $('page-head'); if(!el) return;
-  const i = PAGE_INFO[tab];
-  el.innerHTML = i ? `<h1 class="font-display font-700 text-2xl tracking-tight">${i[0]}</h1><p class="text-sm mt-0.5" style="color:var(--muted)">${i[1]}</p>` : '';
-  el.style.display = i ? '' : 'none';
-}
-
-function renderAdmin(){
-  const nav = SB_MENU.map(sec => sec.group
-    ? `<div class="sb-sec"><button type="button" id="sb-dados" class="sb-link sb-group" aria-expanded="false">${sbIcon('chart')}<span>${sec.title}</span>${sbIcon('down').replace('class="sb-ic"', 'class="sb-ic sb-chev"')}</button><div class="sb-sub">${sec.items.map(sbLink).join('')}</div></div>`
-    : `<div class="sb-sec"><p class="sb-title">${sec.title}</p>${sec.items.map(sbLink).join('')}</div>`).join('');
-  $('main-content').innerHTML = `
-    <button type="button" id="sb-toggle" aria-label="Abrir menu">${sbIcon('menu')}</button>
-    <div id="sb-backdrop"></div>
-    <aside id="admin-sb" aria-label="Menu principal">
-      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão CIMA<small>Painel do ADM</small></span></div>
-      <nav class="sb-nav">${nav}</nav>
-      <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
-    </aside>
-    <div id="page-head" class="page-head"></div>
-    <div id="admin-tab-content"></div>`;
-  const sb = $('admin-sb'), grp = $('sb-dados');
-  const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, projetos: renderAdminProjetos, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
-    solicitante: () => renderSolicitante($('admin-tab-content')), operador: () => renderOperador($('admin-tab-content')) };
-  const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
-  const go = tab => {
-    document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-    if(['graficos', 'resumo', 'relatorio'].includes(tab)) setGroup(true);
-    sb.classList.remove('show'); $('sb-backdrop').classList.remove('show');
-    setPageHead(tab);
-    views[tab]();
-  };
-  document.querySelectorAll('.admin-tab').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
-  grp.addEventListener('click', () => setGroup(!grp.classList.contains('open')));
-  $('sb-toggle').addEventListener('click', () => { sb.classList.add('show'); $('sb-backdrop').classList.add('show'); });
-  $('sb-backdrop').addEventListener('click', () => { sb.classList.remove('show'); $('sb-backdrop').classList.remove('show'); });
-  go('fila');
-  refreshBell();
-}
-
-function renderAdminFila(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="fila-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
-  liveRefresh('admin-fila', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
-      .eq('status', 'aguardando_analise').order('created_at', { ascending: true });
-    if(error){ showError('fila-list', error); return; }
-    const orders = data.map(normalizeOrder);
-    const list = $('fila-list');
-    if(orders.length === 0){
-      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Tudo em dia: nenhum pedido aguardando triagem. 🎉</div>`;
-      return;
-    }
-    list.innerHTML = orders.map(o=> `
-      <div class="card p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
-        <div>
-          <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-          <p class="text-xs mt-1" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${prazoTxt(o)}</p>
-        </div>
-        <button data-triar="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
-      </div>`).join('');
-    list.querySelectorAll('[data-triar]').forEach(btn=>{
-      btn.addEventListener('click', ()=> openTriagemModal(orders.find(o=>o.id===btn.dataset.triar)));
-    });
-  });
-}
-
-function openTriagemModal(order){
-  let routing = [];
-  function renderBody(){
-    $('triagem-body').innerHTML = `
-      <div>
-        <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
-        ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
-      </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos do solicitante</p>
-        ${attachmentsHTML(order)}
-      </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
-        <input id="triagem-file" type="file" class="w-full text-sm">
-      </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
-        <div class="flex flex-wrap gap-2 mb-3">
-          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3 py-1.5 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">+ ${m}</button>`).join('')}
-        </div>
-        <div id="routing-list" class="space-y-2"></div>
-      </div>
-      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="triagem-urgent" type="checkbox" ${order.urgent ? 'checked' : ''} style="width:16px;height:16px"> 🔥 Marcar como URGENTE (destaque na fila do operador)</label>
-      <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button id="btn-aprovar" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
-    `;
-    renderRoutingList();
-    $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ routing.push(btn.dataset.addMachine); renderRoutingList(); });
-    });
-    $('btn-aprovar').addEventListener('click', async ()=>{
-      const err = $('triagem-error');
-      if(routing.length === 0){ err.textContent = 'Defina ao menos uma máquina no roteiro.'; err.classList.remove('hidden'); return; }
-      $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Enviando...';
-      try{
-        await sb.from('orders').update({
-          status: 'em_producao', urgent: $('triagem-urgent').checked, current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
-        }).eq('id', order.id);
-
-        const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
-        await sb.from('order_routing').insert(rows);
-
-        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
-
-        const file = $('triagem-file').files[0];
-        if(file){
-          const att = await uploadFile(order.id, file);
-          await sb.from('order_attachments').insert(att);
-        }
-        closeModal('triagem-modal');
-      }catch(ex){
-        console.error(ex);
-        err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden');
-      }finally{
-        $('btn-aprovar').disabled = false; $('btn-aprovar').textContent = 'Aprovar e Enviar para Produção';
-      }
-    });
-  }
-  function renderRoutingList(){
-    const el = $('routing-list');
-    if(routing.length === 0){ el.innerHTML = `<p class="text-sm" style="color:var(--muted)">Nenhuma etapa adicionada.</p>`; return; }
-    el.innerHTML = routing.map((m,i)=> `
-      <div class="flex items-center justify-between card px-3.5 py-2">
-        <span class="text-sm font-medium">${i+1}. ${m}</span>
-        <div class="flex items-center gap-1">
-          <button data-up="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
-          <button data-down="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===routing.length-1?'disabled style="opacity:.3"':''}>↓</button>
-          <button data-remove="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--red);color:#fff">✕</button>
-        </div>
-      </div>`).join('');
-    el.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.up; [routing[i-1],routing[i]]=[routing[i],routing[i-1]]; renderRoutingList(); }));
-    el.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.down; [routing[i+1],routing[i]]=[routing[i],routing[i+1]]; renderRoutingList(); }));
-    el.querySelectorAll('[data-remove]').forEach(b=> b.addEventListener('click', ()=>{ routing.splice(+b.dataset.remove,1); renderRoutingList(); }));
-  }
-  renderBody();
-  openModal('triagem-modal');
-}
-
-function renderAdminTodos(){
-  clearChannels();
-  const fld = 'px-3 py-2 text-sm';
-  $('admin-tab-content').innerHTML = `
-    <div id="f-chips" class="flex flex-wrap gap-2 mb-4"></div>
-    <div class="card p-3 mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 items-center">
-      <input id="f-q" placeholder="Buscar peça, O.S., projeto, solicitante..." class="sm:col-span-2 ${fld}">
-      <select id="f-status" class="${fld}">
-        <option value="">Todos os status</option><option value="aguardando_analise">Aguardando análise</option>
-        <option value="em_producao">Em produção</option><option value="concluido">Concluído</option><option value="atrasado">Atrasados</option>
-      </select>
-      <input id="f-from" type="date" title="Criado a partir de" class="${fld}">
-      <input id="f-to" type="date" title="Criado até" class="${fld}">
-      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="f-urg" type="checkbox" style="width:16px;height:16px"> Só urgentes</label>
-    </div>
-    <p id="f-count" class="text-xs mb-3 font-medium" style="color:var(--muted)"></p>
-    <div id="todos-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>`;
-  let all = [];
-  const draw = ()=>{
-    const list = $('todos-list'); if(!list) return;
-    const cnt = { '': all.length, aguardando_analise: all.filter(o => o.status === 'aguardando_analise').length, em_producao: all.filter(o => o.status === 'em_producao').length,
-      concluido: all.filter(o => o.status === 'concluido').length, atrasado: all.filter(isLate).length };
-    $('f-chips').innerHTML = [['', 'Todos'], ['aguardando_analise', 'Aguardando análise'], ['em_producao', 'Em produção'], ['concluido', 'Concluídos'], ['atrasado', 'Atrasados']]
-      .map(([v, l]) => `<button type="button" data-chip-st="${v}" class="chip-st ${$('f-status').value === v ? 'on' : ''}">${l} <b>${cnt[v]}</b></button>`).join('');
-    $('f-chips').querySelectorAll('[data-chip-st]').forEach(b => b.onclick = () => { $('f-status').value = b.dataset.chipSt; draw(); });
-    const q = $('f-q').value.trim().toLowerCase(), st = $('f-status').value, urg = $('f-urg').checked;
-    const from = $('f-from').value ? new Date($('f-from').value + 'T00:00:00') : null;
-    const to = $('f-to').value ? new Date($('f-to').value + 'T23:59:59') : null;
-    const orders = all.filter(o=>{
-      if(q && ![o.pieceName, o.osNumber, o.project, o.material, o.requesterName, o.description].join(' ').toLowerCase().includes(q)) return false;
-      if(st === 'atrasado' ? !isLate(o) : (st && o.status !== st)) return false;
-      if(urg && !o.urgent) return false;
-      const c = new Date(o.createdAt);
-      return !(from && c < from) && !(to && c > to);
-    });
-    $('f-count').textContent = `${orders.length} de ${all.length} pedido(s)`;
-    if(orders.length === 0){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
-    list.innerHTML = orders.map(o=>{
-      const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
-            ${metaLine(o, true)}
-          </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
-        </div>
-        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
-        ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
-      </div>`;
-    }).join('');
-    const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
-    list.querySelectorAll('[data-order-id]').forEach(el=> el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId))));
-    by('data-edit-order', openEditOrderModal); by('data-edit-routing', openRoutingEditor); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
-  };
-  ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
-  liveRefresh('admin-todos', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
-    if(error){ showError('todos-list', error); return; }
-    all = data.map(normalizeOrder); draw();
-  });
-}
-
-function renderAdminProjetos(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `
-    <div class="flex items-center justify-between mb-4 gap-3">
-      <div><h2 class="font-display font-700 text-xl">Projetos / OS cadastrados</h2>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Lista disponível para a escolha dos solicitantes.</p></div>
-      <button id="btn-new-project" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo</button>
-    </div>
-    <div id="projects-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
-  $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
-  liveRefresh('admin-projetos', async ()=>{
-    const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
-    if(error){ showError('projects-list', error); return; }
-    const list = $('projects-list');
-    if(!data.length){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
-    list.innerHTML = data.map(p => `
-      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p class="font-medium text-sm">OS ${escapeHtml(p.os_number)} <span style="color:var(--muted)">— ${escapeHtml(p.project_name)}</span></p>
-          <p class="text-xs mt-0.5" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button data-edit-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
-          <button data-toggle-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
-          <button data-del-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>
-        </div>
-      </div>`).join('');
-    list.querySelectorAll('[data-edit-project]').forEach(b => b.addEventListener('click', ()=> openProjectModal(data.find(p=>p.id===b.dataset.editProject))));
-    list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
-      const p = data.find(x=>x.id===b.dataset.toggleProject);
-      const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
-      if(error) notify('Erro: ' + error.message);
-    }));
-    list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
-      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados.')) return;
-      const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
-      if(error) notify('Erro: ' + error.message);
-    }));
-  });
-}
-
-let editProjectTarget = null;
-function openProjectModal(p){
-  editProjectTarget = p;
-  $('project-modal-title').textContent = p ? 'Editar Projeto / OS' : 'Novo Projeto / OS';
-  $('pm-os').value = p ? p.os_number : '';
-  $('pm-project').value = p ? p.project_name : '';
-  $('pm-active').checked = p ? p.active : true;
-  $('project-modal-error').classList.add('hidden');
-  openModal('project-modal');
-}
-$('project-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const err = $('project-modal-error'); err.classList.add('hidden');
-  const os_number = $('pm-os').value.trim(), project_name = $('pm-project').value.trim();
-  if(!os_number || !project_name){ err.textContent = 'Preencha a OS e o nome do projeto.'; err.classList.remove('hidden'); return; }
-  const btn = $('project-modal-submit'); btn.disabled = true; btn.textContent = 'Salvando...';
-  const payload = { os_number, project_name, active: $('pm-active').checked };
-  const { error } = editProjectTarget
-    ? await sb.from('projects').update(payload).eq('id', editProjectTarget.id)
-    : await sb.from('projects').insert(payload);
-  if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); }
-  else closeModal('project-modal');
-  btn.disabled = false; btn.textContent = 'Salvar';
-});
-
-function renderAdminUsuarios(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="users-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
-  liveRefresh('admin-usuarios', async ()=>{
-    const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
-    if(error){ showError('users-list', error); return; }
-    $('users-list').innerHTML = users.map(u=> `
-      <div class="card p-4 flex items-center justify-between">
-        <div>
-          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">(${u.email})</span></p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
-          <button data-edit-user="${u.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
-        </div>
-      </div>`).join('');
-    $('users-list').querySelectorAll('[data-edit-user]').forEach(btn=>{
-      btn.addEventListener('click', ()=> openEditUserModal(users.find(u=>u.id===btn.dataset.editUser)));
-    });
-  });
-}
-
-$('eu-machines').innerHTML = MACHINES.map(m=>`
-  <label class="flex items-center gap-2 text-sm cursor-pointer">
-    <input type="checkbox" name="eu-machine-check" value="${m}" style="width:16px;height:16px"> ${m}
-  </label>`).join('');
-$('eu-role').addEventListener('change', ()=>{
-  $('eu-machine-wrap').classList.toggle('hidden', $('eu-role').value !== 'operador');
-});
-
-function openEditUserModal(user){
-  $('eu-name').textContent = `${user.name} — ${user.email}`;
-  $('eu-role').value = user.role;
-  $('eu-machine-wrap').classList.toggle('hidden', user.role !== 'operador');
-  const mine = user.machines || [];
-  document.querySelectorAll('input[name="eu-machine-check"]').forEach(cb=>{ cb.checked = mine.includes(cb.value); });
-  $('edit-user-form').onsubmit = async (e)=>{
-    e.preventDefault();
-    const err = $('edit-user-error'); err.classList.add('hidden');
-    const role = $('eu-role').value;
-    const machines = role === 'operador'
-      ? [...document.querySelectorAll('input[name="eu-machine-check"]:checked')].map(cb=>cb.value)
-      : [];
-    if(role === 'operador' && machines.length === 0){
-      err.textContent = 'Marque ao menos uma máquina para o operador.'; err.classList.remove('hidden'); return;
-    }
-    const { error } = await sb.from('profiles').update({ role, machines }).eq('id', user.id);
-    if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); return; }
-    closeModal('edit-user-modal');
-  };
-  openModal('edit-user-modal');
-}
-
-/* =========================================================================
-   6) PAINEL — OPERADOR
-   ========================================================================= */
-function renderOperador(container = $('main-content')){
-  clearChannels();
-  const isAdmin = currentUser.role === 'admin';
-  const available = isAdmin ? MACHINES : (currentUser.machines || []);
-  let filter = 'todas';
-  let lastOrders = [];
-
-  container.innerHTML = `
-    <div class="mb-6">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <h2 class="font-display font-700 text-2xl tracking-tight">${isAdmin ? 'Visão do Operador — todas as máquinas' : 'Fila das Minhas Máquinas'}</h2>
-        <button id="op-reset-order" class="text-xs px-2.5 py-1.5 rounded-lg border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--muted)">↺ Ordem automática (prazo + urgência)</button>
-      </div>
-      <p class="text-sm mt-0.5" style="color:var(--muted)">Pedidos aguardando ou em execução ${isAdmin ? 'em cada setor' : 'nos seus setores'}. Use as setas para priorizar manualmente.</p>
-      <div id="op-chips" class="flex flex-wrap gap-2 mt-4"></div>
-    </div>
-    <div id="operador-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
-  `;
-  if(available.length === 0){
-    $('operador-list').innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Seu usuário não tem nenhuma máquina definida. Peça ao administrador para configurá-las.</div>`;
-    return;
-  }
-
-  function drawChips(){
-    if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
-    const opts = ['todas', ...available];
-    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'rgba(59,130,246,0.16)':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
-    $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
-      filter = b.dataset.chip; drawChips(); fetchOp();
-    }));
-  }
-
-  const fetchOp = async ()=>{
-    const machinesFilter = filter === 'todas' ? available : [filter];
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
-      .eq('status', 'em_producao').in('current_machine', machinesFilter)
-      .order('deadline', { ascending: true });
-    if(error){ showError('operador-list', error); return; }
-    const orders = data.map(normalizeOrder);
-    const list = $('operador-list');
-    if(!list) return;
-    orders.sort((a, b) => {
-      if(a.queueOrder != null && b.queueOrder != null) return a.queueOrder - b.queueOrder;
-      if(a.queueOrder != null) return -1;
-      if(b.queueOrder != null) return 1;
-      const u = (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
-      if(u !== 0) return u;
-      return new Date(a.deadline) - new Date(b.deadline);
-    }); 
-    lastOrders = orders;
-    if(orders.length === 0){
-      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido na fila no momento.</div>`;
-      return;
-    }
-    list.innerHTML = orders.map((o, i)=>{
-      const step = o.routing[o.currentStepIndex];
-      const late = isLate(o);
-      return `<div class="card p-5 tag" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':'var(--blue)'};${o.urgent?'background:rgba(245,158,11,0.06);':''}">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: <span class="text-white font-medium">${o.currentMachine}</span> · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'rgba(59,130,246,0.16)':'rgba(100,116,139,0.16)'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
-              ${step.status==='em_andamento' ? 'Em andamento' : 'Aguardando início'}
-            </span>
-            ${isAdmin ? `<input data-pos-in="${o.id}" type="number" min="1" max="${orders.length}" value="${i + 1}" title="Posição na fila" class="w-12 h-8 rounded-md border text-xs text-center font-medium" style="border-color:var(--line);background:transparent;color:var(--text)">` : ''}
-            <div class="flex flex-col gap-0.5">
-              <button data-up="${o.id}" title="Subir na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▲</button>
-              <button data-down="${o.id}" title="Descer na fila" class="w-6 h-6 rounded-md border text-xs leading-none hover:bg-white/5" style="border-color:var(--line)">▼</button>
-            </div>
-          </div>
-        </div>
-        ${metaLine(o, true)}<p class="text-sm mt-2 leading-relaxed">${o.description || ''}</p>${itemsListHTML(o)}
-        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
-        <div class="mt-3">${attachmentsHTML(o)}</div>
-        <div class="mt-4 flex gap-2">
-          <button data-detail="${o.id}" class="px-3 py-2 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">Ver histórico</button>
-          ${step.status === 'pendente'
-            ? `<button data-start="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Iniciar Etapa</button>`
-            : `<button data-finish="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--green);color:#06210f">Finalizar Etapa</button>`}
-        </div>
-      </div>`;
-    }).join('');
-
-    list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
-    list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
-    list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
-    list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1)));
-    list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1)));
-    list.querySelectorAll('[data-pos-in]').forEach(inp=> inp.addEventListener('change', ()=> setQueuePosition(orders, inp.dataset.posIn, parseInt(inp.value, 10) - 1)));
-  };
-
-  drawChips();
-  liveRefresh('operador-fila', fetchOp);
-  $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders));
-}
-
-async function setQueuePosition(orders, id, to){
-  const from = orders.findIndex(o => o.id === id); if(from < 0 || isNaN(to)) return;
-  to = Math.max(0, Math.min(orders.length - 1, to));
-  const arr = orders.slice(); arr.splice(to, 0, arr.splice(from, 1)[0]);
-  const rs = await Promise.all(arr.map((o, k) => sb.from('orders').update({ queue_order: k }).eq('id', o.id)));
-  const bad = rs.find(r => r.error); if(bad) notify('Erro ao reordenar: ' + bad.error.message);
-}
-async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir); }
-
-async function resetQueueOrder(orders){
-  if(!orders.length) return;
-  if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência)?')) return;
-  const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
-  if(error) notify('Erro: ' + error.message);
-}
-
-async function startStep(order){
-  const step = order.routing[order.currentStepIndex];
-  const r1 = await sb.from('order_routing').update({ status: 'em_andamento', started_at: new Date().toISOString() }).eq('id', step.id);
-  if(r1.error){ notify('Erro ao iniciar etapa: ' + r1.error.message); return; }
-  const r2 = await sb.from('order_history').insert(historyRow(order.id, 'inicio_etapa', `Iniciou a etapa "${order.currentMachine}".`));
-  if(r2.error) notify('Etapa iniciada, mas o histórico falhou: ' + r2.error.message);
-}
-
-$('finish-photo').addEventListener('change', ()=>{
-  const f = $('finish-photo').files[0]; const img = $('finish-preview');
-  if(f){ img.src = URL.createObjectURL(f); img.classList.remove('hidden'); } else img.classList.add('hidden');
-});
-function openFinishModal(order){
-  $('finish-form').reset(); $('finish-preview').classList.add('hidden'); $('finish-error').classList.add('hidden');
-  $('finish-title').textContent = `${order.pieceName} — etapa "${order.currentMachine}"`;
-  $('finish-form').onsubmit = async (e)=>{
-    e.preventDefault();
-    const err = $('finish-error'); const btn = $('finish-submit'); err.classList.add('hidden');
-    const photo = $('finish-photo').files[0];
-    if(!photo){ err.textContent = 'Envie uma foto do trabalho concluído.'; err.classList.remove('hidden'); return; }
-    btn.disabled = true; btn.textContent = 'Enviando...';
-    try{ await finishStep(order, photo); closeModal('finish-modal'); }
-    catch(ex){ console.error(ex); err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
-    finally{ btn.disabled = false; btn.textContent = 'Enviar foto e finalizar etapa'; }
-  };
-  openModal('finish-modal');
-}
-
-async function finishStep(order, photo){
-  const idx = order.currentStepIndex;
-  const step = order.routing[idx];
-  const nextIdx = idx + 1;
-  const isLast = nextIdx >= order.routing.length;
-  const detail = `Finalizou a etapa "${order.currentMachine}" (foto anexada).` + (isLast ? ' Pedido concluído — aguardando confirmação de recebimento.' : ` Enviado para "${order.routing[nextIdx].machine}".`);
-  const ok = (r, msg)=>{ if(r.error) throw new Error(msg + ': ' + r.error.message); };
-
-  const att = await uploadFile(order.id, photo, 'fotos');
-  ok(await sb.from('order_attachments').insert(att), 'Falha ao salvar a foto');
-
-  ok(await sb.from('order_routing').update({ status: 'concluido', finished_at: new Date().toISOString() }).eq('id', step.id), 'Erro ao finalizar etapa');
-  ok(await sb.from('order_history').insert(historyRow(order.id, 'fim_etapa', detail)), 'Erro ao registrar histórico');
-
-  const updates = { updated_at: new Date().toISOString(), current_step_index: nextIdx };
-  if(isLast){ updates.status = 'concluido'; updates.current_machine = null; }
-  else{ updates.current_machine = order.routing[nextIdx].machine; }
-  ok(await sb.from('orders').update(updates).eq('id', order.id), 'Erro ao avançar o pedido');
-}
-
-async function confirmReceipt(order){
-  if(!await askConfirm(`Confirmar que você recebeu a peça "${order.pieceName}"?`)) return;
-  const { error } = await sb.from('order_history').insert(historyRow(order.id, 'recebimento', 'Confirmou o recebimento da peça.'));
-  if(error) notify('Erro ao confirmar recebimento: ' + error.message);
-}
-
-const IMG_RE = /\.(png|jpe?g|webp|gif)$/i;
-function isImage(a){ return IMG_RE.test(a.name || '') || IMG_RE.test((a.url || '').split('?')[0]) || isPhoto(a); }
-function openImagePreview(url, title){
-  const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(5,7,10,0.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px';
-  ov.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="max-width:100%;max-height:82vh;object-fit:contain;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.6)">
-    <div class="text-sm font-medium" style="color:#fff">${escapeHtml(title)} · <a href="${escapeHtml(url)}" target="_blank" style="text-decoration:underline;color:var(--blue)">abrir em nova aba</a> · clique fora ou Esc para fechar</div>`;
-  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
-  const esc = e => { if(e.key === 'Escape') close(); };
-  ov.addEventListener('click', e => { if(e.target.tagName !== 'A') close(); });
-  document.addEventListener('keydown', esc); document.body.appendChild(ov);
-}
-document.addEventListener('click', ev => {
-  const b = ev.target.closest('[data-img]'); if(!b) return;
-  ev.stopPropagation(); openImagePreview(b.dataset.img, b.dataset.title || 'Imagem');
-}, true);
-
-async function fillPositions(root){
-  for(const el of root.querySelectorAll('[data-pos]')){
-    const { data, error } = await sb.rpc('queue_position', { p_order: el.dataset.pos });
-    if(error || !data) continue;
-    el.textContent = data.kind === 'triagem'
-      ? `📍 Aguardando triagem do ADM — ${data.pos}º de ${data.total} na fila`
-      : `📍 Na fila de ${data.machine} — ${data.pos}º de ${data.total}${data.pos === 1 ? ' (próximo!)' : ''}`;
-    el.hidden = false;
-  }
-}
-
-function openRoutingEditor(order){
-  const isLocked = s => s.status === 'concluido' || (s.status === 'em_andamento' && s.started_at);
-  const locked = order.routing.filter(isLocked);
-  let edit = order.routing.filter(s => !isLocked(s)).map(s => ({ id: s.id, machine: s.machine }));
-  const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(5,7,10,0.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
-  const btn = 'class="px-2 py-1 rounded-md border text-xs hover:bg-white/5" style="border-color:var(--line)"';
-  const draw = () => { ov.innerHTML = `<div style="background:var(--surface,#121821);border-radius:12px;border:1px solid var(--line);width:min(520px,100%);max-height:90vh;overflow:auto;padding:20px" class="space-y-3">
-    <b class="text-base font-display">Editar etapas — ${escapeHtml(order.pieceName)}</b>
-    <p class="text-xs" style="color:var(--muted)">Etapas concluídas ou já iniciadas ficam travadas (🔒). As demais podem ser reordenadas, removidas ou criadas.</p>
-    ${locked.map(s => `<div class="card p-3 text-sm">🔒 ${escapeHtml(s.machine)} <span class="text-xs" style="color:var(--muted)">(${s.status === 'concluido' ? 'concluída' : 'em andamento'})</span></div>`).join('')}
-    ${edit.map((s, i) => `<div class="card p-3 text-sm flex items-center justify-between"><span>${locked.length + i + 1}. ${escapeHtml(s.machine)}</span><span class="flex gap-1"><button type="button" ${btn} data-m="up" data-i="${i}">▲</button><button type="button" ${btn} data-m="dn" data-i="${i}">▼</button><button type="button" ${btn} data-m="rm" data-i="${i}">✕</button></span></div>`).join('')}
-    <div class="flex flex-wrap gap-2 pt-2">${MACHINES.map(m => `<button type="button" ${btn} data-add="${m}">+ ${m}</button>`).join('')}</div>
-    <p data-err class="text-sm" style="color:var(--red);display:none"></p>
-    <div class="flex justify-end gap-2 pt-2"><button type="button" data-x class="px-3.5 py-2 rounded-lg text-sm hover:bg-white/5" style="background:var(--surface-2)">Cancelar</button><button type="button" data-save class="px-3.5 py-2 rounded-lg text-sm font-medium shadow" style="background:var(--blue);color:#fff">Salvar etapas</button></div></div>`; };
-  const showErr = m => { const e = ov.querySelector('[data-err]'); e.textContent = 'Erro: ' + m; e.style.display = 'block'; };
-  const chk = r => { if(r.error) throw r.error; };
-  const save = async () => {
-    const cur = order.currentStepIndex;
-    if(cur >= locked.length + edit.length) return showErr('mantenha ao menos uma etapa pendente.');
-    const keepIds = edit.filter(s => s.id).map(s => s.id);
-    const removed = order.routing.filter(s => !isLocked(s) && !keepIds.includes(s.id));
-    try{
-      if(removed.length) chk(await sb.from('order_routing').delete().in('id', removed.map(s => s.id)));
-      for(const [k, id] of keepIds.entries()) chk(await sb.from('order_routing').update({ step_index: 1000 + k, status: 'pendente' }).eq('id', id));
-      for(const [i, s] of edit.entries()){
-        const idx = locked.length + i;
-        if(s.id) chk(await sb.from('order_routing').update({ step_index: idx }).eq('id', s.id));
-        else chk(await sb.from('order_routing').insert({ order_id: order.id, step_index: idx, machine: s.machine, status: 'pendente' }));
-      }
-      const all = [...locked.map(s => s.machine), ...edit.map(s => s.machine)];
-      chk(await sb.from('orders').update({ current_machine: all[cur], updated_at: new Date().toISOString() }).eq('id', order.id));
-      await sb.from('order_history').insert(historyRow(order.id, 'roteiro', `Roteiro alterado pelo ADM: ${all.join(' → ')}.`));
-      ov.remove();
-    }catch(ex){ showErr(ex.message); }
-  };
-  ov.addEventListener('click', e => {
-    const t = e.target, m = t.dataset && t.dataset.m, i = +t.dataset.i;
-    if(t === ov || t.closest('[data-x]')) return ov.remove();
-    if(t.dataset.save !== undefined) return save();
-    if(t.dataset.add) edit.push({ id: null, machine: t.dataset.add });
-    else if(m === 'rm') edit.splice(i, 1);
-    else if(m === 'up' && i > 0) edit.splice(i - 1, 0, edit.splice(i, 1)[0]);
-    else if(m === 'dn' && i < edit.length - 1) edit.splice(i + 1, 0, edit.splice(i, 1)[0]);
-    else return;
-    draw();
-  });
-  draw(); document.body.appendChild(ov);
-}
-
-function openEditOrderModal(order){
-  setupOpPicker({ selectId:'eo-op-select', manualId:'eo-op-manual', osId:'eo-os', projectId:'eo-project', matchOs: order.osNumber, matchProject: order.project });
-  $('eo-desc').value = order.description || ''; $('eo-deadline').value = order.deadline;
-  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
-  const withAttach = baseItems.map((it, i) => {
-    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
-    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
-    const att = tagged || fallback;
-    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
-  });
-  eoItemsEditor.reset(withAttach);
-  $('edit-order-error').classList.add('hidden');
-  $('edit-order-form').onsubmit = async (e)=>{
-    e.preventDefault();
-    const err = $('edit-order-error'); const btn = $('edit-order-submit'); err.classList.add('hidden');
-    try{
-      const items = eoItemsEditor.getItems();
-      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
-      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      if(!$('eo-os').value.trim() || !$('eo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
-      const pieceName = items.length === 1 ? items[0].name : ($('eo-project').value.trim() || items[0].name);
-      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
-      const material = items.length === 1 ? items[0].material : null;
-      const v = {
-        os_number: $('eo-os').value.trim(), project: $('eo-project').value.trim(),
-        description: $('eo-desc').value.trim(), deadline: $('eo-deadline').value,
-        piece_name: pieceName, quantity: totalQty, material,
-        items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
-      };
-      btn.disabled = true; btn.textContent = 'Salvando...';
-      const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
-      if(error) throw error;
-      if(!data || data.length === 0) throw new Error('sem permissão para editar.');
-      await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
-      for(let i = 0; i < items.length; i++){
-        if(items[i].file){
-          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
-          const att = await uploadFile(order.id, items[i].file, 'itens', label);
-          await sb.from('order_attachments').insert(att);
-        }
-      }
-      await sb.from('order_history').insert(historyRow(order.id, 'editado', `Pedido editado pelo ADM (${items.length} peça(s)).`));
-      closeModal('edit-order-modal');
-    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
-    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
-  };
-  openModal('edit-order-modal');
-}
-
-function openSolEditModal(order){
-  if(order.status !== 'aguardando_analise'){
-    notify('Este pedido já entrou em triagem/produção e não pode mais ser editado.');
-    return;
-  }
-  setupOpPicker({ selectId:'seo-op-select', manualId:'seo-op-manual', osId:'seo-os', projectId:'seo-project', matchOs: order.osNumber, matchProject: order.project });
-  $('seo-desc').value = order.description || ''; $('seo-deadline').value = order.deadline;
-  const baseItems = (order.items && order.items.length) ? order.items : [{ name: order.pieceName, quantity: order.quantity, material: order.material }];
-  const withAttach = baseItems.map((it, i) => {
-    const tagged = order.attachments.find(a => !isPhoto(a) && a.name.startsWith(`Peça ${i + 1} - `));
-    const fallback = baseItems.length === 1 ? order.attachments.find(a => !isPhoto(a)) : null;
-    const att = tagged || fallback;
-    return { ...it, _attachmentName: att ? att.name : '', _attachmentId: att ? att.id : null };
-  });
-  solItemsEditor.reset(withAttach);
-  $('sol-edit-order-error').classList.add('hidden');
-  $('sol-edit-order-form').onsubmit = async (e)=>{
-    e.preventDefault();
-    const err = $('sol-edit-order-error'); const btn = $('sol-edit-order-submit'); err.classList.add('hidden');
-    try{
-      const items = solItemsEditor.getItems();
-      if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
-      if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      if(!$('seo-os').value.trim() || !$('seo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
-      const pieceName = items.length === 1 ? items[0].name : ($('seo-project').value.trim() || items[0].name);
-      const totalQty = items.reduce((a, it) => a + it.quantity, 0);
-      const material = items.length === 1 ? items[0].material : null;
-      btn.disabled = true; btn.textContent = 'Salvando...';
-      const v = {
-        os_number: $('seo-os').value.trim(), project: $('seo-project').value.trim(),
-        description: $('seo-desc').value.trim(), deadline: $('seo-deadline').value,
-        piece_name: pieceName, quantity: totalQty, material,
-        items: items.map(({ name, quantity, material }) => ({ name, quantity, material })),
-        updated_at: new Date().toISOString()
-      };
-      const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
-      if(error) throw error;
-      if(!data || data.length === 0) throw new Error('não deu para salvar.');
-      await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
-      for(let i = 0; i < items.length; i++){
-        if(items[i].file){
-          const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
-          const att = await uploadFile(order.id, items[i].file, 'itens', label);
-          await sb.from('order_attachments').insert(att);
-        }
-      }
-      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Solicitante editou o próprio pedido.'));
-      closeModal('sol-edit-order-modal');
-    }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
-    finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
-  };
-  openModal('sol-edit-order-modal');
-}
-
-async function removeOldPieceAttachment(order, i, total){
-  const old = order.attachments.filter(a => a.id && !isPhoto(a) && a.uploadedBy === order.requesterName
-    && (total > 1 ? a.name.startsWith(`Peça ${i + 1} - `) : true));
-  if(!old.length) return;
-  const { error } = await sb.from('order_attachments').delete().in('id', old.map(a => a.id));
-  if(error) return; 
-  const paths = old.map(a => decodeURIComponent(a.url.split('/attachments/')[1] || '')).filter(Boolean);
-  if(paths.length) await sb.storage.from('attachments').remove(paths);
-}
-
-async function deleteOwnOrder(order){
-  if(order.status !== 'aguardando_analise'){
-    notify('Este pedido já entrou em triagem/produção. Peça ao ADM para excluir.');
-    return;
-  }
-  if(!await askConfirm(`Excluir seu pedido "${order.pieceName}"?\n\nIsso apaga também os anexos enviados. Não dá para desfazer.`)) return;
-  try{
-    let r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
-    if(r.error && r.error.code === '23503'){
-      for(const t of ['order_history', 'order_attachments', 'order_routing']){
-        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
-      }
-      r = await sb.from('orders').delete().eq('id', order.id).eq('status', 'aguardando_analise').select();
-    }
-    if(r.error) throw r.error;
-    if(!r.data || r.data.length === 0) throw new Error('não deu para excluir.');
-    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
-    if(paths.length) await sb.storage.from('attachments').remove(paths);
-  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
-}
-
-async function deleteOrder(order){
-  if(!await askConfirm(`Excluir o pedido "${order.pieceName}"?\n\nIsso apaga também roteiro, anexos, fotos e histórico. Não dá para desfazer.`)) return;
-  try{
-    let r = await sb.from('orders').delete().eq('id', order.id).select();
-    if(r.error && r.error.code === '23503'){ 
-      for(const t of ['order_history', 'order_attachments', 'order_routing']){
-        const c = await sb.from(t).delete().eq('order_id', order.id); if(c.error) throw c.error;
-      }
-      r = await sb.from('orders').delete().eq('id', order.id).select();
-    }
-    if(r.error) throw r.error;
-    if(!r.data || r.data.length === 0) throw new Error('sem permissão para excluir.');
-    const paths = order.attachments.map(a => (a.url.split('/attachments/')[1] || '')).map(decodeURIComponent).filter(Boolean);
-    if(paths.length) await sb.storage.from('attachments').remove(paths);
-  }catch(ex){ notify('Erro ao excluir: ' + ex.message); }
-}
-
-const cutQtyOf = o => o.routing.some(r => r.machine === 'Corte a Laser' && r.status === 'concluido') ? (o.quantity || 0) : 0;
-function materialUsage(orders){
-  const m = {};
-  orders.forEach(o => {
-    const its = (o.items && o.items.length) ? o.items : [{ quantity: o.quantity, material: o.material }];
-    its.forEach(it => { const k = it.material || 'Sem material'; m[k] = (m[k] || 0) + (Number(it.quantity) || 0); });
-  });
-  return Object.entries(m).sort((a, b) => b[1] - a[1]);
-}
-function materialChartHTML(orders){
-  const data = materialUsage(orders), total = data.reduce((a, d) => a + d[1], 0), max = data.length ? data[0][1] : 1;
-  const bars = data.length === 0 ? '<p class="text-sm" style="color:var(--muted)">Sem dados ainda.</p>' : data.map(([name, q], i) => `
-    <div class="mb-3"><div class="flex justify-between gap-3 text-xs font-medium mb-1.5"><span>${i === 0 ? '🏆 ' : ''}${escapeHtml(name)}</span><span style="color:var(--muted)">${q} peça(s) · ${total ? Math.round(q / total * 100) : 0}%</span></div>
-    <div style="height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.max(3, q / max * 100)}%;border-radius:6px;background:${i === 0 ? 'var(--blue)' : '#334155'}"></div></div></div>`).join('');
-  return `<div class="card p-5 mb-6"><p class="text-xs uppercase tracking-wide font-medium mb-4" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
-}
-
-function renderAdminResumo(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
-    <p class="text-xs uppercase tracking-wide font-medium mb-3" style="color:var(--muted)">Por solicitante</p>
-    <div id="resumo-table" class="card overflow-x-auto"></div>`;
-  liveRefresh('admin-resumo', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
-    if(error){ showError('resumo-table', error); return; }
-    if(!$('resumo-stats')) return;
-    const orders = data.map(normalizeOrder);
-    const cutTotal = orders.reduce((a, o) => a + cutQtyOf(o), 0);
-    $('resumo-stats').innerHTML = statsHTML(statsOf(orders)) +
-      `<div class="card p-5 mb-6 flex items-center justify-between gap-3"><div><p class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças cortadas (Corte a Laser concluído)</p><p class="font-display text-3xl font-700 mt-1" style="color:var(--green)">${cutTotal}</p></div><span style="font-size:32px">✂️</span></div>` + materialChartHTML(orders);
-    const by = {};
-    orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
-    const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list), cut: g.list.reduce((a, o) => a + cutQtyOf(o), 0) })).sort((a, b) => b.s.total - a.s.total);
-    const th = h => `<th class="text-left font-medium px-4 py-3 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
-    const td = (v, c) => `<td class="px-4 py-3 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
-    $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-8 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
-      `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Peças cortadas', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
-      rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.cut, 'var(--green)')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
-      `</tbody></table>`;
-  });
-}
-
-function renderAdminRelatorio(){
-  clearChannels();
-  const now = new Date();
-  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const toStr = d => d.toISOString().slice(0, 10);
-  const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  $('admin-tab-content').innerHTML = `
-    <div class="card p-6 max-w-md space-y-4">
-      <div>
-        <h2 class="font-display font-700 text-xl">Relatório (Excel)</h2>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Inclui pedidos, itens/peças, etapas por máquina e resumo por solicitante.</p>
-      </div>
-      <div class="flex gap-4 text-sm pt-1">
-        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="mes" checked style="width:16px;height:16px"> Por mês</label>
-        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rep-mode" value="periodo" style="width:16px;height:16px"> Por período livre</label>
-      </div>
-      <div id="rep-mes-field">
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Mês</label>
-        <input id="rep-month" type="month" value="${ym}" class="w-full mt-1 px-3 py-2 text-sm">
-      </div>
-      <div id="rep-periodo-field" class="hidden grid grid-cols-2 gap-3">
-        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">De</label><input id="rep-from" type="date" value="${toStr(monthAgo)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
-        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Até</label><input id="rep-to" type="date" value="${toStr(now)}" class="w-full mt-1 px-3 py-2 text-sm"></div>
-      </div>
-      <div>
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Solicitante (opcional)</label>
-        <select id="rep-requester" class="w-full mt-1 px-3 py-2 text-sm"><option value="">Todos os solicitantes</option></select>
-      </div>
-      <p id="rep-msg" class="text-sm hidden"></p>
-      <button id="rep-btn" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 mt-2" style="background:var(--green);color:#06210f">Baixar Excel (.xlsx)</button>
-    </div>`;
-
-  document.querySelectorAll('input[name="rep-mode"]').forEach(r=> r.addEventListener('change', ()=>{
-    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
-    $('rep-mes-field').classList.toggle('hidden', periodo);
-    $('rep-periodo-field').classList.toggle('hidden', !periodo);
-  }));
-
-  sb.from('orders').select('requester_name').then(({ data })=>{
-    if(!$('rep-requester') || !data) return;
-    const names = [...new Set(data.map(r => r.requester_name))].sort();
-    $('rep-requester').innerHTML = '<option value="">Todos os solicitantes</option>' +
-      names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n}</option>`).join('');
-  });
-
-  $('rep-btn').addEventListener('click', async ()=>{
-    const btn = $('rep-btn'); const msg = $('rep-msg');
-    const periodo = document.querySelector('input[name="rep-mode"]:checked').value === 'periodo';
-    let from, to, label;
-    if(periodo){
-      if(!$('rep-from').value || !$('rep-to').value) return;
-      from = new Date($('rep-from').value + 'T00:00:00'); to = new Date($('rep-to').value + 'T23:59:59');
-      label = `${$('rep-from').value}_a_${$('rep-to').value}`;
-    }else{
-      const month = $('rep-month').value; if(!month) return;
-      const [y, m] = month.split('-').map(Number);
-      from = new Date(y, m - 1, 1); to = new Date(y, m, 0, 23, 59, 59);
-      label = month;
-    }
-    const requesterName = $('rep-requester').value || null;
-    msg.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Gerando...';
-    try{
-      const n = await exportReport(from, to, requesterName, label);
-      msg.textContent = n ? `Relatório gerado com ${n} pedido(s).` : 'Nenhum pedido encontrado nesse filtro.';
-      msg.style.color = n ? 'var(--green)' : 'var(--muted)';
-    }catch(ex){ msg.textContent = 'Erro: ' + ex.message; msg.style.color = 'var(--red)'; }
-    msg.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Baixar Excel (.xlsx)';
-  });
-}
-
-async function exportReport(from, to, requesterName, label){
-  if(typeof XLSX === 'undefined') throw new Error('a biblioteca de Excel não carregou. Recarregue a página.');
-  let q = sb.from('orders').select(ORDER_SELECT)
-    .gte('created_at', from.toISOString()).lt('created_at', new Date(to.getTime() + 1000).toISOString())
-    .order('created_at', { ascending: true });
-  if(requesterName) q = q.eq('requester_name', requesterName);
-  const { data, error } = await q;
-  if(error) throw error;
-  const orders = data.map(normalizeOrder);
-  if(orders.length === 0) return 0;
-
-  const pedidos = orders.map(o => {
-    const last = o.routing[o.routing.length - 1];
-    const fim = (o.status === 'concluido' && last) ? last.finishedAt : null;
-    const atrasado = fim ? new Date(fim) > new Date(o.deadline + 'T23:59:59') : isLate(o);
-    const rec = receiptOf(o);
-    return {
-      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Material': o.material || '', 'Qtd Peças': (o.items && o.items.length) || 1, 'Urgente': o.urgent ? 'Sim' : 'Não', 'Peça': o.pieceName, 'Observações': o.description, 'Quantidade': o.quantity, 'Solicitante': o.requesterName,
-      'Criado em': fmtDateTime(o.createdAt), 'Prazo': fmtDate(o.deadline), 'Status': statusInfo(o).label,
-      'Roteiro': o.routing.map(r => r.machine).join(' → '), 'Concluído em': fim ? fmtDateTime(fim) : '',
-      'Atrasado': atrasado ? 'Sim' : 'Não', 'Recebimento confirmado': rec ? 'Sim' : (o.status === 'concluido' ? 'Pendente' : ''),
-      'Recebido em': rec ? fmtDateTime(rec.at) : '', 'Arquivos enviados': reqFilesOf(o).length, 'Fotos de conclusão': photosOf(o).length
-    };
-  });
-  const itens = [];
-  orders.forEach(o => {
-    const its = (o.items && o.items.length) ? o.items : [{ name: o.pieceName, quantity: o.quantity, material: o.material }];
-    its.forEach((it, i) => itens.push({
-      'O.S.': o.osNumber || '', 'Projeto': o.project || '', 'Peça': it.name, 'Item nº': i + 1,
-      'Quantidade': it.quantity, 'Material': it.material || '', 'Solicitante': o.requesterName,
-      'Status do pedido': statusInfo(o).label, 'Prazo': fmtDate(o.deadline), 'Urgente': o.urgent ? 'Sim' : 'Não'
-    }));
-  });
-  const etapas = [];
-  orders.forEach(o => o.routing.forEach((r, i) => etapas.push({
-    'Peça': o.pieceName, 'Solicitante': o.requesterName, 'Etapa': i + 1, 'Máquina': r.machine,
-    'Status': { pendente: 'Aguardando', em_andamento: 'Em andamento', concluido: 'Concluída' }[r.status] || r.status,
-    'Início': r.startedAt ? fmtDateTime(r.startedAt) : '', 'Fim': r.finishedAt ? fmtDateTime(r.finishedAt) : '',
-    'Duração (min)': (r.startedAt && r.finishedAt) ? Math.round((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000) : ''
-  })));
-  const by = {};
-  orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
-  const resumo = Object.values(by).map(g => { const s = statsOf(g.list); return {
-    'Solicitante': g.name, 'Pedidos': s.total, 'Aguardando ADM': s.aguardando, 'Em produção': s.producao,
-    'Concluídos': s.concluido, 'Recebidos': s.recebidos, 'Atrasados': s.atrasados, 'Arquivos enviados': s.arquivos, 'Fotos': s.fotos }; });
-
-  const sheet = rows => {
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const keys = Object.keys(rows[0] || {});
-    ws['!cols'] = keys.map(k => ({ wch: Math.min(45, Math.max(k.length, ...rows.map(r => String(r[k] == null ? '' : r[k]).length)) + 2) }));
-    return ws;
-  };
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, sheet(pedidos), 'Pedidos');
-  XLSX.utils.book_append_sheet(wb, sheet(itens), 'Itens');
-  XLSX.utils.book_append_sheet(wb, sheet(etapas), 'Etapas');
-  XLSX.utils.book_append_sheet(wb, sheet(resumo), 'Por solicitante');
-  XLSX.writeFile(wb, `relatorio-pedidos-${label}.xlsx`);
-  return orders.length;
-}
-
-const MATERIALS = ["Aço Galvanizado = 0,65mm", "Chapa Aço Carbono #18 = 1.2mm", "Chapa Aço Carbono #14 = 2mm",
-  "Chapa Aço Carbono (1/8\") = 3,18mm (Xadrez)", "Chapa Aço Carbono (3/16\") = 4,76mm", "Chapa Aço Carbono (1/4\") = 6,35mm",
-  "Chapa Aço Carbono (5/16\") = 7,94mm", "Chapa Aço Carbono (3/8\") = 9,53mm", "Chapa Aço Carbono (1/2\") = 12,70mm",
-  "Chapa Aço Carbono (5/8\") = 15,88mm", "Chapa Inox #18 = 1.2mm", "Chapa Inox = 3mm", "Chapa Alumínio = 3mm"];
-function materialOptionsHTML(placeholder){
-  return `<option value="">${placeholder}</option>` + MATERIALS.map(m=>`<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
-}
-if($('eo-material')) $('eo-material').innerHTML = materialOptionsHTML('— sem material —');
-$('order-deadline').min = new Date().toLocaleDateString('sv-SE');
-const ITEM_MATERIAL_OPTIONS = materialOptionsHTML('Selecione o material...');
-
-function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function createItemsEditor(containerId){
-  const wrap = $(containerId);
-  let rows = [], removedIds = [];
-  const hasFile = r => !!(r.file || (r.existingAttachmentName && !r.removeExisting));
-  function fileAreaHTML(r){
-    if(hasFile(r)) return `<div class="flex items-center justify-between gap-2 mt-1 px-3 py-2 rounded-md text-xs border" style="background:var(--surface-2);border-color:var(--line)">
-        <span class="truncate">📎 ${escapeHtml(r.file ? r.file.name : r.existingAttachmentName)}${r.file ? '' : ' <em style="color:var(--muted)">(atual)</em>'}</span>
-        <button type="button" data-del-file style="color:var(--red)" class="shrink-0 font-medium hover:underline">Excluir</button></div>`;
-    return `<input data-f="file" type="file" class="w-full mt-1 text-xs">${r.removeExisting ? '<p class="text-xs mt-1" style="color:var(--amber)">O anexo atual será removido ao salvar.</p>' : ''}`;
-  }
-  function renderFileArea(r){
-    const area = wrap.querySelector(`[data-row="${r.id}"] [data-file-area]`);
-    area.innerHTML = fileAreaHTML(r);
-    const inp = area.querySelector('[data-f="file"]');
-    if(inp) inp.addEventListener('change', e => {
-      const f = e.target.files[0] || null, m = f ? validateFile(f) : '';
-      if(m){ notify(m); e.target.value = ''; return; }
-      r.file = f; renderFileArea(r);
-    });
-    const del = area.querySelector('[data-del-file]');
-    if(del) del.addEventListener('click', () => { if(r.file) r.file = null; else r.removeExisting = true; renderFileArea(r); });
-  }
-  function rowHTML(r){
-    return `<div class="card p-4 space-y-3" data-row="${r.id}">
-      <div class="flex items-center justify-between"><span class="text-xs font-semibold uppercase tracking-wide" data-label style="color:var(--muted)"></span>
-        <button type="button" data-remove-item class="text-xs font-medium hover:underline" style="color:var(--red)">Remover</button></div>
-      <input data-f="name" value="${escapeHtml(r.name)}" placeholder="Descrição da peça (nome)" class="w-full px-3 py-2 text-sm">
-      <div class="grid grid-cols-2 gap-2">
-        <input data-f="qty" type="number" min="1" value="${r.qty}" placeholder="Quantidade" class="w-full px-3 py-2 text-sm">
-        <select data-f="material" class="w-full px-3 py-2 text-sm">${ITEM_MATERIAL_OPTIONS}</select></div>
-      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Anexo desta peça (opcional)</label><div data-file-area></div></div></div>`;
-  }
-  function refreshLabels(){
-    rows.forEach((r, i) => {
-      const el = wrap.querySelector(`[data-row="${r.id}"]`);
-      el.querySelector('[data-label]').textContent = `Peça ${i + 1}`;
-      el.querySelector('[data-remove-item]').style.display = rows.length > 1 ? '' : 'none';
-    });
-  }
-  function addRow(data){
-    data = data || {};
-    const r = { id: 'itm' + Math.random().toString(36).slice(2, 9), name: data.name || '', qty: data.quantity || 1, material: data.material || '', file: null,
-      existingAttachmentName: data._attachmentName || '', existingAttachmentId: data._attachmentId || null, removeExisting: false };
-    rows.push(r);
-    wrap.insertAdjacentHTML('beforeend', rowHTML(r));
-    const el = wrap.querySelector(`[data-row="${r.id}"]`);
-    el.querySelector('[data-f="material"]').value = r.material;
-    el.querySelector('[data-f="name"]').addEventListener('input', e => r.name = e.target.value);
-    el.querySelector('[data-f="qty"]').addEventListener('input', e => r.qty = Number(e.target.value));
-    el.querySelector('[data-f="material"]').addEventListener('change', e => r.material = e.target.value);
-    el.querySelector('[data-remove-item]').addEventListener('click', () => removeRow(r.id));
-    renderFileArea(r); refreshLabels();
-  }
-  function removeRow(rid){
-    if(rows.length <= 1) return;
-    const r = rows.find(x => x.id === rid);
-    if(r.existingAttachmentId) removedIds.push(r.existingAttachmentId);
-    rows = rows.filter(x => x.id !== rid);
-    wrap.querySelector(`[data-row="${rid}"]`).remove(); refreshLabels();
-  }
-  function reset(items){ rows = []; removedIds = []; wrap.innerHTML = ''; (items && items.length ? items : [{}]).forEach(addRow); }
-  reset();
-  return {
-    addBlank: () => addRow(),
-    reset,
-    getItems: () => rows.map(r => ({ name: r.name.trim(), quantity: Math.max(1, Number(r.qty) || 1), material: r.material, file: r.file })),
-    takeDeletes: () => { const ids = [...removedIds, ...rows.filter(r => r.existingAttachmentId && (r.removeExisting || r.file)).map(r => r.existingAttachmentId)]; removedIds = []; return ids; }
-  };
-}
-async function deleteAttachmentsByIds(ids){
-  if(!ids.length) return;
-  const { data, error } = await sb.from('order_attachments').delete().in('id', ids).select();
-  if(error || !data) return;
-  const paths = data.map(a => decodeURIComponent((a.url.split('/attachments/')[1] || ''))).filter(Boolean);
-  if(paths.length) await sb.storage.from('attachments').remove(paths);
-}
-
-const orderItemsEditor = createItemsEditor('order-items-editor');
-$('order-add-item').addEventListener('click', ()=> orderItemsEditor.addBlank());
-
-const solItemsEditor = createItemsEditor('seo-items-editor');
-$('seo-add-item').addEventListener('click', ()=> solItemsEditor.addBlank());
-
-const eoItemsEditor = createItemsEditor('eo-items-editor');
-$('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
-
-async function toggleUrgent(o){
-  const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
-  if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão')); return; }
-  await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
-}
-
-function barsHTML(rows, fmt = v => v){
-  const max = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
-  return rows.map(r => {
-    const tot = r.segs.reduce((a, s) => a + s.v, 0);
-    return `<div class="flex items-center gap-3 mb-2.5">
-      <span class="w-24 sm:w-32 shrink-0 text-xs font-medium truncate" style="color:var(--muted)" title="${r.label}">${r.label}</span>
-      <div class="flex-1 flex h-5 rounded-md overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
-      <span class="w-20 text-xs text-right font-medium">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
-  }).join('');
-}
-function renderAdminGraficos(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `<div id="gr" class="grid gap-4 lg:grid-cols-2"></div>`;
-  liveRefresh('admin-graficos', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
-    if(error){ showError('gr', error); return; }
-    if(!$('gr')) return;
-    const orders = data.map(normalizeOrder);
-    const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const now = new Date(), months = [];
-    for(let i = 5; i >= 0; i--){ const x = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ key: key(x), label: `${String(x.getMonth() + 1).padStart(2, '0')}/${x.getFullYear()}` }); }
-    const inMonth = m => orders.filter(o => key(new Date(o.createdAt)) === m.key);
-    const porMes = months.map(m => ({ label: m.label, segs: [{ v: inMonth(m).length, color: 'var(--blue)', name: 'Pedidos' }] }));
-    const atrasos = months.map(m => { const l = inMonth(m), late = l.filter(lateFinal).length;
-      return { label: m.label, segs: [{ v: l.length - late, color: 'var(--green)', name: 'No prazo' }, { v: late, color: 'var(--red)', name: 'Atrasados' }], text: `${late} de ${l.length}` }; });
-    const acc = {};
-    orders.forEach(o => o.routing.forEach(r => { if(r.startedAt && r.finishedAt) (acc[r.machine] = acc[r.machine] || []).push((new Date(r.finishedAt) - new Date(r.startedAt)) / 60000); }));
-    const tempo = MACHINES.map(m => { const a = acc[m] || [], avg = a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
-      return { label: m, segs: [{ v: avg, color: 'var(--amber)', name: 'Média' }], text: a.length ? fmtMin(avg) : '—' }; });
-    const box = (t, sub, body) => `<div class="card p-5"><p class="font-display font-600 text-lg">${t}</p><p class="text-xs mb-4" style="color:var(--muted)">${sub}</p>${body}</div>`;
-    const abertos = orders.filter(o => o.status !== 'concluido' && isLate(o)).length;
-    $('gr').innerHTML =
-      box('Pedidos por mês', 'Últimos 6 meses (data de criação)', barsHTML(porMes)) +
-      box('Tempo médio por máquina', 'Duração das etapas concluídas (início → fim)', barsHTML(tempo)) +
-      box('Atrasos por mês', `<span style="color:var(--green)">■</span> no prazo &nbsp;<span style="color:var(--red)">■</span> atrasados · ${abertos} pedido(s) em aberto com prazo vencido agora`, barsHTML(atrasos));
-  });
-}
-</script>
-  <!-- ================= MODAL: NOVO PEDIDO ================= -->
-<div id="new-order-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
-      <h3 class="font-display font-600 text-lg">Novo Pedido de Peça</h3>
-      <button data-close-modal="new-order-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
-    </div>
-    <form id="new-order-form" class="p-6 space-y-4">
-      <div>
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">OS / Projeto cadastrado</label>
-        <select id="order-op-select" class="w-full mt-1 px-3 py-2 text-sm"></select>
-        <p class="text-xs mt-1" style="color:var(--muted)">Não achou a OS/Projeto? Escolha "Outro" ou peça ao ADM para cadastrar.</p>
-      </div>
-      <div class="grid grid-cols-2 gap-3 hidden" id="order-op-manual">
-        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S.</label><input id="order-os" class="w-full mt-1 px-3 py-2 text-sm"></div>
-        <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Projeto</label><input id="order-project" class="w-full mt-1 px-3 py-2 text-sm"></div>
-      </div>
-      <div class="flex items-center justify-between">
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Peças deste pedido</label>
-        <button type="button" id="order-add-item" class="text-xs px-2.5 py-1 rounded border hover:bg-white/5 transition-colors" style="border-color:var(--line);color:var(--text)">+ Adicionar peça</button>
-      </div>
-      <div id="order-items-editor" class="space-y-3"></div>
-      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Observações (opcional)</label><textarea id="order-description" rows="2" class="w-full mt-1 px-3 py-2 text-sm" placeholder="Tolerâncias, acabamento..."></textarea></div>
-      <div><label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Prazo desejado</label><input id="order-deadline" type="date" required class="w-full mt-1 px-3 py-2 text-sm"></div>
-      <p id="new-order-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="new-order-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Enviar para análise do ADM</button>
-    </form>
-  </div>
-</div>
-  
-</body>
-</html>
+  return date.toLocaleDateString('pt-BR'); 
