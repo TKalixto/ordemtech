@@ -904,4 +904,392 @@ function goAdminTab(tab){
 }
 async function refreshBell(){
   if(!currentUser || currentUser.role !== 'admin') return;
-  const { count, error } = await sb.from('orders').select('id', { count:'exact', head:true }).eq
+  const { count, error } = await sb.from('orders').select('id', { count:'exact', head:true }).eq('status','aguardando_analise');
+  if(error){ console.error(error); return; }
+  const dot = $('bell-dot'), txt = count > 99 ? '99+' : String(count);
+  if(count > 0){ dot.textContent = txt; dot.classList.remove('hidden'); }
+  else dot.classList.add('hidden');
+  const nc = $('nav-count-fila');
+  if(nc){ nc.textContent = txt; nc.classList.toggle('hidden', !(count > 0)); }
+  document.title = count > 0 ? `(${count}) ${BASE_TITLE}` : BASE_TITLE;
+}
+function startBell(){
+  refreshBell();
+  if(bellChannel) return;
+  bellChannel = sb.channel('bell-admin')
+    .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, refreshBell)
+    .subscribe();
+}
+$('bell-btn').addEventListener('click', ()=> goAdminTab('fila'));
+
+/* ============ Seletor de Projeto/OS ============ */
+async function loadProjects(){
+  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
+  if(error){ console.error(error); projectsCache = []; return []; }
+  projectsCache = data; return data;
+}
+function projectOptionsHTML(list, selectedValue){
+  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
+  return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
+}
+async function setupOpPicker({ selectId, manualId, osId, projectId, matchOs, matchProject }){
+  const list = await loadProjects();
+  const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
+  const match = (matchOs && matchProject) ? list.find(p => p.os_number === matchOs && p.project_name === matchProject) : null;
+  const initial = match ? match.id : ((matchOs || matchProject) ? '__custom__' : '');
+  sel.innerHTML = projectOptionsHTML(list, initial);
+  sel.value = initial;
+  if(initial === '__custom__'){ osEl.value = matchOs || ''; projEl.value = matchProject || ''; }
+  const apply = ()=>{
+    if(sel.value === '__custom__'){ manual.classList.remove('hidden'); }
+    else{
+      manual.classList.add('hidden');
+      const p = list.find(x => x.id === sel.value);
+      osEl.value = p ? p.os_number : '';
+      projEl.value = p ? p.project_name : '';
+    }
+  };
+  sel.onchange = apply;
+  apply();
+}
+
+/* =========================================================================
+   4) PAINEL — SOLICITANTE
+   ========================================================================= */
+function renderSolicitante(container = $('main-content')){
+  clearChannels();
+  container.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+      <div>
+        <h2 class="font-display font-700 text-2xl tracking-tight">Meus Pedidos</h2>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Acompanhe o status dos pedidos enviados.</p>
+      </div>
+      <button id="btn-new-order" class="px-4 py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90 flex items-center gap-1.5" style="background:var(--blue);color:#fff">+ Novo Pedido</button>
+    </div>
+    <div id="solicitante-summary"></div>
+    <div id="solicitante-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>
+  `;
+  $('btn-new-order').addEventListener('click', ()=>{ orderItemsEditor.reset(); $('new-order-form').reset(); setupOpPicker({ selectId:'order-op-select', manualId:'order-op-manual', osId:'order-os', projectId:'order-project' }); openModal('new-order-modal'); });
+
+  liveRefresh('solicitante-orders', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('requester_id', currentUser.id).order('created_at', { ascending: false });
+    if(error){ showError('solicitante-list', error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('solicitante-list');
+    if($('solicitante-summary')) $('solicitante-summary').innerHTML = statsHTML(statsOf(orders));
+    if(orders.length === 0){
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
+      return;
+    }
+    list.innerHTML = orders.map(o=>{
+      const s = statusInfo(o); const late = isLate(o);
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
+        </div>
+        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
+        ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-order-id]').forEach(el=>{
+      el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
+    });
+    list.querySelectorAll('[data-receive]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); confirmReceipt(orders.find(o=>o.id===b.dataset.receive));
+    }));
+    list.querySelectorAll('[data-sol-edit]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); openSolEditModal(orders.find(o=>o.id===b.dataset.solEdit));
+    }));
+    list.querySelectorAll('[data-sol-del]').forEach(b=> b.addEventListener('click', (ev)=>{
+      ev.stopPropagation(); deleteOwnOrder(orders.find(o=>o.id===b.dataset.solDel));
+    }));
+    fillPositions(list);
+  });
+}
+
+$('new-order-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = $('new-order-submit'); const err = $('new-order-error');
+  err.classList.add('hidden');
+  if($('order-deadline').value < new Date().toLocaleDateString('sv-SE')){ err.textContent = 'O prazo não pode ser uma data que já passou.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try{
+    const items = orderItemsEditor.getItems();
+    if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
+    if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
+    if(!$('order-os').value.trim() || !$('order-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+    const pieceName = items.length === 1 ? items[0].name : ($('order-project').value.trim() || items[0].name);
+    const totalQty = items.reduce((a, it) => a + it.quantity, 0);
+    const material = items.length === 1 ? items[0].material : null;
+
+    const { data: order, error } = await sb.from('orders').insert({
+      piece_name: pieceName,
+      description: $('order-description').value.trim(),
+      quantity: totalQty,
+      deadline: $('order-deadline').value,
+      requester_id: currentUser.id,
+      requester_name: currentUser.name,
+      status: 'aguardando_analise',
+      os_number: $('order-os').value.trim(), project: $('order-project').value.trim(), material,
+      items: items.map(({ name, quantity, material }) => ({ name, quantity, material }))
+    }).select().single();
+    if(error) throw error;
+
+    await sb.from('order_history').insert(historyRow(order.id, 'criado', `Pedido criado com ${items.length} peça(s) e enviado para triagem do ADM.`));
+
+    for(let i = 0; i < items.length; i++){
+      if(items[i].file){
+        const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
+        const att = await uploadFile(order.id, items[i].file, 'itens', label);
+        await sb.from('order_attachments').insert(att);
+      }
+    }
+    e.target.reset();
+    orderItemsEditor.reset();
+    closeModal('new-order-modal');
+  }catch(ex){
+    console.error(ex);
+    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
+    err.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
+  }
+});
+
+/* =========================================================================
+   5) PAINEL — ADMINISTRADOR
+   ========================================================================= */
+const SB_ICONS = {
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+  usercheck: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>',
+  sheet: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>',
+  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  down: '<path d="m6 9 6 6 6-6"/>', menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>'
+};
+const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SB_ICONS[n]}</svg>`;
+const SB_MENU = [
+  { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
+  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
+  { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
+  { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
+];
+const sbLink = ([t, label, ic]) => `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-count-fila">0</span>' : ''}</button>`;
+
+const PAGE_INFO = {
+  fila: ['Fila de Triagem', 'Pedidos novos aguardando você definir o roteiro de máquinas.'],
+  todos: ['Todos os Pedidos', 'Acompanhe, filtre e edite todos os pedidos do sistema.'],
+  usuarios: ['Usuários', 'Aprove contas novas e defina o perfil e as máquinas de cada pessoa.'],
+  graficos: ['Gráficos', 'Indicadores da produção em gráficos.'],
+  resumo: ['Resumo por Solicitante', 'Pedidos, arquivos e fotos de cada solicitante.']
+};
+function setPageHead(tab){
+  const el = $('page-head'); if(!el) return;
+  const i = PAGE_INFO[tab];
+  el.innerHTML = i ? `<div class="flex items-center justify-between flex-wrap gap-3"><div><h1 class="font-display font-700 text-2xl tracking-tight">${i[0]}</h1><p class="text-sm mt-0.5" style="color:var(--muted)">${i[1]}</p></div>${tab==='fila'?'<a href="almoxarifado_index.html" target="_blank" class="px-4 py-2.5 rounded-lg text-xs font-semibold shadow transition hover:opacity-90 flex items-center gap-2" style="background:var(--amber); color:#1a1204"><span>📦 Abrir Almoxarifado</span></a>':''}</div>` : '';
+  el.style.display = i ? '' : 'none';
+}
+
+function renderAdmin(){
+  const nav = SB_MENU.map(sec => sec.group
+    ? `<div class="sb-sec"><button type="button" id="sb-dados" class="sb-link sb-group" aria-expanded="false">${sbIcon('chart')}<span>${sec.title}</span>${sbIcon('down').replace('class="sb-ic"', 'class="sb-ic sb-chev"')}</button><div class="sb-sub">${sec.items.map(sbLink).join('')}</div></div>`
+    : `<div class="sb-sec"><p class="sb-title">${sec.title}</p>${sec.items.map(sbLink).join('')}</div>`).join('');
+  $('main-content').innerHTML = `
+    <button type="button" id="sb-toggle" aria-label="Abrir menu">${sbIcon('menu')}</button>
+    <div id="sb-backdrop"></div>
+    <aside id="admin-sb" aria-label="Menu principal">
+      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão CIMA<small>Painel do ADM</small></span></div>
+      <nav class="sb-nav">${nav}</nav>
+      <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
+    </aside>
+    <div id="page-head" class="page-head"></div>
+    <div id="admin-tab-content"></div>`;
+  const sb = $('admin-sb'), grp = $('sb-dados');
+  const views = { fila: renderAdminFila, todos: renderAdminTodos, usuarios: renderAdminUsuarios, projetos: renderAdminProjetos, graficos: renderAdminGraficos, resumo: renderAdminResumo, relatorio: renderAdminRelatorio,
+    solicitante: () => renderSolicitante($('admin-tab-content')), operador: () => renderOperador($('admin-tab-content')) };
+  const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
+  const go = tab => {
+    document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    if(['graficos', 'resumo', 'relatorio'].includes(tab)) setGroup(true);
+    sb.classList.remove('show'); $('sb-backdrop').classList.remove('show');
+    setPageHead(tab);
+    views[tab]();
+  };
+  document.querySelectorAll('.admin-tab').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+  grp.addEventListener('click', () => setGroup(!grp.classList.contains('open')));
+  $('sb-toggle').addEventListener('click', () => { sb.classList.add('show'); $('sb-backdrop').classList.add('show'); });
+  $('sb-backdrop').addEventListener('click', () => { sb.classList.remove('show'); $('sb-backdrop').classList.remove('show'); });
+  go('fila');
+  refreshBell();
+}
+
+function renderAdminFila(){
+  clearChannels();
+  $('admin-tab-content').innerHTML = `<div id="fila-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
+  liveRefresh('admin-fila', async ()=>{
+    const { data, error } = await sb.from('orders').select(ORDER_SELECT)
+      .eq('status', 'aguardando_analise').order('created_at', { ascending: true });
+    if(error){ showError('fila-list', error); return; }
+    const orders = data.map(normalizeOrder);
+    const list = $('fila-list');
+    if(orders.length === 0){
+      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Tudo em dia: nenhum pedido aguardando triagem. 🎉</div>`;
+      return;
+    }
+    list.innerHTML = orders.map(o=> `
+      <div class="card p-4 tag flex items-center justify-between gap-3" style="border-left-color:var(--slate)">
+        <div>
+          <p class="font-medium text-base">${cardTitleHTML(o)}</p>
+          <p class="text-xs mt-1" style="color:var(--muted)">Solicitante: ${escapeHtml(o.requesterName)} · Prazo: ${prazoTxt(o)}</p>
+        </div>
+        <button data-triar="${o.id}" class="px-4 py-2 rounded-lg text-sm font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--amber);color:#1a1204">Fazer Triagem</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-triar]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openTriagemModal(orders.find(o=>o.id===btn.dataset.triar)));
+    });
+  });
+}
+
+function openTriagemModal(order){
+  let routing = [];
+  let ferramentasEstoque = JSON.parse(localStorage.getItem('cima_ferramentas')) || [];
+  
+  function renderBody(){
+    $('triagem-body').innerHTML = `
+      <div>
+        <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
+        ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexos do solicitante</p>
+        ${attachmentsHTML(order)}
+      </div>
+
+      <div class="card p-4 space-y-3" style="background:var(--surface-2)">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <label class="text-xs uppercase tracking-wider font-semibold text-amber-400">📦 Baixar Material do Almoxarifado</label>
+          <a href="almoxarifado_index.html" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-medium shadow transition hover:opacity-90 flex items-center gap-1.5" style="background:var(--blue); color:#fff">
+            <span>Abrir Gestão do Almoxarifado ↗</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="text-[11px]" style="color:var(--muted)">Selecionar Material / Chapa</label>
+            <select id="triagem-almox-item" class="w-full mt-1 px-3 py-2 text-xs">
+              <option value="">Nenhum (Não debitar estoque)</option>
+              ${ferramentasEstoque.map(f => `<option value="${f.id}">${f.id} - ${f.nome} (Estoque: ${f.qtd})</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px]" style="color:var(--muted)">Quantidade a Consumir / Baixar</label>
+            <input id="triagem-almox-qtd" type="number" step="any" min="0.01" value="1" class="w-full mt-1 px-3 py-2 text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Anexar arquivo de fabricação (opcional)</p>
+        <input id="triagem-file" type="file" class="w-full text-sm">
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide font-medium mb-2" style="color:var(--muted)">Definir roteiro de máquinas (clique para adicionar, na ordem desejada)</p>
+        <div class="flex flex-wrap gap-2 mb-3">
+          ${MACHINES.map(m=>`<button data-add-machine="${m}" type="button" class="px-3.5 py-1.5 rounded-lg text-sm border hover:bg-white/5 transition-colors" style="border-color:var(--line)">+ ${m}</button>`).join('')}
+        </div>
+        <div id="routing-list" class="space-y-2"></div>
+      </div>
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="triagem-urgent" type="checkbox" ${order.urgent ? 'checked' : ''} style="width:16px;height:16px"> 🔥 Marcar como URGENTE (destaque na fila do operador)</label>
+      <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
+      <button id="btn-aprovar" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
+    `;
+    renderRoutingList();
+    $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ routing.push(btn.dataset.addMachine); renderRoutingList(); });
+    });
+    
+    $('btn-aprovar').addEventListener('click', async ()=>{
+      const err = $('triagem-error');
+      if(routing.length === 0){ err.textContent = 'Defina ao menos uma máquina no roteiro.'; err.classList.remove('hidden'); return; }
+      
+      $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Processando...';
+      try{
+        const itemIdAlmox = $('triagem-almox-item').value;
+        const qtdBaixa = parseFloat($('triagem-almox-qtd').value) || 0;
+        
+        if(itemIdAlmox && qtdBaixa > 0){
+          let ferramentasEstoque = JSON.parse(localStorage.getItem('cima_ferramentas')) || [];
+          let movimentacoes = JSON.parse(localStorage.getItem('cima_movimentacoes')) || [];
+          
+          const idxItem = ferramentasEstoque.findIndex(f => f.id === itemIdAlmox);
+          if(idxItem !== -1){
+            ferramentasEstoque[idxItem].qtd -= qtdBaixa;
+            
+            movimentacoes.unshift({
+              data: new Date().toLocaleString('pt-BR'),
+              tipo: 'Saída / Consumo (Triagem)',
+              ferramenta: `${ferramentasEstoque[idxItem].id} - ${ferramentasEstoque[idxItem].nome}`,
+              qtd: `${qtdBaixa} ${ferramentasEstoque[idxItem].cat.includes('Matéria-Prima') ? 'kg' : 'un'}`,
+              os: order.osNumber || 'OS-Geral',
+              operador: currentUser.name,
+              maquina: routing[0] || 'Corte a Laser'
+            });
+            
+            localStorage.setItem('cima_ferramentas', JSON.stringify(ferramentasEstoque));
+            localStorage.setItem('cima_movimentacoes', JSON.stringify(movimentacoes));
+          }
+        }
+
+        await sb.from('orders').update({
+          status: 'em_producao', urgent: $('triagem-urgent').checked, current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
+        }).eq('id', order.id);
+
+        const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
+        await sb.from('order_routing').insert(rows);
+
+        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção com baixa de material realizada.`));
+
+        const file = $('triagem-file').files[0];
+        if(file){
+          const att = await uploadFile(order.id, file);
+          await sb.from('order_attachments').insert(att);
+        }
+        closeModal('triagem-modal');
+      }catch(ex){
+        console.error(ex);
+        err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden');
+      }finally{
+        $('btn-aprovar').disabled = false; $('btn-aprovar').textContent = 'Aprovar e Enviar para Produção';
+      }
+    });
+  }
+  
+  function renderRoutingList(){
+    const el = $('routing-list');
+    if(routing.length === 0){ el.innerHTML = `<p class="text-sm" style="color:var(--muted)">Nenhuma etapa adicionada.</p>`; return; }
+    el.innerHTML = routing.map((m,i)=> `
+      <div class="flex items-center justify-between card px-3.5 py-2">
+        <span class="text-sm font-medium">${i+1}. ${m}</span>
+        <div class="flex items-center gap-1">
+          <button data-up="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
+          <button data-down="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--surface-2)" ${i===routing.length-1?'disabled style="opacity:.3"':''}>↓</button>
+          <button data-remove="${i}" class="text-xs px-2 py-1 rounded-md" style="background:var(--red);color:#fff">✕</button>
+        </div>
+      </div>`).join('');
+    el.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.up; [routing[i-1],routing[i]]=[routing[i],routing[i-1]]; renderRoutingList(); }));
+    el.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=>{ const i=+b.dataset.down; [routing[i+1],routing[i]]=[routing[i],routing[i+1]]; renderRoutingList(); }));
+    el.querySelectorAll('[data-remove]').forEach(b=> b.addEventListener('click', ()=>{ routing.splice(+b.dataset.remove,1); renderRoutingList(); }));
+  }
+  renderBody();
+  openModal('triagem-modal');
+}
