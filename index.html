@@ -1293,3 +1293,122 @@ function openTriagemModal(order){
   renderBody();
   openModal('triagem-modal');
 }
+  function isLate(order){
+  if(order.status === 'concluido' || !order.deadline) return false;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return new Date(order.deadline + 'T00:00:00') < hoje;
+}
+function statusInfo(o){
+  switch(o.status){
+    case 'aguardando_analise': return { label: 'Aguardando Análise', color: 'var(--amber)' };
+    case 'em_producao': return { label: 'Em Produção', color: 'var(--blue)' };
+    case 'concluido': return { label: 'Concluído', color: 'var(--green)' };
+    default: return { label: o.status, color: 'var(--slate)' };
+  }
+}
+function metaLine(o, requesterMode = false){
+  const userTxt = requesterMode ? `Para: ${escapeHtml(o.assignedOperator || 'Não atribuído')}` : `Por: ${escapeHtml(o.requesterName)}`;
+  const extra = o.osNumber ? ` · OS: ${escapeHtml(o.osNumber)}${o.project ? ' (' + escapeHtml(o.project) + ')' : ''}` : '';
+  const mat = o.material ? ` · Material: ${escapeHtml(o.material)}` : '';
+  return `<p class="text-xs mt-1" style="color:var(--muted)">${userTxt}${extra}${mat} · Enviado em ${fmtDateTime(o.createdAt)}</p>`;
+}
+function itemsListHTML(o){
+  if(!o.items || o.items.length <= 1) return '';
+  return `<div class="mt-2 text-xs p-2.5 rounded-lg" style="background:var(--surface-2);border:1px solid var(--line)">
+    <span class="font-medium" style="color:var(--muted)">Peças do pedido (${o.items.length}):</span>
+    <ul class="mt-1 space-y-1">${o.items.map(it => `<li>• <b>${escapeHtml(it.name)}</b> (Qtd: ${it.quantity}) — Material: ${escapeHtml(it.material || 'N/D')}</li>`).join('')}</ul>
+  </div>`;
+}
+function attachmentsHTML(o){
+  if(!o.attachments || o.attachments.length === 0) return '<p class="text-xs" style="color:var(--muted)">Nenhum arquivo anexado.</p>';
+  return `<div class="flex flex-wrap gap-2">${o.attachments.map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition hover:bg-white/5" style="border-color:var(--line);color:var(--blue)">📄 ${escapeHtml(a.name || 'Arquivo')}</a>`).join('')}</div>`;
+}
+function miniTimelineHTML(o){
+  if(!o.routing || o.routing.length === 0) return '';
+  return `<div class="mt-3 flex items-center gap-1.5 overflow-x-auto py-1">
+    ${o.routing.map((r, idx) => {
+      let bg = 'var(--surface-2)', fg = 'var(--muted)', border = 'var(--line)';
+      if(r.status === 'concluido'){ bg = 'rgba(16,185,129,0.15)'; fg = 'var(--green)'; border = 'rgba(16,185,129,0.3)'; }
+      else if(r.status === 'em_andamento'){ bg = 'rgba(59,130,246,0.15)'; fg = 'var(--blue)'; border = 'rgba(59,130,246,0.3)'; }
+      return `<div class="px-2.5 py-1 rounded text-[11px] font-medium whitespace-nowrap flex items-center gap-1" style="background:${bg};color:${fg};border:1px solid ${border}">
+        <span>${idx+1}. ${escapeHtml(r.machine)}</span>
+        <span>${r.status === 'concluido' ? '✓' : r.status === 'em_andamento' ? '⏳' : '•'}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function stepperHTML(o){
+  if(!o.routing || o.routing.length === 0) return '<p class="text-xs" style="color:var(--muted)">Sem roteiro definido.</p>';
+  return `<div class="space-y-1.5">
+    <div class="flex items-center justify-between text-xs font-medium" style="color:var(--muted)">
+      <span>Progresso da Produção</span>
+      <span>${o.routing.filter(r=>r.status==='concluido').length} de ${o.routing.length} etapas</span>
+    </div>
+    <div class="grid gap-1" style="grid-template-columns: repeat(${o.routing.length}, minmax(0, 1fr))">
+      ${o.routing.map(r => `<div class="h-1.5 rounded-full ${r.status === 'concluido' ? 'done' : ''}" style="background:${r.status === 'concluido' ? 'var(--green)' : r.status === 'em_andamento' ? 'var(--blue)' : 'var(--line)'}"></div>`).join('')}
+    </div>
+  </div>`;
+}
+function cardFooterHTML(o, mode){
+  if(mode === 'sol'){
+    let acts = '';
+    if(o.status === 'aguardando_analise'){
+      acts = `<button type="button" data-sol-edit="${o.id}" class="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-white/5" style="border-color:var(--line)">Editar Pedido</button>
+              <button type="button" data-sol-del="${o.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white" style="background:var(--red)">Excluir</button>`;
+    } else if(o.status === 'concluido' && !o.receivedAt){
+      acts = `<button type="button" data-receive="${o.id}" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white" style="background:var(--green)">Confirmar Recebimento</button>`;
+    }
+    return `<div class="mt-3 pt-3 border-t flex items-center justify-between gap-2" style="border-color:var(--line)">
+      <span class="text-xs" style="color:var(--muted)">ID: ${o.id.slice(0,8)}</span>
+      <div class="flex items-center gap-2">${acts}</div>
+    </div>`;
+  }
+  return '';
+}
+function statsOf(orders){
+  const total = orders.length;
+  const aguardando = orders.filter(o => o.status === 'aguardando_analise').length;
+  const producao = orders.filter(o => o.status === 'em_producao').length;
+  const concluidos = orders.filter(o => o.status === 'concluido').length;
+  return { total, aguardando, producao, concluidos };
+}
+function statsHTML(s){
+  return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Total de Pedidos</p><p class="font-display font-700 text-2xl mt-1">${s.total}</p></div>
+    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Aguardando Análise</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--amber)">${s.aguardando}</p></div>
+    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Em Produção</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--blue)">${s.producao}</p></div>
+    <div class="card p-4"><p class="text-xs uppercase tracking-wider font-semibold" style="color:var(--muted)">Concluídos</p><p class="font-display font-700 text-2xl mt-1" style="color:var(--green)">${s.concluidos}</p></div>
+  </div>`;
+}
+function normalizeOrder(raw){
+  return {
+    id: raw.id,
+    pieceName: raw.piece_name,
+    description: raw.description,
+    quantity: raw.quantity,
+    deadline: raw.deadline,
+    requesterId: raw.requester_id,
+    requesterName: raw.requester_name,
+    status: raw.status,
+    osNumber: raw.os_number,
+    project: raw.project,
+    material: raw.material,
+    items: raw.items || [],
+    createdAt: raw.created_at,
+    assignedOperator: raw.assigned_operator,
+    receivedAt: raw.received_at,
+    routing: raw.order_routing ? raw.order_routing.sort((a,b)=>a.step_index - b.step_index).map(r=>({ machine: r.machine, status: r.status })) : [],
+    attachments: raw.order_attachments || []
+  };
+}
+async function uploadFile(orderId, file, folder = 'geral', customName = null){
+  const cleanName = (customName || file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const filePath = `${orderId}/${Date.now()}_${cleanName}`;
+  const { error: uploadError } = await sb.storage.from('order-files').upload(filePath, file);
+  if(uploadError) throw uploadError;
+  const { data } = sb.storage.from('order-files').getPublicUrl(filePath);
+  return { order_id: orderId, name: customName || file.name, url: data.publicUrl };
+}
+</script>
+</body>
+</html>
