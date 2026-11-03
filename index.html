@@ -189,11 +189,12 @@
       <span id="role-badge" class="ml-2 text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--line)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-      <button id="bell-btn" type="button" class="bell-btn hidden" title="Pedidos aguardando triagem" aria-label="Notificações">
-        <!-- BOTÃO DO ALMOXARIFADO PARA TODOS OS PERFIS -->
+      <!-- BOTÃO DO ALMOXARIFADO SEPARADO DO SINO (item 3 e 4 corrigidos) -->
       <a href="almoxarifado_index.html" class="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-white/5 flex items-center gap-1.5 font-medium" style="border-color:var(--line); color:var(--text)">
         📦 Almoxarifado
       </a>
+      
+      <button id="bell-btn" type="button" class="bell-btn hidden" title="Pedidos aguardando triagem" aria-label="Notificações">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span id="bell-dot" class="bell-dot hidden">0</span>
       </button>
@@ -394,7 +395,7 @@
    1) CONFIGURAÇÃO DO SUPABASE
    ========================================================================= */
 const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefIjoiaWR2bmxzb2dheXdhaGlhcnhtaG4iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc5MDU3MjI3NiwiZXhwIjoyMTA2MTQ4Mjc2fQ.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MACHINES = ["Corte a Laser", "Dobra CNC", "Centro de Usinagem", "Torno CNC"];
@@ -1064,7 +1065,7 @@ $('new-order-form').addEventListener('submit', async (e)=>{
    5) PAINEL — ADMINISTRADOR
    ========================================================================= */
 const SB_ICONS = {
-  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 1-1.79 1.11z"/>',
   layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   chart: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
@@ -1078,17 +1079,14 @@ const SB_ICONS = {
 };
 const sbIcon = n => `<svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SB_ICONS[n]}</svg>`;
 
-// ---> ABA DE ALMOXARIFADO ADICIONADA AQUI NO MENU DO ADM:
+// REMOVIDO ALMOXARIFADO DO MENU LATERAL (item 3 corrigido)
 const SB_MENU = [
   { title: 'Principal', items: [['fila', 'Fila de Triagem', 'inbox'], ['todos', 'Todos os Pedidos', 'layers']] },
-  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder'], ['almoxarifado', 'Almoxarifado', 'sheet']] },
+  { title: 'Gestão', items: [['usuarios', 'Usuários', 'users'], ['projetos', 'Projetos / OS', 'folder']] },
   { title: 'Relatórios e Indicadores', group: true, items: [['graficos', 'Gráficos', 'pie'], ['resumo', 'Resumo por Solicitante', 'usercheck'], ['relatorio', 'Relatório Excel', 'sheet']] },
   { title: 'Visualização', items: [['solicitante', 'Ver como Solicitante', 'user'], ['operador', 'Ver como Operador', 'wrench']] }
 ];
 const sbLink = ([t, label, ic]) => {
-  if (t === 'almoxarifado') {
-    return `<a href="almoxarifado_index.html" class="sb-link" style="text-decoration: none;">${sbIcon(ic)}<span>${label}</span></a>`;
-  }
   return `<button type="button" class="sb-link admin-tab" data-tab="${t}">${sbIcon(ic)}<span>${label}</span>${t === 'fila' ? '<span class="nav-count hidden" id="nav-fila-count">0</span>' : ''}</button>`;
 };
 
@@ -1097,7 +1095,6 @@ const PAGE_INFO = {
   todos: ['Todos os Pedidos', 'Acompanhe, filtre e edite todos os pedidos do sistema.'],
   usuarios: ['Usuários', 'Aprove contas novas e defina o perfil e as máquinas de cada pessoa.'],
   projetos: ['Projetos / OS', 'Gerencie as ordens de serviço e projetos disponíveis.'],
-  almoxarifado: ['Almoxarifado', 'Controle de estoque, materiais e insumos da oficina.'],
   graficos: ['Gráficos', 'Indicadores da produção em gráficos.'],
   resumo: ['Resumo por Solicitante', 'Pedidos, arquivos e fotos de cada solicitante.']
 };
@@ -1124,13 +1121,11 @@ function renderAdmin(){
     <div id="admin-tab-content"></div>`;
   const sb = $('admin-sb'), grp = $('sb-dados');
   
-  // ---> ROTA DA ABA DE ALMOXARIFADO MAPEADA AQUI:
   const views = { 
     fila: renderAdminFila, 
     todos: renderAdminTodos, 
     usuarios: renderAdminUsuarios, 
-    projetos: renderAdminProjetos, 
-    almoxarifado: renderAdminAlmoxarifado,
+    projetos: renderAdminProjetos,
     graficos: renderAdminGraficos, 
     resumo: renderAdminResumo, 
     relatorio: renderAdminRelatorio,
@@ -1227,7 +1222,7 @@ function openTriagemModal(order){
 
         await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
 
-        // ---> EXECUTA A BAIXA AUTOMÁTICA DOS ITENS NO ALMOXARIFADO:
+        // EXECUTA A BAIXA AUTOMÁTICA DOS ITENS NO ALMOXARIFADO (item 2 ajustado):
         await darBaixaAlmoxarifadoNaTriagem(order);
 
         const file = $('triagem-file').files[0];
@@ -1264,61 +1259,30 @@ function openTriagemModal(order){
   openModal('triagem-modal');
 }
 
-// ---> FUNÇÃO DE GERENCIAMENTO E VISUALIZAÇÃO DO ALMOXARIFADO NO PAINEL ADM:
-function renderAdminAlmoxarifado(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `
-    <div class="flex items-center justify-between mb-4 gap-3">
-      <div>
-        <h2 class="font-display font-700 text-xl">Controle de Almoxarifado</h2>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Gerencie o estoque de chapas, tubos e insumos da oficina.</p>
-      </div>
-      <button id="btn-novo-item-almox" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo Item no Estoque</button>
-    </div>
-    <div id="almoxarifado-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>
-  `;
-
-  liveRefresh('admin-almoxarifado', async ()=>{
-    const { data, error } = await sb.from('almoxarifado').select('*').order('item_name');
-    const list = $('almoxarifado-list');
-    if(error){ 
-      list.innerHTML = `<div class="card p-6 text-center" style="border-color:var(--amber)">
-        <p class="text-sm font-medium" style="color:var(--amber)">A tabela 'almoxarifado' não foi encontrada no Supabase.</p>
-        <p class="text-xs mt-1" style="color:var(--muted)">Crie uma tabela chamada 'almoxarifado' no Supabase com as colunas: id, item_name, quantity, unit.</p>
-      </div>`; 
-      return; 
-    }
-    if(!data.length){ 
-      list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum item cadastrado no almoxarifado.</div>`; 
-      return; 
-    }
-    list.innerHTML = data.map(item => `
-      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p class="font-medium text-sm">${escapeHtml(item.item_name)}</p>
-          <p class="text-xs mt-0.5" style="color:var(--muted)">Estoque atual: <b style="color:var(--text)">${item.quantity} ${escapeHtml(item.unit || 'un')}</b></p>
-        </div>
-      </div>`).join('');
-  });
-}
-
-// ---> FUNÇÃO PARA DAR BAIXA AUTOMÁTICA NO ESTOQUE AO FAZER A TRIAGEM:
+// FUNÇÃO APERFEIÇOADA PARA DAR BAIXA NO ALMOXARIFADO DURANTE A TRIAGEM (Item 2 corrigido):
 async function darBaixaAlmoxarifadoNaTriagem(order){
   try {
-    const materialUsado = order.material;
-    const qtdNecessaria = order.quantity || 1;
-    if (!materialUsado) return;
+    const items = (order.items && order.items.length) ? order.items : [{ quantity: order.quantity, material: order.material }];
+    
+    for (const item of items) {
+      const materialUsado = item.material || order.material;
+      const qtdNecessaria = Number(item.quantity) || 1;
+      if (!materialUsado) continue;
 
-    const { data: items, error: fetchErr } = await sb.from('almoxarifado').select('*').ilike('item_name', `%${materialUsado}%`);
-    if (fetchErr || !items || items.length === 0) return;
+      // Busca aproximada do nome do material no estoque
+      const termoBusca = materialUsado.split('=')[0].split('(')[0].trim();
+      const { data: stockItems, error: fetchErr } = await sb.from('almoxarifado').select('*').ilike('item_name', `%${termoBusca}%`);
+      
+      if (fetchErr || !stockItems || stockItems.length === 0) continue;
 
-    const itemEstoque = items[0];
-    const novaQtd = Math.max(0, Number(itemEstoque.quantity) - Number(qtdNecessaria));
+      const itemEstoque = stockItems[0];
+      const novaQtd = Math.max(0, Number(itemEstoque.quantity) - qtdNecessaria);
 
-    await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', itemEstoque.id);
-    await sb.from('order_history').insert(historyRow(order.id, 'baixa_almoxarifado', `Baixa automática de ${qtdNecessaria} unidade(s) de "${itemEstoque.item_name}" realizada no almoxarifado.`));
+      await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', itemEstoque.id);
+      await sb.from('order_history').insert(historyRow(order.id, 'baixa_almoxarifado', `Baixa de ${qtdNecessaria} ${itemEstoque.unit || 'un'} do item "${itemEstoque.item_name}" realizada no almoxarifado.`));
+    }
   } catch (err) {
-    console.error("Erro ao dar baixa no almoxarifado:", err);
+    console.error("Erro ao processar baixa do almoxarifado:", err);
   }
 }
 
@@ -1597,30 +1561,34 @@ function renderOperador(container = $('main-content')){
     list.querySelectorAll('[data-detail]').forEach(b=> b.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===b.dataset.detail))));
     list.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> startStep(orders.find(o=>o.id===b.dataset.start))));
     list.querySelectorAll('[data-finish]').forEach(b=> b.addEventListener('click', ()=> openFinishModal(orders.find(o=>o.id===b.dataset.finish))));
-    list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1)));
-    list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1)));
-    list.querySelectorAll('[data-pos-in]').forEach(inp=> inp.addEventListener('change', ()=> setQueuePosition(orders, inp.dataset.posIn, parseInt(inp.value, 10) - 1)));
+    list.querySelectorAll('[data-up]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.up, -1, fetchOp)));
+    list.querySelectorAll('[data-down]').forEach(b=> b.addEventListener('click', ()=> moveQueueItem(orders, b.dataset.down, 1, fetchOp)));
+    list.querySelectorAll('[data-pos-in]').forEach(inp=> inp.addEventListener('change', ()=> setQueuePosition(orders, inp.dataset.posIn, parseInt(inp.value, 10) - 1, fetchOp)));
   };
 
   drawChips();
   liveRefresh('operador-fila', fetchOp);
-  $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders));
+  $('op-reset-order').addEventListener('click', ()=> resetQueueOrder(lastOrders, fetchOp));
 }
 
-async function setQueuePosition(orders, id, to){
+// CORREÇÃO DA ATUALIZAÇÃO DA TELA DE PRIORIDADE (Item 1 corrigido):
+async function setQueuePosition(orders, id, to, fetchOp){
   const from = orders.findIndex(o => o.id === id); if(from < 0 || isNaN(to)) return;
   to = Math.max(0, Math.min(orders.length - 1, to));
   const arr = orders.slice(); arr.splice(to, 0, arr.splice(from, 1)[0]);
   const rs = await Promise.all(arr.map((o, k) => sb.from('orders').update({ queue_order: k }).eq('id', o.id)));
-  const bad = rs.find(r => r.error); if(bad) notify('Erro ao reordenar: ' + bad.error.message);
+  const bad = rs.find(r => r.error); 
+  if(bad) notify('Erro ao reordenar: ' + bad.error.message);
+  else if(fetchOp) fetchOp(); // Força a atualização imediata na tela
 }
-async function moveQueueItem(orders, id, dir){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir); }
+async function moveQueueItem(orders, id, dir, fetchOp){ return setQueuePosition(orders, id, orders.findIndex(o => o.id === id) + dir, fetchOp); }
 
-async function resetQueueOrder(orders){
+async function resetQueueOrder(orders, fetchOp){
   if(!orders.length) return;
   if(!await askConfirm('Voltar a fila para a ordem automática (prazo + urgência)?')) return;
   const { error } = await sb.from('orders').update({ queue_order: null }).in('id', orders.map(o => o.id));
   if(error) notify('Erro: ' + error.message);
+  else if(fetchOp) fetchOp();
 }
 
 async function startStep(order){
