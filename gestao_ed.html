@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão Escritório de Desenhos - Kanban de Projetos</title>
+  <title>Gestão Escritório de Desenhos - Kanban & Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     tailwind.config = { darkMode: 'class' }
   </script>
@@ -26,7 +27,7 @@
 
   <!-- HEADER / BARRA SUPERIOR -->
   <header class="bg-slate-900 border-b border-slate-800 text-white shrink-0 shadow-md">
-    <!-- Linha 1: Navegação, Título e Botões Principais -->
+    <!-- Linha 1: Navegação, Título, Abas e Botões Principais -->
     <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <!-- BOTÃO VOLTAR PARA O SITE PRINCIPAL -->
@@ -38,7 +39,17 @@
         </div>
         <div>
           <h1 class="text-lg font-bold leading-tight">Gestão Escritório de Desenhos</h1>
-          <p class="text-xs text-slate-400">Kanban de Projetos</p>
+          <p class="text-xs text-slate-400">Kanban & Indicadores de Projetos</p>
+        </div>
+
+        <!-- ALTERNADOR DE ABAS (KANBAN / DASHBOARD) -->
+        <div class="ml-4 flex bg-slate-800 p-1 rounded-lg border border-slate-700">
+          <button id="tabBtnKanban" onclick="switchTab('kanban')" class="px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 bg-blue-600 text-white shadow">
+            <i class="fa-solid fa-table-columns"></i> Kanban
+          </button>
+          <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+          </button>
         </div>
       </div>
 
@@ -68,30 +79,25 @@
         <i class="fa-solid fa-filter"></i> Filtros:
       </span>
 
-      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterTipo" onchange="atualizarVisualizacao()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos os Tipos</option>
         <option value="Projeto">Projeto</option>
         <option value="Demanda de fábrica">Demanda de fábrica</option>
       </select>
 
-      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[240px] truncate">
+      <select id="filterProjeto" onchange="atualizarVisualizacao()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[200px] truncate">
         <option value="">Todos os Projetos</option>
       </select>
 
-      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterDesenhista" onchange="atualizarVisualizacao()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos Desenhistas</option>
-        <option value="A definir">A definir</option>
-        <option value="Ana Karoline">Ana Karoline</option>
-        <option value="Ivaldo Cardoso">Ivaldo Cardoso</option>
-        <option value="Maria Rosalia">Maria Rosalia</option>
-        <option value="Pedro Henrrique">Pedro Henrrique</option>
-        <option value="Saulo Hebert">Saulo Hebert</option>
-        <option value="Thiago Calixto">Thiago Calixto</option>
-        <option value="Wesley Gomes">Wesley Gomes</option>
-        <option value="Tienio Andrade">Tienio Andrade</option>
       </select>
 
-      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterSolicitante" onchange="atualizarVisualizacao()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todos Solicitantes</option>
+      </select>
+
+      <select id="filterPrioridade" onchange="atualizarVisualizacao()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todas Prioridades</option>
         <option value="Alta">Alta</option>
         <option value="Média">Média</option>
@@ -100,10 +106,102 @@
     </div>
   </header>
 
-  <!-- QUADRO KANBAN -->
-  <main class="flex-1 overflow-x-auto p-4">
+  <!-- ABA 1: QUADRO KANBAN -->
+  <main id="viewKanban" class="flex-1 overflow-x-auto p-4">
     <div id="kanbanBoard" class="flex gap-4 h-full min-w-max"></div>
   </main>
+
+  <!-- ABA 2: DASHBOARD -->
+  <section id="viewDashboard" class="hidden flex-1 overflow-y-auto p-6 space-y-6 kanban-scroll">
+    <!-- Cards de KPIs -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total de Atividades</p>
+          <h3 id="kpiTotal" class="text-3xl font-bold mt-1 text-slate-800 dark:text-white">0</h3>
+          <p id="kpiTaxaConclusao" class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">0% concluído</p>
+        </div>
+        <div class="bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 p-3.5 rounded-xl text-2xl">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Em Andamento</p>
+          <h3 id="kpiAndamento" class="text-3xl font-bold mt-1 text-amber-600 dark:text-amber-400">0</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Em execução no momento</p>
+        </div>
+        <div class="bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-3.5 rounded-xl text-2xl">
+          <i class="fa-solid fa-spinner"></i>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Paralisadas</p>
+          <h3 id="kpiParalisado" class="text-3xl font-bold mt-1 text-red-600 dark:text-red-400">0</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Aguardando definição</p>
+        </div>
+        <div class="bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 p-3.5 rounded-xl text-2xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Projetos Cadastrados</p>
+          <h3 id="kpiProjetos" class="text-3xl font-bold mt-1 text-indigo-600 dark:text-indigo-400">0</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Projetos & Demandas</p>
+        </div>
+        <div class="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 p-3.5 rounded-xl text-2xl">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos Linha 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie text-blue-500"></i> Distribuição por Status
+        </h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="chartStatus"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-users text-emerald-500"></i> Carga por Desenhista
+        </h3>
+        <div class="h-64">
+          <canvas id="chartDesenhista"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos Linha 2 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-gears text-amber-500"></i> Demanda por Processo de Fabricação
+        </h3>
+        <div class="h-60">
+          <canvas id="chartProcessos"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-red-500"></i> Atividades por Prioridade
+        </h3>
+        <div class="h-60 flex items-center justify-center">
+          <canvas id="chartPrioridade"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- MODAL: CADASTRAR / EDITAR ATIVIDADE -->
   <div id="atividadeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
@@ -140,7 +238,7 @@
 
             <div class="md:col-span-4">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Solicitante</label>
-              <input type="text" id="ativSolicitante" placeholder="Nome do solicitante" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <select id="ativSolicitante" onchange="verificarNovoSolicitante(this)" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
             </div>
             <div class="md:col-span-4">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
@@ -181,17 +279,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Desenhista</label>
-              <select id="ativDesenhista" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="A definir">A definir</option>
-                <option value="Ana Karoline">Ana Karoline</option>
-                <option value="Ivaldo Cardoso">Ivaldo Cardoso</option>
-                <option value="Maria Rosalia">Maria Rosalia</option>
-                <option value="Pedro Henrrique">Pedro Henrrique</option>
-                <option value="Saulo Hebert">Saulo Hebert</option>
-                <option value="Thiago Calixto">Thiago Calixto</option>
-                <option value="Wesley Gomes">Wesley Gomes</option>
-                <option value="Tienio Andrade">Tienio Andrade</option>
-              </select>
+              <select id="ativDesenhista" onchange="verificarNovoDesenhista(this)" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">OS (000.000.000)</label>
@@ -199,7 +287,7 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Analista</label>
-              <input type="text" id="ativAnalise" placeholder="Nome do analista" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <select id="ativAnalise" onchange="verificarNovoAnalista(this)" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
             </div>
           </div>
         </div>
@@ -321,7 +409,7 @@
 
   <script>
     /* =========================================================================
-       1) CONFIGURAÇÃO DO SUPABASE
+       1) CONFIGURAÇÃO DO SUPABASE E LISTAS PADRÃO
        ========================================================================= */
     const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
@@ -330,6 +418,24 @@
     let projetos = [];
     let atividades = [];
     let tempChecklist = [];
+    let abaAtual = 'kanban';
+
+    // Instâncias dos gráficos Chart.js
+    let charts = { status: null, desenhista: null, processos: null, prioridade: null };
+
+    // Listas base
+    let listaDesenhistas = [
+      "A definir", "Ana Karoline", "Ivaldo Cardoso", "Maria Rosalia", 
+      "Pedro Henrrique", "Saulo Hebert", "Thiago Calixto", "Wesley Gomes", "Tienio Andrade"
+    ];
+
+    let listaAnalistas = [
+      "", "Pedro Santiago", "Thiago Farias", "Andre Levy", "Francisco Antonio"
+    ];
+
+    let listaSolicitantes = [
+      "", "Tienio Andrade", "José Rocha", "Aderaldo Guedes", "Cicero Everaldo", "Rodson Vasconcelos"
+    ];
 
     // Gerenciamento de Tema Escuro / Claro
     function initTheme() {
@@ -347,9 +453,38 @@
       const isDark = html.classList.contains('dark');
       localStorage.setItem('cima_dark_mode', isDark);
       icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      if (abaAtual === 'dashboard') renderDashboard();
     }
 
     initTheme();
+
+    // Alternar entre Kanban e Dashboard
+    function switchTab(tab) {
+      abaAtual = tab;
+      const vKanban = document.getElementById('viewKanban');
+      const vDash = document.getElementById('viewDashboard');
+      const btnK = document.getElementById('tabBtnKanban');
+      const btnD = document.getElementById('tabBtnDashboard');
+
+      if (tab === 'kanban') {
+        vKanban.classList.remove('hidden');
+        vDash.classList.add('hidden');
+        btnK.className = 'px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 bg-blue-600 text-white shadow';
+        btnD.className = 'px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white';
+        renderBoard();
+      } else {
+        vKanban.classList.add('hidden');
+        vDash.classList.remove('hidden');
+        btnD.className = 'px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 bg-blue-600 text-white shadow';
+        btnK.className = 'px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white';
+        renderDashboard();
+      }
+    }
+
+    function atualizarVisualizacao() {
+      if (abaAtual === 'kanban') renderBoard();
+      else renderDashboard();
+    }
 
     const COLUNAS = [
       { id: 'Sem Programação', cor: 'border-slate-400', badge: 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
@@ -371,7 +506,7 @@
     }
 
     /* =========================================================================
-       2) CARREGAR DADOS DO SUPABASE
+       2) CARREGAR DADOS DO SUPABASE E ATUALIZAR SELECTS
        ========================================================================= */
     async function carregarDadosDoBanco() {
       try {
@@ -387,32 +522,125 @@
           checklist: a.atividade_checklists_ed || []
         }));
 
-        populateProjectSelects();
-        renderBoard();
+        extrairNomesDinamicos();
+        populateSelects();
+        atualizarVisualizacao();
       } catch (err) {
         console.error('Erro ao carregar dados do Supabase:', err.message);
       }
     }
 
-    function populateProjectSelects() {
-      const filterSelect = document.getElementById('filterProjeto');
-      const modalSelect = document.getElementById('ativProjeto');
-      const currentFilter = filterSelect.value;
-
-      filterSelect.innerHTML = '<option value="">Todos os Projetos</option>';
-      modalSelect.innerHTML = '';
-
-      projetos.forEach(p => {
-        filterSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
-        modalSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+    function extrairNomesDinamicos() {
+      atividades.forEach(a => {
+        if (a.desenhista && !listaDesenhistas.includes(a.desenhista)) listaDesenhistas.push(a.desenhista);
+        if (a.analise && !listaAnalistas.includes(a.analise)) listaAnalistas.push(a.analise);
+        if (a.solicitante && !listaSolicitantes.includes(a.solicitante)) listaSolicitantes.push(a.solicitante);
       });
-      filterSelect.value = currentFilter;
+    }
+
+    function populateSelects() {
+      const filterProj = document.getElementById('filterProjeto');
+      const filterDes = document.getElementById('filterDesenhista');
+      const filterSol = document.getElementById('filterSolicitante');
+      
+      const curProj = filterProj.value;
+      const curDes = filterDes.value;
+      const curSol = filterSol.value;
+
+      filterProj.innerHTML = '<option value="">Todos os Projetos</option>';
+      projetos.forEach(p => {
+        filterProj.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+      });
+      filterProj.value = curProj;
+
+      filterDes.innerHTML = '<option value="">Todos Desenhistas</option>';
+      listaDesenhistas.forEach(d => {
+        if(d) filterDes.innerHTML += `<option value="${d}">${d}</option>`;
+      });
+      filterDes.value = curDes;
+
+      filterSol.innerHTML = '<option value="">Todos Solicitantes</option>';
+      listaSolicitantes.forEach(s => {
+        if(s) filterSol.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+      filterSol.value = curSol;
+
+      const modalProj = document.getElementById('ativProjeto');
+      const modalDes = document.getElementById('ativDesenhista');
+      const modalAna = document.getElementById('ativAnalise');
+      const modalSol = document.getElementById('ativSolicitante');
+
+      modalProj.innerHTML = '';
+      projetos.forEach(p => {
+        modalProj.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+      });
+
+      modalDes.innerHTML = '';
+      listaDesenhistas.forEach(d => {
+        modalDes.innerHTML += `<option value="${d}">${d}</option>`;
+      });
+      modalDes.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo desenhista...</option>`;
+
+      modalAna.innerHTML = '<option value="">Nenhum</option>';
+      listaAnalistas.forEach(a => {
+        if(a) modalAna.innerHTML += `<option value="${a}">${a}</option>`;
+      });
+      modalAna.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo analista...</option>`;
+
+      modalSol.innerHTML = '<option value="">Nenhum</option>';
+      listaSolicitantes.forEach(s => {
+        if(s) modalSol.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+      modalSol.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo solicitante...</option>`;
+    }
+
+    function verificarNovoDesenhista(select) {
+      if (select.value === '__novo__') {
+        const novo = prompt('Digite o nome do novo Desenhista:');
+        if (novo && novo.trim()) {
+          const nomeLimpo = novo.trim();
+          if (!listaDesenhistas.includes(nomeLimpo)) listaDesenhistas.push(nomeLimpo);
+          populateSelects();
+          select.value = nomeLimpo;
+        } else {
+          select.value = listaDesenhistas[0];
+        }
+      }
+    }
+
+    function verificarNovoAnalista(select) {
+      if (select.value === '__novo__') {
+        const novo = prompt('Digite o nome do novo Analista:');
+        if (novo && novo.trim()) {
+          const nomeLimpo = novo.trim();
+          if (!listaAnalistas.includes(nomeLimpo)) listaAnalistas.push(nomeLimpo);
+          populateSelects();
+          select.value = nomeLimpo;
+        } else {
+          select.value = '';
+        }
+      }
+    }
+
+    function verificarNovoSolicitante(select) {
+      if (select.value === '__novo__') {
+        const novo = prompt('Digite o nome do novo Solicitante:');
+        if (novo && novo.trim()) {
+          const nomeLimpo = novo.trim();
+          if (!listaSolicitantes.includes(nomeLimpo)) listaSolicitantes.push(nomeLimpo);
+          populateSelects();
+          select.value = nomeLimpo;
+        } else {
+          select.value = '';
+        }
+      }
     }
 
     function getAtividadesFiltradas() {
       const fTipo = document.getElementById('filterTipo').value;
       const fProj = document.getElementById('filterProjeto').value;
       const fDes = document.getElementById('filterDesenhista').value;
+      const fSol = document.getElementById('filterSolicitante').value;
       const fPrio = document.getElementById('filterPrioridade').value;
 
       return atividades.filter(a => {
@@ -420,11 +648,134 @@
         if (fTipo && proj && proj.tipo !== fTipo) return false;
         if (fProj && a.projeto_id !== fProj) return false;
         if (fDes && a.desenhista !== fDes) return false;
+        if (fSol && a.solicitante !== fSol) return false;
         if (fPrio && a.prioridade !== fPrio) return false;
         return true;
       });
     }
 
+    /* =========================================================================
+       3) RENDERIZAÇÃO DO DASHBOARD
+       ========================================================================= */
+    function renderDashboard() {
+      const filtradas = getAtividadesFiltradas();
+      const total = filtradas.length;
+      const concluidas = filtradas.filter(a => a.status === 'Concluído').length;
+      const andamento = filtradas.filter(a => a.status === 'Em andamento').length;
+      const paralisadas = filtradas.filter(a => a.status === 'Paralisado').length;
+      const taxa = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiTaxaConclusao').innerText = `${taxa}% concluído (${concluidas})`;
+      document.getElementById('kpiAndamento').innerText = andamento;
+      document.getElementById('kpiParalisado').innerText = paralisadas;
+      document.getElementById('kpiProjetos').innerText = projetos.length;
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#cbd5e1' : '#334155';
+      const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+
+      // Destruir gráficos anteriores antes de recriar
+      Object.keys(charts).forEach(k => { if (charts[k]) charts[k].destroy(); });
+
+      // 1. Gráfico de Status
+      const statusCounts = COLUNAS.map(c => filtradas.filter(a => a.status === c.id).length);
+      charts.status = new Chart(document.getElementById('chartStatus'), {
+        type: 'doughnut',
+        data: {
+          labels: COLUNAS.map(c => c.id),
+          datasets: [{
+            data: statusCounts,
+            backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#71717a'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+
+      // 2. Gráfico por Desenhista
+      const desenhistasAtivos = [...new Set(filtradas.map(a => a.desenhista || 'A definir'))];
+      const desConcluido = desenhistasAtivos.map(d => filtradas.filter(a => (a.desenhista || 'A definir') === d && a.status === 'Concluído').length);
+      const desOutros = desenhistasAtivos.map(d => filtradas.filter(a => (a.desenhista || 'A definir') === d && a.status !== 'Concluído').length);
+
+      charts.desenhista = new Chart(document.getElementById('chartDesenhista'), {
+        type: 'bar',
+        data: {
+          labels: desenhistasAtivos,
+          datasets: [
+            { label: 'Concluído', data: desConcluido, backgroundColor: '#10b981', borderRadius: 4 },
+            { label: 'Em aberto', data: desOutros, backgroundColor: '#3b82f6', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+            y: { stacked: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
+          },
+          plugins: { legend: { labels: { color: textColor, boxWidth: 12 } } }
+        }
+      });
+
+      // 3. Gráfico de Processos
+      const pLaser = filtradas.filter(a => a.corte_laser).length;
+      const pDobra = filtradas.filter(a => a.corte_dobra).length;
+      const pUsinagem = filtradas.filter(a => a.usinagem).length;
+
+      charts.processos = new Chart(document.getElementById('chartProcessos'), {
+        type: 'bar',
+        data: {
+          labels: ['Corte Laser', 'Corte / Dobra', 'Usinagem'],
+          datasets: [{
+            label: 'Atividades',
+            data: [pLaser, pDobra, pUsinagem],
+            backgroundColor: ['#6366f1', '#f59e0b', '#06b6d4'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 4. Gráfico de Prioridade
+      const prioAlta = filtradas.filter(a => a.prioridade === 'Alta').length;
+      const prioMedia = filtradas.filter(a => a.prioridade === 'Média').length;
+      const prioBaixa = filtradas.filter(a => a.prioridade === 'Baixa').length;
+
+      charts.prioridade = new Chart(document.getElementById('chartPrioridade'), {
+        type: 'pie',
+        data: {
+          labels: ['Alta', 'Média', 'Baixa'],
+          datasets: [{
+            data: [prioAlta, prioMedia, prioBaixa],
+            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12 } } }
+        }
+      });
+    }
+
+    /* =========================================================================
+       4) RENDERIZAÇÃO DO KANBAN
+       ========================================================================= */
     function renderBoard() {
       const board = document.getElementById('kanbanBoard');
       board.innerHTML = '';
@@ -473,7 +824,6 @@
         <div draggable="true" ondragstart="handleDragStart(event, '${card.id}')" ondragend="handleDragEnd(event)"
              class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition relative group">
           
-          <!-- TOPO DO CARD: Badge de Projeto + Menu 3 Pontinhos -->
           <div class="flex justify-between items-start gap-2 mb-1.5">
             <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[160px]">
               ${proj ? proj.nome : 'Sem Projeto'}
@@ -484,12 +834,10 @@
                 ${card.prioridade}
               </span>
               
-              <!-- BOTÃO 3 PONTINHOS -->
               <div class="relative">
                 <button onclick="toggleCardMenu(event, '${card.id}')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                   <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
-                <!-- MENU DROPDOWN -->
                 <div id="menu-${card.id}" class="hidden absolute right-0 top-6 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-20 text-xs">
                   <button onclick="event.stopPropagation(); openAtividadeModal('${card.id}')" class="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200">
                     <i class="fa-solid fa-pen text-blue-500"></i> Copiar / Editar
@@ -505,7 +853,6 @@
             </div>
           </div>
 
-          <!-- CORPO DO CARD (Clicável para abrir edição) -->
           <div onclick="openAtividadeModal('${card.id}')" class="cursor-pointer">
             <div class="flex items-center gap-1 mb-1">
               <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
@@ -545,7 +892,6 @@
       `;
     }
 
-    // Fechar menus flutuantes ao clicar fora
     document.addEventListener('click', () => {
       document.querySelectorAll('[id^="menu-"]').forEach(m => m.classList.add('hidden'));
     });
@@ -607,7 +953,7 @@
     }
 
     /* =========================================================================
-       3) EXPORTAR PARA EXCEL (SHEETJS)
+       5) EXPORTAR PARA EXCEL (SHEETJS)
        ========================================================================= */
     function exportarExcel() {
       const filtradas = getAtividadesFiltradas();
@@ -677,6 +1023,7 @@
       const form = document.getElementById('atividadeForm');
       const btnExcluir = document.getElementById('btnExcluirAtiv');
       form.reset();
+      populateSelects();
 
       if (id) {
         const a = atividades.find(item => item.id === id);
@@ -704,6 +1051,8 @@
         document.getElementById('modalTitle').innerText = 'Nova Atividade';
         document.getElementById('editId').value = '';
         document.getElementById('ativDesenhista').value = 'A definir';
+        document.getElementById('ativAnalise').value = '';
+        document.getElementById('ativSolicitante').value = '';
         tempChecklist = [];
         btnExcluir.classList.add('hidden');
       }
@@ -727,7 +1076,7 @@
         projeto_id: document.getElementById('ativProjeto').value,
         titulo: document.getElementById('ativTitulo').value,
         quantidade: parseInt(document.getElementById('ativQtd').value) || 1,
-        solicitante: document.getElementById('ativSolicitante').value,
+        solicitante: document.getElementById('ativSolicitante').value || null,
         tipo: document.getElementById('ativTipo').value,
         prioridade: document.getElementById('ativPrioridade').value,
         corte_laser: document.getElementById('procLaser').checked,
@@ -735,7 +1084,7 @@
         usinagem: document.getElementById('procUsinagem').checked,
         desenhista: document.getElementById('ativDesenhista').value,
         os: document.getElementById('ativOs').value || null,
-        analise: document.getElementById('ativAnalise').value,
+        analise: document.getElementById('ativAnalise').value || null,
         status: document.getElementById('ativStatus').value,
         data_inicio: document.getElementById('ativInicio').value || null,
         data_fim: document.getElementById('ativFim').value || null,
@@ -808,7 +1157,8 @@
 
     function toggleChecklist(idx) {
       tempChecklist[idx].concluido = !tempChecklist[idx].concluido;
-      renderChecklist}
+      renderChecklist();
+    }
 
     function removeChecklist(idx) {
       tempChecklist.splice(idx, 1);
