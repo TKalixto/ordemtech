@@ -24,36 +24,58 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
-<!-- HEADER / BARRA SUPERIOR -->
-  <header class="bg-slate-900 dark:bg-slate-900 border-b border-slate-800 text-white px-6 py-3 shadow-md flex flex-wrap items-center justify-between gap-4 shrink-0">
-    <div class="flex items-center gap-3">
-      <!-- BOTÃO VOLTAR PARA O SITE PRINCIPAL -->
-      <a href="index.html" title="Voltar para o Gestão CIMA" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-lg transition text-sm flex items-center gap-1.5 border border-slate-700">
-        <i class="fa-solid fa-arrow-left"></i> Voltar
-      </a>
-
-      <div class="bg-blue-600 p-2 rounded-lg">
-        <i class="fa-solid fa-industry text-xl"></i>
+  <!-- HEADER / BARRA SUPERIOR -->
+  <header class="bg-slate-900 border-b border-slate-800 text-white shrink-0 shadow-md">
+    <!-- Linha 1: Navegação, Título e Botões Principais -->
+    <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <!-- BOTÃO VOLTAR PARA O SITE PRINCIPAL -->
+        <a href="index.html" title="Voltar para o Gestão CIMA" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-lg transition text-sm flex items-center gap-1.5 border border-slate-700">
+          <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+        <div class="bg-blue-600 p-2 rounded-lg">
+          <i class="fa-solid fa-industry text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold leading-tight">Gestão Escritório de Desenhos</h1>
+          <p class="text-xs text-slate-400">Kanban de Projetos</p>
+        </div>
       </div>
-      <div>
-        <h1 class="text-lg font-bold leading-tight">Gestão Escritório de Desenhos</h1>
-        <p class="text-xs text-slate-400">Kanban de Projetos</p>
+
+      <!-- Botões de Ação -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-lg transition text-sm border border-slate-700">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+        <button onclick="exportarExcel()" title="Exportar para Excel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-excel"></i> Exportar
+        </button>
+        <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-folder-plus"></i> Novo Projeto
+        </button>
+        <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-plus"></i> Nova Atividade
+        </button>
       </div>
     </div>
 
-    <!-- FILTROS -->
-    <div class="flex flex-wrap items-center gap-2">
-      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+    <!-- Linha 2: Barra de Filtros -->
+    <div class="px-6 py-2.5 bg-slate-950/50 border-t border-slate-800/80 flex flex-wrap items-center gap-2.5">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1">
+        <i class="fa-solid fa-filter"></i> Filtros:
+      </span>
+
+      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos os Tipos</option>
         <option value="Projeto">Projeto</option>
         <option value="Demanda de fábrica">Demanda de fábrica</option>
       </select>
 
-      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[240px] truncate">
         <option value="">Todos os Projetos</option>
       </select>
 
-      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos Desenhistas</option>
         <option value="A definir">A definir</option>
         <option value="Ana Karoline">Ana Karoline</option>
@@ -66,28 +88,12 @@
         <option value="Tienio Andrade">Tienio Andrade</option>
       </select>
 
-      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todas Prioridades</option>
         <option value="Alta">Alta</option>
         <option value="Média">Média</option>
         <option value="Baixa">Baixa</option>
       </select>
-    </div>
-
-    <!-- BOTÕES DE AÇÃO, EXPORTAÇÃO E TEMA -->
-    <div class="flex items-center gap-2">
-      <button onclick="toggleDarkMode()" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-lg transition text-sm">
-        <i id="themeIcon" class="fa-solid fa-moon"></i>
-      </button>
-      <button onclick="exportarExcel()" title="Exportar para Excel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
-        <i class="fa-solid fa-file-excel"></i> Exportar
-      </button>
-      <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
-        <i class="fa-solid fa-folder-plus"></i> Novo Projeto
-      </button>
-      <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
-        <i class="fa-solid fa-plus"></i> Nova Atividade
-      </button>
     </div>
   </header>
 
@@ -408,7 +414,7 @@
         const cardsColuna = filtradas.filter(a => a.status === col.id);
 
         const colEl = document.createElement('div');
-        colEl.className = `w-80 bg-slate-200/70 dark:bg-slate-900/80 rounded-xl flex flex-col max-h-full border-t-4 ${col.cor} shadow-sm border border-slate-300/50 dark:border-slate-800`;
+        colEl.className = `flex-1 min-w-[240px] bg-slate-200/70 dark:bg-slate-900/80 rounded-xl flex flex-col max-h-full border-t-4 ${col.cor} shadow-sm border border-slate-300/50 dark:border-slate-800`;
         colEl.ondragover = (e) => { e.preventDefault(); colEl.classList.add('drag-over'); };
         colEl.ondragleave = () => colEl.classList.remove('drag-over');
         colEl.ondrop = (e) => handleDrop(e, col.id, colEl);
