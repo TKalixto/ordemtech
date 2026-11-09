@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão Escritório de Desenhos - Kanban de Projetos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <style>
+    .kanban-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .kanban-scroll::-webkit-scrollbar-track { background: transparent; border-radius: 4px; }
+    .kanban-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .dark .kanban-scroll::-webkit-scrollbar-thumb { background: #475569; }
+    .kanban-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dragging { opacity: 0.5; transform: scale(0.98); }
+    .drag-over { background-color: #cbd5e1 !important; border: 2px dashed #64748b; }
+    .dark .drag-over { background-color: #334155 !important; border: 2px dashed #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
+
+  <!-- HEADER / BARRA SUPERIOR -->
+  <header class="bg-slate-900 dark:bg-slate-900 border-b border-slate-800 text-white px-6 py-3 shadow-md flex flex-wrap items-center justify-between gap-4 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 p-2 rounded-lg">
+        <i class="fa-solid fa-industry text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">Gestão Escritório de Desenhos</h1>
+        <p class="text-xs text-slate-400">Kanban de Projetos</p>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todos os Tipos</option>
+        <option value="Projeto">Projeto</option>
+        <option value="Demanda de fábrica">Demanda de fábrica</option>
+      </select>
+
+      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todos os Projetos</option>
+      </select>
+
+      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todos Desenhistas</option>
+        <option value="A definir">A definir</option>
+        <option value="Ana Karoline">Ana Karoline</option>
+        <option value="Ivaldo Cardoso">Ivaldo Cardoso</option>
+        <option value="Maria Rosalia">Maria Rosalia</option>
+        <option value="Pedro Henrrique">Pedro Henrrique</option>
+        <option value="Saulo Hebert">Saulo Hebert</option>
+        <option value="Thiago Calixto">Thiago Calixto</option>
+        <option value="Wesley Gomes">Wesley Gomes</option>
+        <option value="Tienio Andrade">Tienio Andrade</option>
+      </select>
+
+      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+        <option value="">Todas Prioridades</option>
+        <option value="Alta">Alta</option>
+        <option value="Média">Média</option>
+        <option value="Baixa">Baixa</option>
+      </select>
+    </div>
+
+    <!-- BOTÕES DE AÇÃO, EXPORTAÇÃO E TEMA -->
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-lg transition text-sm">
+        <i id="themeIcon" class="fa-solid fa-moon"></i>
+      </button>
+      <button onclick="exportarExcel()" title="Exportar para Excel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+        <i class="fa-solid fa-file-excel"></i> Exportar
+      </button>
+      <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+        <i class="fa-solid fa-folder-plus"></i> Novo Projeto
+      </button>
+      <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-plus"></i> Nova Atividade
+      </button>
+    </div>
+  </header>
+
+  <!-- QUADRO KANBAN -->
+  <main class="flex-1 overflow-x-auto p-4">
+    <div id="kanbanBoard" class="flex gap-4 h-full min-w-max"></div>
+  </main>
+
+  <!-- MODAL: CADASTRAR / EDITAR ATIVIDADE -->
+  <div id="atividadeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+      
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h2 id="modalTitle" class="text-lg font-bold">Nova Atividade</h2>
+        <button onclick="closeAtividadeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="atividadeForm" onsubmit="saveAtividade(event)" class="p-6 overflow-y-auto space-y-6 flex-1">
+        <input type="hidden" id="editId">
+
+        <!-- BLOCO 1: IDENTIFICAÇÃO E VÍNCULO -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-tag text-blue-600"></i> 1. Identificação e Vínculo
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-5">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Projeto *</label>
+              <select id="ativProjeto" required class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
+            </div>
+            <div class="md:col-span-5">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Atividade / Peça *</label>
+              <input type="text" id="ativTitulo" required placeholder="Ex: 02.001 - Magazine para..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Qtd.</label>
+              <input type="number" id="ativQtd" value="1" min="1" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div class="md:col-span-4">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Solicitante</label>
+              <input type="text" id="ativSolicitante" placeholder="Nome do solicitante" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="md:col-span-4">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
+              <select id="ativTipo" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="Projeto">Projeto</option>
+                <option value="Demanda de fábrica">Demanda de fábrica</option>
+              </select>
+            </div>
+            <div class="md:col-span-4">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Prioridade</label>
+              <select id="ativPrioridade" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="Baixa">Baixa</option>
+                <option value="Média" selected>Média</option>
+                <option value="Alta">Alta</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCO 2: PROCESSOS E ENGENHARIA -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-gears text-blue-600"></i> 2. Processos e Engenharia
+          </h3>
+          
+          <div class="flex flex-wrap gap-6 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input type="checkbox" id="procLaser" class="w-4 h-4 text-blue-600 rounded"> Corte Laser
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input type="checkbox" id="procDobra" class="w-4 h-4 text-blue-600 rounded"> Corte / Dobra
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input type="checkbox" id="procUsinagem" class="w-4 h-4 text-blue-600 rounded"> Usinagem
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Desenhista</label>
+              <select id="ativDesenhista" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="A definir">A definir</option>
+                <option value="Ana Karoline">Ana Karoline</option>
+                <option value="Ivaldo Cardoso">Ivaldo Cardoso</option>
+                <option value="Maria Rosalia">Maria Rosalia</option>
+                <option value="Pedro Henrrique">Pedro Henrrique</option>
+                <option value="Saulo Hebert">Saulo Hebert</option>
+                <option value="Thiago Calixto">Thiago Calixto</option>
+                <option value="Wesley Gomes">Wesley Gomes</option>
+                <option value="Tienio Andrade">Tienio Andrade</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">OS (000.000.000)</label>
+              <input type="text" id="ativOs" maxlength="11" oninput="mascaraOS(this)" placeholder="705.000.001" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Analista</label>
+              <input type="text" id="ativAnalise" placeholder="Nome do analista" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCO 3: DATAS E FOLLOW-UP -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-blue-600"></i> 3. Status, Datas e Follow-up
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status (Coluna Kanban)</label>
+              <select id="ativStatus" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="Sem Programação">Sem Programação</option>
+                <option value="Programado">Programado</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Paralisado">Paralisado</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Data Início</label>
+              <input type="date" id="ativInicio" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Data Fim</label>
+              <input type="date" id="ativFim" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Follow-up / Observações</label>
+            <textarea id="ativFollowup" rows="2" placeholder="Registre o andamento, pendências ou histórico..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- BLOCO 4: CHECKLIST DA ATIVIDADE -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-blue-600"></i> 4. Checklist da Atividade
+            </h3>
+            <button type="button" onclick="aplicarPadraoEngenharia()" class="text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 text-indigo-700 dark:text-indigo-300 font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Aplicar Padrão Engenharia
+            </button>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="novoChecklistInput" placeholder="Adicionar nova etapa (ex: Revisão 01)..." class="flex-1 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" onkeypress="if(event.key==='Enter'){event.preventDefault(); addChecklistItem();}">
+            <button type="button" onclick="addChecklistItem()" class="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium">
+              Adicionar
+            </button>
+          </div>
+
+          <ul id="checklistContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1"></ul>
+        </div>
+      </form>
+
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <button type="button" id="btnExcluirAtiv" onclick="deleteAtividade()" class="hidden text-red-600 hover:text-red-700 text-sm font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-trash"></i> Excluir Atividade
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button type="button" onclick="closeAtividadeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition">Cancelar</button>
+          <button type="submit" form="atividadeForm" class="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow transition">Salvar Atividade</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO PROJETO -->
+  <div id="projetoModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h2 class="text-lg font-bold">Novo Projeto</h2>
+        <button onclick="closeProjetoModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveProjeto(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nome do Projeto *</label>
+          <input type="text" id="projNome" required placeholder="Ex: Proj. 01 - Pintura Base" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
+          <select id="projTipo" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="Projeto">Projeto</option>
+            <option value="Demanda de fábrica">Demanda de fábrica</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">OS (000.000.000)</label>
+          <input type="text" id="projOs" maxlength="11" oninput="mascaraOS(this)" placeholder="705.000.001" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeProjetoModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-5 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg">Criar Projeto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1) CONFIGURAÇÃO DO SUPABASE
+       ========================================================================= */
+    const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let projetos = [];
+    let atividades = [];
+    let tempChecklist = [];
+
+    // Gerenciamento de Tema Escuro / Claro
+    function initTheme() {
+      const isDark = localStorage.getItem('cima_dark_mode') === 'true';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+      }
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      html.classList.toggle('dark');
+      const isDark = html.classList.contains('dark');
+      localStorage.setItem('cima_dark_mode', isDark);
+      icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+
+    initTheme();
+
+    const COLUNAS = [
+      { id: 'Sem Programação', cor: 'border-slate-400', badge: 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
+      { id: 'Programado', cor: 'border-blue-500', badge: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
+      { id: 'Em andamento', cor: 'border-amber-500', badge: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
+      { id: 'Paralisado', cor: 'border-red-500', badge: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300' },
+      { id: 'Concluído', cor: 'border-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' },
+      { id: 'Cancelado', cor: 'border-zinc-500', badge: 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' }
+    ];
+
+    function mascaraOS(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 9);
+      if (v.length > 6) {
+        v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      } else if (v.length > 3) {
+        v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+      }
+      input.value = v;
+    }
+
+    /* =========================================================================
+       2) CARREGAR DADOS DO SUPABASE
+       ========================================================================= */
+    async function carregarDadosDoBanco() {
+      try {
+        const { data: projData, error: projError } = await sb.from('projetos_ed').select('*').order('created_at', { ascending: false });
+        if (projError) throw projError;
+        projetos = projData || [];
+
+        const { data: ativData, error: ativError } = await sb.from('atividades_ed').select('*, atividade_checklists_ed(*)').order('created_at', { ascending: false });
+        if (ativError) throw ativError;
+        
+        atividades = (ativData || []).map(a => ({
+          ...a,
+          checklist: a.atividade_checklists_ed || []
+        }));
+
+        populateProjectSelects();
+        renderBoard();
+      } catch (err) {
+        console.error('Erro ao carregar dados do Supabase:', err.message);
+      }
+    }
+
+    function populateProjectSelects() {
+      const filterSelect = document.getElementById('filterProjeto');
+      const modalSelect = document.getElementById('ativProjeto');
+      const currentFilter = filterSelect.value;
+
+      filterSelect.innerHTML = '<option value="">Todos os Projetos</option>';
+      modalSelect.innerHTML = '';
+
+      projetos.forEach(p => {
+        filterSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+        modalSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+      });
+      filterSelect.value = currentFilter;
+    }
+
+    function getAtividadesFiltradas() {
+      const fTipo = document.getElementById('filterTipo').value;
+      const fProj = document.getElementById('filterProjeto').value;
+      const fDes = document.getElementById('filterDesenhista').value;
+      const fPrio = document.getElementById('filterPrioridade').value;
+
+      return atividades.filter(a => {
+        const proj = projetos.find(p => p.id === a.projeto_id);
+        if (fTipo && proj && proj.tipo !== fTipo) return false;
+        if (fProj && a.projeto_id !== fProj) return false;
+        if (fDes && a.desenhista !== fDes) return false;
+        if (fPrio && a.prioridade !== fPrio) return false;
+        return true;
+      });
+    }
+
+    function renderBoard() {
+      const board = document.getElementById('kanbanBoard');
+      board.innerHTML = '';
+
+      const filtradas = getAtividadesFiltradas();
+
+      COLUNAS.forEach(col => {
+        const cardsColuna = filtradas.filter(a => a.status === col.id);
+
+        const colEl = document.createElement('div');
+        colEl.className = `w-80 bg-slate-200/70 dark:bg-slate-900/80 rounded-xl flex flex-col max-h-full border-t-4 ${col.cor} shadow-sm border border-slate-300/50 dark:border-slate-800`;
+        colEl.ondragover = (e) => { e.preventDefault(); colEl.classList.add('drag-over'); };
+        colEl.ondragleave = () => colEl.classList.remove('drag-over');
+        colEl.ondrop = (e) => handleDrop(e, col.id, colEl);
+
+        colEl.innerHTML = `
+          <div class="p-3 flex justify-between items-center border-b border-slate-300/60 dark:border-slate-800">
+            <h2 class="font-bold text-sm text-slate-700 dark:text-slate-200">${col.id}</h2>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${col.badge}">${cardsColuna.length}</span>
+          </div>
+          <div class="p-2.5 space-y-2.5 overflow-y-auto kanban-scroll flex-1">
+            ${cardsColuna.map(card => createCardHTML(card)).join('')}
+          </div>
+        `;
+        board.appendChild(colEl);
+      });
+    }
+
+    function createCardHTML(card) {
+      const proj = projetos.find(p => p.id === card.projeto_id);
+      const totalCheck = card.checklist ? card.checklist.length : 0;
+      const doneCheck = card.checklist ? card.checklist.filter(c => c.concluido).length : 0;
+      const pct = totalCheck > 0 ? Math.round((doneCheck / totalCheck) * 100) : 0;
+
+      const prioColors = {
+        'Alta': 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
+        'Média': 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900',
+        'Baixa': 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900'
+      };
+
+      const tipoBadge = proj && proj.tipo === 'Demanda de fábrica' 
+        ? '<span class="text-[10px] bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-medium border border-purple-200 dark:border-purple-900 ml-1">Demanda</span>' 
+        : '';
+
+      return `
+        <div draggable="true" ondragstart="handleDragStart(event, '${card.id}')" ondragend="handleDragEnd(event)" onclick="openAtividadeModal('${card.id}')"
+             class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition cursor-pointer group">
+          
+          <div class="flex justify-between items-start gap-2 mb-1.5">
+            <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[180px]">
+              ${proj ? proj.nome : 'Sem Projeto'}
+            </span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${prioColors[card.prioridade] || ''}">
+              ${card.prioridade}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1 mb-1">
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              ${card.titulo} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
+            </h3>
+            ${tipoBadge}
+          </div>
+
+          ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${card.os}</p>` : '<div class="mb-2"></div>'}
+
+          <div class="flex flex-wrap gap-1 mb-3">
+            ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Laser</span>' : ''}
+            ${card.corte_dobra ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Dobra</span>' : ''}
+            ${card.usinagem ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Usinagem</span>' : ''}
+          </div>
+
+          ${totalCheck > 0 ? `
+            <div class="mb-3">
+              <div class="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <span><i class="fa-regular fa-square-check"></i> Checklist</span>
+                <span class="font-semibold">${doneCheck}/${totalCheck}</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-blue-600 dark:bg-blue-500 h-full transition-all" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
+            <span class="flex items-center gap-1 font-medium">
+              <i class="fa-solid fa-user-pen text-slate-400"></i> ${card.desenhista || 'A definir'}
+            </span>
+            ${card.data_fim ? `<span class="text-[11px]"><i class="fa-regular fa-clock"></i> ${card.data_fim.split('-').reverse().join('/')}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    /* =========================================================================
+       3) EXPORTAR PARA EXCEL (SHEETJS)
+       ========================================================================= */
+    function exportarExcel() {
+      const filtradas = getAtividadesFiltradas();
+      if (filtradas.length === 0) {
+        alert("Não há atividades para exportar com os filtros atuais.");
+        return;
+      }
+
+      const linhas = filtradas.map(a => {
+        const proj = projetos.find(p => p.id === a.projeto_id);
+        const totalCheck = a.checklist ? a.checklist.length : 0;
+        const doneCheck = a.checklist ? a.checklist.filter(c => c.concluido).length : 0;
+
+        return {
+          "Projeto": proj ? proj.nome : '',
+          "Tipo": a.tipo || '',
+          "Atividade / Peça": a.titulo,
+          "Qtd": a.quantidade,
+          "Status": a.status,
+          "Prioridade": a.prioridade,
+          "Desenhista": a.desenhista,
+          "Analista": a.analise || '',
+          "OS": a.os || '',
+          "Solicitante": a.solicitante || '',
+          "Corte Laser": a.corte_laser ? "Sim" : "Não",
+          "Corte/Dobra": a.corte_dobra ? "Sim" : "Não",
+          "Usinagem": a.usinagem ? "Sim" : "Não",
+          "Checklist": `${doneCheck}/${totalCheck}`,
+          "Data Início": a.data_inicio || '',
+          "Data Fim": a.data_fim || '',
+          "Follow-up": a.followup || ''
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(linhas);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Kanban_Engenharia");
+      XLSX.writeFile(wb, `Gestao_Desenhos_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    let draggedId = null;
+    function handleDragStart(e, id) {
+      draggedId = id;
+      e.target.classList.add('dragging');
+    }
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    }
+    
+    async function handleDrop(e, novoStatus, colEl) {
+      e.preventDefault();
+      colEl.classList.remove('drag-over');
+      if (!draggedId) return;
+      
+      const idx = atividades.findIndex(a => a.id === draggedId);
+      if (idx > -1) {
+        atividades[idx].status = novoStatus;
+        renderBoard();
+        await sb.from('atividades_ed').update({ status: novoStatus }).eq('id', draggedId);
+      }
+      draggedId = null;
+    }
+
+    function openAtividadeModal(id = null) {
+      const modal = document.getElementById('atividadeModal');
+      const form = document.getElementById('atividadeForm');
+      const btnExcluir = document.getElementById('btnExcluirAtiv');
+      form.reset();
+
+      if (id) {
+        const a = atividades.find(item => item.id === id);
+        document.getElementById('modalTitle').innerText = 'Editar Atividade';
+        document.getElementById('editId').value = a.id;
+        document.getElementById('ativProjeto').value = a.projeto_id;
+        document.getElementById('ativTitulo').value = a.titulo;
+        document.getElementById('ativQtd').value = a.quantidade;
+        document.getElementById('ativSolicitante').value = a.solicitante || '';
+        document.getElementById('ativTipo').value = a.tipo || 'Projeto';
+        document.getElementById('ativPrioridade').value = a.prioridade || 'Média';
+        document.getElementById('procLaser').checked = !!a.corte_laser;
+        document.getElementById('procDobra').checked = !!a.corte_dobra;
+        document.getElementById('procUsinagem').checked = !!a.usinagem;
+        document.getElementById('ativDesenhista').value = a.desenhista || 'A definir';
+        document.getElementById('ativOs').value = a.os || '';
+        document.getElementById('ativAnalise').value = a.analise || '';
+        document.getElementById('ativStatus').value = a.status;
+        document.getElementById('ativInicio').value = a.data_inicio || '';
+        document.getElementById('ativFim').value = a.data_fim || '';
+        document.getElementById('ativFollowup').value = a.followup || '';
+        tempChecklist = JSON.parse(JSON.stringify(a.checklist || []));
+        btnExcluir.classList.remove('hidden');
+      } else {
+        document.getElementById('modalTitle').innerText = 'Nova Atividade';
+        document.getElementById('editId').value = '';
+        document.getElementById('ativDesenhista').value = 'A definir';
+        tempChecklist = [];
+        btnExcluir.classList.add('hidden');
+      }
+
+      renderChecklist();
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAtividadeModal() {
+      const modal = document.getElementById('atividadeModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveAtividade(e) {
+      e.preventDefault();
+      const id = document.getElementById('editId').value;
+      
+      const payload = {
+        projeto_id: document.getElementById('ativProjeto').value,
+        titulo: document.getElementById('ativTitulo').value,
+        quantidade: parseInt(document.getElementById('ativQtd').value) || 1,
+        solicitante: document.getElementById('ativSolicitante').value,
+        tipo: document.getElementById('ativTipo').value,
+        prioridade: document.getElementById('ativPrioridade').value,
+        corte_laser: document.getElementById('procLaser').checked,
+        corte_dobra: document.getElementById('procDobra').checked,
+        usinagem: document.getElementById('procUsinagem').checked,
+        desenhista: document.getElementById('ativDesenhista').value,
+        os: document.getElementById('ativOs').value || null,
+        analise: document.getElementById('ativAnalise').value,
+        status: document.getElementById('ativStatus').value,
+        data_inicio: document.getElementById('ativInicio').value || null,
+        data_fim: document.getElementById('ativFim').value || null,
+        followup: document.getElementById('ativFollowup').value
+      };
+
+      if (id) {
+        await sb.from('atividades_ed').update(payload).eq('id', id);
+        await sb.from('atividade_checklists_ed').delete().eq('atividade_id', id);
+        if (tempChecklist.length > 0) {
+          const checklistPayload = tempChecklist.map(c => ({
+            atividade_id: id,
+            descricao: c.descricao,
+            concluido: c.concluido
+          }));
+          await sb.from('atividade_checklists_ed').insert(checklistPayload);
+        }
+      } else {
+        const { data: novaAtiv, error } = await sb.from('atividades_ed').insert([payload]).select().single();
+        if (!error && novaAtiv && tempChecklist.length > 0) {
+          const checklistPayload = tempChecklist.map(c => ({
+            atividade_id: novaAtiv.id,
+            descricao: c.descricao,
+            concluido: c.concluido
+          }));
+          await sb.from('atividade_checklists_ed').insert(checklistPayload);
+        }
+      }
+
+      closeAtividadeModal();
+      carregarDadosDoBanco();
+    }
+
+    async function deleteAtividade() {
+      const id = document.getElementById('editId').value;
+      if (!id || !confirm('Tem certeza que deseja excluir esta atividade?')) return;
+      
+      await sb.from('atividades_ed').delete().eq('id', id);
+      closeAtividadeModal();
+      carregarDadosDoBanco();
+    }
+
+    function renderChecklist() {
+      const ul = document.getElementById('checklistContainer');
+      if (tempChecklist.length === 0) {
+        ul.innerHTML = '<li class="text-xs text-slate-400 dark:text-slate-500 italic py-2">Nenhuma etapa adicionada.</li>';
+        return;
+      }
+      ul.innerHTML = tempChecklist.map((item, idx) => `
+        <li class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
+          <label class="flex items-center gap-2.5 cursor-pointer flex-1 text-sm ${item.concluido ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}">
+            <input type="checkbox" ${item.concluido ? 'checked' : ''} onchange="toggleChecklist(${idx})" class="w-4 h-4 text-blue-600 rounded">
+            ${item.descricao}
+          </label>
+          <button type="button" onclick="removeChecklist(${idx})" class="text-slate-400 hover:text-red-500 text-xs px-2">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </li>
+      `).join('');
+    }
+
+    function addChecklistItem() {
+      const input = document.getElementById('novoChecklistInput');
+      const val = input.value.trim();
+      if (!val) return;
+      tempChecklist.push({ descricao: val, concluido: false });
+      input.value = '';
+      renderChecklist();
+    }
+
+    function toggleChecklist(idx) {
+      tempChecklist[idx].concluido = !tempChecklist[idx].concluido;
+      renderChecklist();
+    }
+
+    function removeChecklist(idx) {
+      tempChecklist.splice(idx, 1);
+      renderChecklist();
+    }
+
+    function aplicarPadraoEngenharia() {
+      const padrao = ['Modelamento 3D', 'Desenho técnico', 'Envio para validação', 'Envio para corte e dobra'];
+      padrao.forEach(desc => {
+        if (!tempChecklist.some(c => c.descricao === desc)) {
+          tempChecklist.push({ descricao: desc, concluido: false });
+        }
+      });
+      renderChecklist();
+    }
+
+    function openProjetoModal() {
+      document.getElementById('projNome').value = '';
+      document.getElementById('projOs').value = '';
+      document.getElementById('projTipo').value = 'Projeto';
+      document.getElementById('projetoModal').classList.remove('hidden');
+      document.getElementById('projetoModal').classList.add('flex');
+    }
+    
+    function closeProjetoModal() {
+      document.getElementById('projetoModal').classList.add('hidden');
+      document.getElementById('projetoModal').classList.remove('flex');
+    }
+
+    async function saveProjeto(e) {
+      e.preventDefault();
+      const nome = document.getElementById('projNome').value.trim();
+      const tipo = document.getElementById('projTipo').value;
+      const os = document.getElementById('projOs').value.trim();
+      if (!nome) return;
+      
+      const { error } = await sb.from('projetos_ed').insert([{
+        nome,
+        tipo,
+        os: os || null
+      }]);
+
+      if (error) {
+        alert('Erro ao criar projeto: ' + error.message);
+        return;
+      }
+
+      closeProjetoModal();
+      carregarDadosDoBanco();
+    }
+
+    // Inicialização ao carregar a página
+    carregarDadosDoBanco();
+  </script>
+</body>
+</html>
