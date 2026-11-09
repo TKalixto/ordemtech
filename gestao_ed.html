@@ -302,7 +302,7 @@
     </div>
   </div>
 
-  <!-- MODAL: GERENCIAR PROJETOS (LISTA, EDIÇÃO E EXCLUSÃO) -->
+  <!-- MODAL: GERENCIAR PROJETOS -->
   <div id="gerenciarProjetosModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
@@ -470,53 +470,140 @@
         : '';
 
       return `
-        <div draggable="true" ondragstart="handleDragStart(event, '${card.id}')" ondragend="handleDragEnd(event)" onclick="openAtividadeModal('${card.id}')"
-             class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition cursor-pointer group">
+        <div draggable="true" ondragstart="handleDragStart(event, '${card.id}')" ondragend="handleDragEnd(event)"
+             class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition relative group">
           
+          <!-- TOPO DO CARD: Badge de Projeto + Menu 3 Pontinhos -->
           <div class="flex justify-between items-start gap-2 mb-1.5">
-            <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[180px]">
+            <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[160px]">
               ${proj ? proj.nome : 'Sem Projeto'}
             </span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${prioColors[card.prioridade] || ''}">
-              ${card.prioridade}
-            </span>
-          </div>
 
-          <div class="flex items-center gap-1 mb-1">
-            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              ${card.titulo} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
-            </h3>
-            ${tipoBadge}
-          </div>
-
-          ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${card.os}</p>` : '<div class="mb-2"></div>'}
-
-          <div class="flex flex-wrap gap-1 mb-3">
-            ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Laser</span>' : ''}
-            ${card.corte_dobra ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Dobra</span>' : ''}
-            ${card.usinagem ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Usinagem</span>' : ''}
-          </div>
-
-          ${totalCheck > 0 ? `
-            <div class="mb-3">
-              <div class="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1">
-                <span><i class="fa-regular fa-square-check"></i> Checklist</span>
-                <span class="font-semibold">${doneCheck}/${totalCheck}</span>
-              </div>
-              <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-blue-600 dark:bg-blue-500 h-full transition-all" style="width: ${pct}%"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${prioColors[card.prioridade] || ''}">
+                ${card.prioridade}
+              </span>
+              
+              <!-- BOTÃO 3 PONTINHOS -->
+              <div class="relative">
+                <button onclick="toggleCardMenu(event, '${card.id}')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                <!-- MENU DROPDOWN -->
+                <div id="menu-${card.id}" class="hidden absolute right-0 top-6 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-20 text-xs">
+                  <button onclick="event.stopPropagation(); openAtividadeModal('${card.id}')" class="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                    <i class="fa-solid fa-pen text-blue-500"></i> Copiar / Editar
+                  </button>
+                  <button onclick="event.stopPropagation(); duplicarAtividade('${card.id}')" class="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                    <i class="fa-solid fa-copy text-emerald-500"></i> Duplicar
+                  </button>
+                  <button onclick="event.stopPropagation(); excluirAtividadeDireto('${card.id}')" class="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-950/50 flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <i class="fa-solid fa-trash"></i> Excluir
+                  </button>
+                </div>
               </div>
             </div>
-          ` : ''}
+          </div>
 
-          <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-            <span class="flex items-center gap-1 font-medium">
-              <i class="fa-solid fa-user-pen text-slate-400"></i> ${card.desenhista || 'A definir'}
-            </span>
-            ${card.data_fim ? `<span class="text-[11px]"><i class="fa-regular fa-clock"></i> ${card.data_fim.split('-').reverse().join('/')}</span>` : ''}
+          <!-- CORPO DO CARD (Clicável para abrir edição) -->
+          <div onclick="openAtividadeModal('${card.id}')" class="cursor-pointer">
+            <div class="flex items-center gap-1 mb-1">
+              <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                ${card.titulo} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
+              </h3>
+              ${tipoBadge}
+            </div>
+
+            ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${card.os}</p>` : '<div class="mb-2"></div>'}
+
+            <div class="flex flex-wrap gap-1 mb-3">
+              ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Laser</span>' : ''}
+              ${card.corte_dobra ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Dobra</span>' : ''}
+              ${card.usinagem ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Usinagem</span>' : ''}
+            </div>
+
+            ${totalCheck > 0 ? `
+              <div class="mb-3">
+                <div class="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <span><i class="fa-regular fa-square-check"></i> Checklist</span>
+                  <span class="font-semibold">${doneCheck}/${totalCheck}</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-blue-600 dark:bg-blue-500 h-full transition-all" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
+              <span class="flex items-center gap-1 font-medium">
+                <i class="fa-solid fa-user-pen text-slate-400"></i> ${card.desenhista || 'A definir'}
+              </span>
+              ${card.data_fim ? `<span class="text-[11px]"><i class="fa-regular fa-clock"></i> ${card.data_fim.split('-').reverse().join('/')}</span>` : ''}
+            </div>
           </div>
         </div>
       `;
+    }
+
+    // Fechar menus flutuantes ao clicar fora
+    document.addEventListener('click', () => {
+      document.querySelectorAll('[id^="menu-"]').forEach(m => m.classList.add('hidden'));
+    });
+
+    function toggleCardMenu(e, id) {
+      e.stopPropagation();
+      document.querySelectorAll('[id^="menu-"]').forEach(m => {
+        if(m.id !== `menu-${id}`) m.classList.add('hidden');
+      });
+      const menu = document.getElementById(`menu-${id}`);
+      menu.classList.toggle('hidden');
+    }
+
+    async function duplicarAtividade(id) {
+      const original = atividades.find(a => a.id === id);
+      if (!original) return;
+
+      const payload = {
+        projeto_id: original.projeto_id,
+        titulo: original.titulo + ' (Cópia)',
+        quantidade: original.quantidade,
+        solicitante: original.solicitante,
+        tipo: original.tipo,
+        prioridade: original.prioridade,
+        corte_laser: original.corte_laser,
+        corte_dobra: original.corte_dobra,
+        usinagem: original.usinagem,
+        desenhista: original.desenhista,
+        os: original.os,
+        analise: original.analise,
+        status: original.status,
+        data_inicio: original.data_inicio,
+        data_fim: original.data_fim,
+        followup: original.followup
+      };
+
+      const { data: novaAtiv, error } = await sb.from('atividades_ed').insert([payload]).select().single();
+      if (error) {
+        alert('Erro ao duplicar: ' + error.message);
+        return;
+      }
+
+      if (original.checklist && original.checklist.length > 0) {
+        const checklistPayload = original.checklist.map(c => ({
+          atividade_id: novaAtiv.id,
+          descricao: c.descricao,
+          concluido: false
+        }));
+        await sb.from('atividade_checklists_ed').insert(checklistPayload);
+      }
+
+      carregarDadosDoBanco();
+    }
+
+    async function excluirAtividadeDireto(id) {
+      if (!confirm('Tem certeza que deseja excluir esta atividade?')) return;
+      await sb.from('atividades_ed').delete().eq('id', id);
+      carregarDadosDoBanco();
     }
 
     /* =========================================================================
@@ -721,8 +808,7 @@
 
     function toggleChecklist(idx) {
       tempChecklist[idx].concluido = !tempChecklist[idx].concluido;
-      renderChecklist();
-    }
+      renderChecklist}
 
     function removeChecklist(idx) {
       tempChecklist.splice(idx, 1);
@@ -739,7 +825,7 @@
       renderChecklist();
     }
 
-    // Gerenciamento de Projetos (Novo, Editar, Excluir)
+    // Gerenciamento de Projetos
     function openProjetoModal(id = null, nome = '', tipo = 'Projeto', os = '') {
       document.getElementById('editProjId').value = id || '';
       document.getElementById('projNome').value = nome;
