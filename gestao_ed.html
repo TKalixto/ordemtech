@@ -6,9 +6,9 @@
   <title>Gestão Escritório de Desenhos - Kanban & Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
     tailwind.config = { darkMode: 'class' }
   </script>
@@ -25,12 +25,13 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
   <!-- HEADER / BARRA SUPERIOR -->
   <header class="bg-slate-900 border-b border-slate-800 text-white shrink-0 shadow-md">
-    <!-- Linha 1: Navegação, Título, Abas e Botões Principais -->
     <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <!-- BOTÃO VOLTAR PARA O SITE PRINCIPAL -->
         <a href="index.html" title="Voltar para o Gestão CIMA" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-lg transition text-sm flex items-center gap-1.5 border border-slate-700">
           <i class="fa-solid fa-arrow-left"></i> Voltar
         </a>
@@ -42,7 +43,6 @@
           <p class="text-xs text-slate-400">Kanban & Indicadores de Projetos</p>
         </div>
 
-        <!-- ALTERNADOR DE ABAS (KANBAN / DASHBOARD) -->
         <div class="ml-4 flex bg-slate-800 p-1 rounded-lg border border-slate-700">
           <button id="tabBtnKanban" onclick="switchTab('kanban')" class="px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 bg-blue-600 text-white shadow">
             <i class="fa-solid fa-table-columns"></i> Kanban
@@ -53,7 +53,6 @@
         </div>
       </div>
 
-      <!-- Botões de Ação -->
       <div class="flex items-center gap-2">
         <button onclick="toggleDarkMode()" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-lg transition text-sm border border-slate-700">
           <i id="themeIcon" class="fa-solid fa-moon"></i>
@@ -73,7 +72,7 @@
       </div>
     </div>
 
-    <!-- Linha 2: Barra de Filtros -->
+    <!-- Barra de Filtros -->
     <div class="px-6 py-2.5 bg-slate-950/50 border-t border-slate-800/80 flex flex-wrap items-center gap-2.5">
       <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1">
         <i class="fa-solid fa-filter"></i> Filtros:
@@ -106,14 +105,13 @@
     </div>
   </header>
 
-  <!-- ABA 1: QUADRO KANBAN -->
+  <!-- ABA KANBAN -->
   <main id="viewKanban" class="flex-1 overflow-x-auto p-4">
     <div id="kanbanBoard" class="flex gap-4 h-full min-w-max"></div>
   </main>
 
-  <!-- ABA 2: DASHBOARD -->
+  <!-- ABA DASHBOARD -->
   <section id="viewDashboard" class="hidden flex-1 overflow-y-auto p-6 space-y-6 kanban-scroll">
-    <!-- Cards de KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
         <div>
@@ -160,7 +158,6 @@
       </div>
     </div>
 
-    <!-- Gráficos Linha 1 -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
@@ -180,44 +177,19 @@
         </div>
       </div>
     </div>
-
-    <!-- Gráficos Linha 2 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-gears text-amber-500"></i> Demanda por Processo de Fabricação
-        </h3>
-        <div class="h-60">
-          <canvas id="chartProcessos"></canvas>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-bolt text-red-500"></i> Atividades por Prioridade
-        </h3>
-        <div class="h-60 flex items-center justify-center">
-          <canvas id="chartPrioridade"></canvas>
-        </div>
-      </div>
-    </div>
   </section>
 
-  <!-- MODAL: CADASTRAR / EDITAR ATIVIDADE -->
+  <!-- MODAL: ATIVIDADE -->
   <div id="atividadeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
-      
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
         <h2 id="modalTitle" class="text-lg font-bold">Nova Atividade</h2>
-        <button onclick="closeAtividadeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button onclick="closeAtividadeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <form id="atividadeForm" onsubmit="saveAtividade(event)" class="p-6 overflow-y-auto space-y-6 flex-1">
         <input type="hidden" id="editId">
-
-        <!-- BLOCO 1: IDENTIFICAÇÃO E VÍNCULO -->
+        
         <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <i class="fa-solid fa-tag text-blue-600"></i> 1. Identificação e Vínculo
@@ -229,7 +201,7 @@
             </div>
             <div class="md:col-span-5">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Atividade / Peça *</label>
-              <input type="text" id="ativTitulo" required placeholder="Ex: 02.001 - Magazine para..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input type="text" id="ativTitulo" required placeholder="Ex: 02.001 - Peça..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Qtd.</label>
@@ -258,24 +230,15 @@
           </div>
         </div>
 
-        <!-- BLOCO 2: PROCESSOS E ENGENHARIA -->
         <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <i class="fa-solid fa-gears text-blue-600"></i> 2. Processos e Engenharia
           </h3>
-          
           <div class="flex flex-wrap gap-6 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
-              <input type="checkbox" id="procLaser" class="w-4 h-4 text-blue-600 rounded"> Corte Laser
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
-              <input type="checkbox" id="procDobra" class="w-4 h-4 text-blue-600 rounded"> Corte / Dobra
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
-              <input type="checkbox" id="procUsinagem" class="w-4 h-4 text-blue-600 rounded"> Usinagem
-            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200"><input type="checkbox" id="procLaser" class="w-4 h-4 text-blue-600 rounded"> Corte Laser</label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200"><input type="checkbox" id="procDobra" class="w-4 h-4 text-blue-600 rounded"> Corte / Dobra</label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200"><input type="checkbox" id="procUsinagem" class="w-4 h-4 text-blue-600 rounded"> Usinagem</label>
           </div>
-
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Desenhista</label>
@@ -292,14 +255,13 @@
           </div>
         </div>
 
-        <!-- BLOCO 3: DATAS E FOLLOW-UP -->
         <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <i class="fa-solid fa-calendar-days text-blue-600"></i> 3. Status, Datas e Follow-up
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status (Coluna Kanban)</label>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status</label>
               <select id="ativStatus" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="Sem Programação">Sem Programação</option>
                 <option value="Programado">Programado</option>
@@ -324,24 +286,19 @@
           </div>
         </div>
 
-        <!-- BLOCO 4: CHECKLIST DA ATIVIDADE -->
         <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-blue-600"></i> 4. Checklist da Atividade
+              <i class="fa-solid fa-list-check text-blue-600"></i> 4. Checklist
             </h3>
             <button type="button" onclick="aplicarPadraoEngenharia()" class="text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 text-indigo-700 dark:text-indigo-300 font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
               <i class="fa-solid fa-wand-magic-sparkles"></i> Aplicar Padrão Engenharia
             </button>
           </div>
-
           <div class="flex gap-2">
-            <input type="text" id="novoChecklistInput" placeholder="Adicionar nova etapa (ex: Revisão 01)..." class="flex-1 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" onkeypress="if(event.key==='Enter'){event.preventDefault(); addChecklistItem();}">
-            <button type="button" onclick="addChecklistItem()" class="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium">
-              Adicionar
-            </button>
+            <input type="text" id="novoChecklistInput" placeholder="Adicionar etapa..." class="flex-1 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" onkeypress="if(event.key==='Enter'){event.preventDefault(); addChecklistItem();}">
+            <button type="button" onclick="addChecklistItem()" class="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium">Adicionar</button>
           </div>
-
           <ul id="checklistContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1"></ul>
         </div>
       </form>
@@ -358,7 +315,7 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVO / EDITAR PROJETO -->
+  <!-- MODAL: PROJETO -->
   <div id="projetoModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
@@ -369,7 +326,7 @@
         <input type="hidden" id="editProjId">
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nome do Projeto *</label>
-          <input type="text" id="projNome" required placeholder="Ex: Proj. 01 - Pintura Base" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" id="projNome" required placeholder="Ex: Proj. 01" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
@@ -398,7 +355,7 @@
         <button onclick="closeGerenciarProjetosModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-6 overflow-y-auto flex-1 space-y-3">
-        <p class="text-xs text-slate-500 dark:text-slate-400">Lista de todos os projetos e demandas cadastradas. Você pode editá-los ou excluí-los.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Lista de todos os projetos e demandas cadastradas.</p>
         <div id="listaProjetosContainer" class="space-y-2"></div>
       </div>
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
@@ -408,9 +365,6 @@
   </div>
 
   <script>
-    /* =========================================================================
-       1) CONFIGURAÇÃO DO SUPABASE E LISTAS PADRÃO
-       ========================================================================= */
     const SUPABASE_URL = "https://jdvnlsogaywahiarxmhn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkdm5sc29nYXl3YWhpYXJ4bWhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NzIyNzYsImV4cCI6MjEwNjE0ODI3Nn0.NvgD5K86FJ0DF8KedcEVJ0Fpm9oG5kqd-Ki_Va7YJ5Q";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -419,27 +373,41 @@
     let atividades = [];
     let tempChecklist = [];
     let abaAtual = 'kanban';
+    let charts = { status: null, desenhista: null };
 
-    // Instâncias dos gráficos Chart.js
-    let charts = { status: null, desenhista: null, processos: null, prioridade: null };
+    let listaDesenhistas = ["A definir", "Ana Karoline", "Ivaldo Cardoso", "Maria Rosalia", "Pedro Henrrique", "Saulo Hebert", "Thiago Calixto", "Wesley Gomes", "Tienio Andrade"];
+    let listaAnalistas = ["", "Pedro Santiago", "Thiago Farias", "Andre Levy", "Francisco Antonio"];
+    let listaSolicitantes = ["", "Tienio Andrade", "José Rocha", "Aderaldo Guedes", "Cicero Everaldo", "Rodson Vasconcelos"];
 
-    // Listas base
-    let listaDesenhistas = [
-      "A definir", "Ana Karoline", "Ivaldo Cardoso", "Maria Rosalia", 
-      "Pedro Henrrique", "Saulo Hebert", "Thiago Calixto", "Wesley Gomes", "Tienio Andrade"
-    ];
+    // Sistema de Toasts (Notificações)
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white';
+      toast.className = `${bg} px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition transform translate-y-2 opacity-0 pointer-events-auto flex items-center gap-2`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${escapeHtml(message)}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
 
-    let listaAnalistas = [
-      "", "Pedro Santiago", "Thiago Farias", "Andre Levy", "Francisco Antonio"
-    ];
+    // Função de Escape para evitar XSS
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
-    let listaSolicitantes = [
-      "", "Tienio Andrade", "José Rocha", "Aderaldo Guedes", "Cicero Everaldo", "Rodson Vasconcelos"
-    ];
-
-    // Gerenciamento de Tema Escuro / Claro
     function initTheme() {
-      const isDark = localStorage.getItem('cima_dark_mode') === 'true';
+      const saved = localStorage.getItem('cima_dark_mode');
+      const isDark = saved !== null ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (isDark) {
         document.documentElement.classList.add('dark');
         document.getElementById('themeIcon').className = 'fa-solid fa-sun';
@@ -458,7 +426,6 @@
 
     initTheme();
 
-    // Alternar entre Kanban e Dashboard
     function switchTab(tab) {
       abaAtual = tab;
       const vKanban = document.getElementById('viewKanban');
@@ -497,24 +464,19 @@
 
     function mascaraOS(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 9);
-      if (v.length > 6) {
-        v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-      } else if (v.length > 3) {
-        v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-      }
+      if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
       input.value = v;
     }
 
-    /* =========================================================================
-       2) CARREGAR DADOS DO SUPABASE E ATUALIZAR SELECTS
-       ========================================================================= */
     async function carregarDadosDoBanco() {
       try {
         const { data: projData, error: projError } = await sb.from('projetos_ed').select('*').order('created_at', { ascending: false });
         if (projError) throw projError;
         projetos = projData || [];
 
-        const { data: ativData, error: ativError } = await sb.from('atividades_ed').select('*, atividade_checklists_ed(*)').order('created_at', { ascending: false });
+        // Limite de 500 registros para evitar problemas de carregamento (Item 4)
+        const { data: ativData, error: ativError } = await sb.from('atividades_ed').select('*, atividade_checklists_ed(*)').order('created_at', { ascending: false }).limit(500);
         if (ativError) throw ativError;
         
         atividades = (ativData || []).map(a => ({
@@ -526,7 +488,8 @@
         populateSelects();
         atualizarVisualizacao();
       } catch (err) {
-        console.error('Erro ao carregar dados do Supabase:', err.message);
+        console.error('Erro ao carregar dados:', err);
+        showToast('Erro ao carregar dados do banco.', 'error');
       }
     }
 
@@ -548,21 +511,15 @@
       const curSol = filterSol.value;
 
       filterProj.innerHTML = '<option value="">Todos os Projetos</option>';
-      projetos.forEach(p => {
-        filterProj.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
-      });
+      projetos.forEach(p => filterProj.innerHTML += `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nome)} (${escapeHtml(p.tipo)})</option>`);
       filterProj.value = curProj;
 
       filterDes.innerHTML = '<option value="">Todos Desenhistas</option>';
-      listaDesenhistas.forEach(d => {
-        if(d) filterDes.innerHTML += `<option value="${d}">${d}</option>`;
-      });
+      listaDesenhistas.forEach(d => { if(d) filterDes.innerHTML += `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`; });
       filterDes.value = curDes;
 
       filterSol.innerHTML = '<option value="">Todos Solicitantes</option>';
-      listaSolicitantes.forEach(s => {
-        if(s) filterSol.innerHTML += `<option value="${s}">${s}</option>`;
-      });
+      listaSolicitantes.forEach(s => { if(s) filterSol.innerHTML += `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`; });
       filterSol.value = curSol;
 
       const modalProj = document.getElementById('ativProjeto');
@@ -571,26 +528,18 @@
       const modalSol = document.getElementById('ativSolicitante');
 
       modalProj.innerHTML = '';
-      projetos.forEach(p => {
-        modalProj.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
-      });
+      projetos.forEach(p => modalProj.innerHTML += `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nome)} (${escapeHtml(p.tipo)})</option>`);
 
       modalDes.innerHTML = '';
-      listaDesenhistas.forEach(d => {
-        modalDes.innerHTML += `<option value="${d}">${d}</option>`;
-      });
+      listaDesenhistas.forEach(d => modalDes.innerHTML += `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`);
       modalDes.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo desenhista...</option>`;
 
       modalAna.innerHTML = '<option value="">Nenhum</option>';
-      listaAnalistas.forEach(a => {
-        if(a) modalAna.innerHTML += `<option value="${a}">${a}</option>`;
-      });
+      listaAnalistas.forEach(a => { if(a) modalAna.innerHTML += `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`; });
       modalAna.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo analista...</option>`;
 
       modalSol.innerHTML = '<option value="">Nenhum</option>';
-      listaSolicitantes.forEach(s => {
-        if(s) modalSol.innerHTML += `<option value="${s}">${s}</option>`;
-      });
+      listaSolicitantes.forEach(s => { if(s) modalSol.innerHTML += `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`; });
       modalSol.innerHTML += `<option value="__novo__" class="font-bold text-blue-600">➕ Adicionar novo solicitante...</option>`;
     }
 
@@ -645,7 +594,8 @@
 
       return atividades.filter(a => {
         const proj = projetos.find(p => p.id === a.projeto_id);
-        if (fTipo && proj && proj.tipo !== fTipo) return false;
+        if (!proj) return false; // Evita erro caso o projeto tenha sido removido
+        if (fTipo && proj.tipo !== fTipo) return false;
         if (fProj && a.projeto_id !== fProj) return false;
         if (fDes && a.desenhista !== fDes) return false;
         if (fSol && a.solicitante !== fSol) return false;
@@ -654,9 +604,6 @@
       });
     }
 
-    /* =========================================================================
-       3) RENDERIZAÇÃO DO DASHBOARD
-       ========================================================================= */
     function renderDashboard() {
       const filtradas = getAtividadesFiltradas();
       const total = filtradas.length;
@@ -675,29 +622,18 @@
       const textColor = isDark ? '#cbd5e1' : '#334155';
       const gridColor = isDark ? '#1e293b' : '#e2e8f0';
 
-      // Destruir gráficos anteriores antes de recriar
       Object.keys(charts).forEach(k => { if (charts[k]) charts[k].destroy(); });
 
-      // 1. Gráfico de Status
       const statusCounts = COLUNAS.map(c => filtradas.filter(a => a.status === c.id).length);
       charts.status = new Chart(document.getElementById('chartStatus'), {
         type: 'doughnut',
         data: {
           labels: COLUNAS.map(c => c.id),
-          datasets: [{
-            data: statusCounts,
-            backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#71717a'],
-            borderWidth: 0
-          }]
+          datasets: [{ data: statusCounts, backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#71717a'], borderWidth: 0 }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, font: { size: 11 } } } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12 } } } }
       });
 
-      // 2. Gráfico por Desenhista
       const desenhistasAtivos = [...new Set(filtradas.map(a => a.desenhista || 'A definir'))];
       const desConcluido = desenhistasAtivos.map(d => filtradas.filter(a => (a.desenhista || 'A definir') === d && a.status === 'Concluído').length);
       const desOutros = desenhistasAtivos.map(d => filtradas.filter(a => (a.desenhista || 'A definir') === d && a.status !== 'Concluído').length);
@@ -712,8 +648,7 @@
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           scales: {
             x: { stacked: true, ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
             y: { stacked: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
@@ -721,70 +656,15 @@
           plugins: { legend: { labels: { color: textColor, boxWidth: 12 } } }
         }
       });
-
-      // 3. Gráfico de Processos
-      const pLaser = filtradas.filter(a => a.corte_laser).length;
-      const pDobra = filtradas.filter(a => a.corte_dobra).length;
-      const pUsinagem = filtradas.filter(a => a.usinagem).length;
-
-      charts.processos = new Chart(document.getElementById('chartProcessos'), {
-        type: 'bar',
-        data: {
-          labels: ['Corte Laser', 'Corte / Dobra', 'Usinagem'],
-          datasets: [{
-            label: 'Atividades',
-            data: [pLaser, pDobra, pUsinagem],
-            backgroundColor: ['#6366f1', '#f59e0b', '#06b6d4'],
-            borderRadius: 6
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { display: false } }
-          },
-          plugins: { legend: { display: false } }
-        }
-      });
-
-      // 4. Gráfico de Prioridade
-      const prioAlta = filtradas.filter(a => a.prioridade === 'Alta').length;
-      const prioMedia = filtradas.filter(a => a.prioridade === 'Média').length;
-      const prioBaixa = filtradas.filter(a => a.prioridade === 'Baixa').length;
-
-      charts.prioridade = new Chart(document.getElementById('chartPrioridade'), {
-        type: 'pie',
-        data: {
-          labels: ['Alta', 'Média', 'Baixa'],
-          datasets: [{
-            data: [prioAlta, prioMedia, prioBaixa],
-            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12 } } }
-        }
-      });
     }
 
-    /* =========================================================================
-       4) RENDERIZAÇÃO DO KANBAN
-       ========================================================================= */
     function renderBoard() {
       const board = document.getElementById('kanbanBoard');
       board.innerHTML = '';
-
       const filtradas = getAtividadesFiltradas();
 
       COLUNAS.forEach(col => {
         const cardsColuna = filtradas.filter(a => a.status === col.id);
-
         const colEl = document.createElement('div');
         colEl.className = `flex-1 min-w-[240px] bg-slate-200/70 dark:bg-slate-900/80 rounded-xl flex flex-col max-h-full border-t-4 ${col.cor} shadow-sm border border-slate-300/50 dark:border-slate-800`;
         colEl.ondragover = (e) => { e.preventDefault(); colEl.classList.add('drag-over'); };
@@ -793,7 +673,7 @@
 
         colEl.innerHTML = `
           <div class="p-3 flex justify-between items-center border-b border-slate-300/60 dark:border-slate-800">
-            <h2 class="font-bold text-sm text-slate-700 dark:text-slate-200">${col.id}</h2>
+            <h2 class="font-bold text-sm text-slate-700 dark:text-slate-200">${escapeHtml(col.id)}</h2>
             <span class="text-xs font-bold px-2 py-0.5 rounded-full ${col.badge}">${cardsColuna.length}</span>
           </div>
           <div class="p-2.5 space-y-2.5 overflow-y-auto kanban-scroll flex-1">
@@ -826,12 +706,12 @@
           
           <div class="flex justify-between items-start gap-2 mb-1.5">
             <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[160px]">
-              ${proj ? proj.nome : 'Sem Projeto'}
+              ${proj ? escapeHtml(proj.nome) : 'Sem Projeto'}
             </span>
 
             <div class="flex items-center gap-1.5">
               <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${prioColors[card.prioridade] || ''}">
-                ${card.prioridade}
+                ${escapeHtml(card.prioridade)}
               </span>
               
               <div class="relative">
@@ -856,17 +736,17 @@
           <div onclick="openAtividadeModal('${card.id}')" class="cursor-pointer">
             <div class="flex items-center gap-1 mb-1">
               <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                ${card.titulo} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
+                ${escapeHtml(card.titulo)} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
               </h3>
               ${tipoBadge}
             </div>
 
-            ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${card.os}</p>` : '<div class="mb-2"></div>'}
+            ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${escapeHtml(card.os)}</p>` : '<div class="mb-2"></div>'}
 
             <div class="flex flex-wrap gap-1 mb-3">
-              ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Laser</span>' : ''}
-              ${card.corte_dobra ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Dobra</span>' : ''}
-              ${card.usinagem ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Usinagem</span>' : ''}
+              ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border">Laser</span>' : ''}
+              ${card.corte_dobra ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border">Dobra</span>' : ''}
+              ${card.usinagem ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border">Usinagem</span>' : ''}
             </div>
 
             ${totalCheck > 0 ? `
@@ -881,11 +761,12 @@
               </div>
             ` : ''}
 
-            <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-              <span class="flex items-center gap-1 font-medium">
-                <i class="fa-solid fa-user-pen text-slate-400"></i> ${card.desenhista || 'A definir'}
-              </span>
-              ${card.data_fim ? `<span class="text-[11px]"><i class="fa-regular fa-clock"></i> ${card.data_fim.split('-').reverse().join('/')}</span>` : ''}
+            <!-- Seletor rápido para Mobile/Tablet (Item 5) -->
+            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <span class="text-[11px] text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-pen"></i> ${escapeHtml(card.desenhista || 'A definir')}</span>
+              <select onclick="event.stopPropagation()" onchange="mudarStatusMobile(event, '${card.id}')" class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded px-1.5 py-1 border border-slate-300 dark:border-slate-600 focus:outline-none">
+                ${COLUNAS.map(c => `<option value="${escapeHtml(c.id)}" ${card.status === c.id ? 'selected' : ''}>${escapeHtml(c.id)}</option>`).join('')}
+              </select>
             </div>
           </div>
         </div>
@@ -898,11 +779,99 @@
 
     function toggleCardMenu(e, id) {
       e.stopPropagation();
-      document.querySelectorAll('[id^="menu-"]').forEach(m => {
-        if(m.id !== `menu-${id}`) m.classList.add('hidden');
-      });
+      document.querySelectorAll('[id^="menu-"]').forEach(m => { if(m.id !== `menu-${id}`) m.classList.add('hidden'); });
       const menu = document.getElementById(`menu-${id}`);
       menu.classList.toggle('hidden');
+    }
+
+    // Mudança de status via seletor mobile (Item 5)
+    async function mudarStatusMobile(e, id) {
+      const novoStatus = e.target.value;
+      let followupExtra = null;
+
+      if (novoStatus === 'Paralisado') {
+        const motivo = prompt('Informe o motivo de paralisação (Follow-up obrigatório):');
+        if (!motivo || !motivo.trim()) {
+          showToast('O follow-up é obrigatório ao paralisar uma atividade.', 'error');
+          renderBoard();
+          return;
+        }
+        followupExtra = motivo.trim();
+      }
+
+      const card = atividades.find(a => a.id === id);
+      const statusAntigo = card ? card.status : null;
+      const followupAntigo = card ? card.followup : null;
+
+      // Atualização otimista na UI
+      if (card) {
+        card.status = novoStatus;
+        if (followupExtra) card.followup = followupExtra;
+        renderBoard();
+      }
+
+      const updatePayload = { status: novoStatus };
+      if (followupExtra) updatePayload.followup = followupExtra;
+
+      const { error } = await sb.from('atividades_ed').update(updatePayload).eq('id', id);
+      if (error) {
+        // Reverte em caso de falha no banco (Item 3)
+        if (card) {
+          card.status = statusAntigo;
+          card.followup = followupAntigo;
+          renderBoard();
+        }
+        showToast('Erro ao atualizar status: ' + error.message, 'error');
+      } else {
+        showToast('Status atualizado com sucesso!');
+      }
+    }
+
+    let draggedId = null;
+    function handleDragStart(e, id) { draggedId = id; e.target.classList.add('dragging'); }
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    }
+    
+    async function handleDrop(e, novoStatus, colEl) {
+      e.preventDefault();
+      colEl.classList.remove('drag-over');
+      if (!draggedId) return;
+      
+      const card = atividades.find(a => a.id === draggedId);
+      if (!card || card.status === novoStatus) return;
+
+      const statusAntigo = card.status;
+      let followupExtra = null;
+
+      if (novoStatus === 'Paralisado') {
+        const motivo = prompt('Informe o motivo de paralisação (Follow-up obrigatório):');
+        if (!motivo || !motivo.trim()) {
+          showToast('O follow-up é obrigatório ao paralisar uma atividade.', 'error');
+          return;
+        }
+        followupExtra = motivo.trim();
+      }
+
+      // Atualização otimista
+      card.status = novoStatus;
+      if (followupExtra) card.followup = followupExtra;
+      renderBoard();
+
+      const updatePayload = { status: novoStatus };
+      if (followupExtra) updatePayload.followup = followupExtra;
+
+      const { error } = await sb.from('atividades_ed').update(updatePayload).eq('id', draggedId);
+      if (error) {
+        // Reverte visualmente se o banco recusar (Item 3)
+        card.status = statusAntigo;
+        renderBoard();
+        showToast('Erro ao mover card: ' + error.message, 'error');
+      } else {
+        showToast('Atividade movida com sucesso!');
+      }
+      draggedId = null;
     }
 
     async function duplicarAtividade(id) {
@@ -930,35 +899,34 @@
 
       const { data: novaAtiv, error } = await sb.from('atividades_ed').insert([payload]).select().single();
       if (error) {
-        alert('Erro ao duplicar: ' + error.message);
+        showToast('Erro ao duplicar: ' + error.message, 'error');
         return;
       }
 
       if (original.checklist && original.checklist.length > 0) {
-        const checklistPayload = original.checklist.map(c => ({
-          atividade_id: novaAtiv.id,
-          descricao: c.descricao,
-          concluido: false
-        }));
+        const checklistPayload = original.checklist.map(c => ({ atividade_id: novaAtiv.id, descricao: c.descricao, concluido: false }));
         await sb.from('atividade_checklists_ed').insert(checklistPayload);
       }
 
+      showToast('Atividade duplicada com sucesso!');
       carregarDadosDoBanco();
     }
 
     async function excluirAtividadeDireto(id) {
       if (!confirm('Tem certeza que deseja excluir esta atividade?')) return;
-      await sb.from('atividades_ed').delete().eq('id', id);
-      carregarDadosDoBanco();
+      const { error } = await sb.from('atividades_ed').delete().eq('id', id);
+      if (error) {
+        showToast('Erro ao excluir: ' + error.message, 'error');
+      } else {
+        showToast('Atividade excluída.');
+        carregarDadosDoBanco();
+      }
     }
 
-    /* =========================================================================
-       5) EXPORTAR PARA EXCEL (SHEETJS)
-       ========================================================================= */
     function exportarExcel() {
       const filtradas = getAtividadesFiltradas();
       if (filtradas.length === 0) {
-        alert("Não há atividades para exportar com os filtros atuais.");
+        showToast("Não há atividades para exportar.", 'error');
         return;
       }
 
@@ -966,25 +934,12 @@
         const proj = projetos.find(p => p.id === a.projeto_id);
         const totalCheck = a.checklist ? a.checklist.length : 0;
         const doneCheck = a.checklist ? a.checklist.filter(c => c.concluido).length : 0;
-
         return {
-          "Projeto": proj ? proj.nome : '',
-          "Tipo": a.tipo || '',
-          "Atividade / Peça": a.titulo,
-          "Qtd": a.quantidade,
-          "Status": a.status,
-          "Prioridade": a.prioridade,
-          "Desenhista": a.desenhista,
-          "Analista": a.analise || '',
-          "OS": a.os || '',
-          "Solicitante": a.solicitante || '',
-          "Corte Laser": a.corte_laser ? "Sim" : "Não",
-          "Corte/Dobra": a.corte_dobra ? "Sim" : "Não",
-          "Usinagem": a.usinagem ? "Sim" : "Não",
-          "Checklist": `${doneCheck}/${totalCheck}`,
-          "Data Início": a.data_inicio || '',
-          "Data Fim": a.data_fim || '',
-          "Follow-up": a.followup || ''
+          "Projeto": proj ? proj.nome : '', "Tipo": a.tipo || '', "Atividade / Peça": a.titulo, "Qtd": a.quantidade,
+          "Status": a.status, "Prioridade": a.prioridade, "Desenhista": a.desenhista, "Analista": a.analise || '',
+          "OS": a.os || '', "Solicitante": a.solicitante || '', "Corte Laser": a.corte_laser ? "Sim" : "Não",
+          "Corte/Dobra": a.corte_dobra ? "Sim" : "Não", "Usinagem": a.usinagem ? "Sim" : "Não",
+          "Checklist": `${doneCheck}/${totalCheck}`, "Data Início": a.data_inicio || '', "Data Fim": a.data_fim || '', "Follow-up": a.followup || ''
         };
       });
 
@@ -992,30 +947,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Kanban_Engenharia");
       XLSX.writeFile(wb, `Gestao_Desenhos_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }
-
-    let draggedId = null;
-    function handleDragStart(e, id) {
-      draggedId = id;
-      e.target.classList.add('dragging');
-    }
-    function handleDragEnd(e) {
-      e.target.classList.remove('dragging');
-      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-    }
-    
-    async function handleDrop(e, novoStatus, colEl) {
-      e.preventDefault();
-      colEl.classList.remove('drag-over');
-      if (!draggedId) return;
-      
-      const idx = atividades.findIndex(a => a.id === draggedId);
-      if (idx > -1) {
-        atividades[idx].status = novoStatus;
-        renderBoard();
-        await sb.from('atividades_ed').update({ status: novoStatus }).eq('id', draggedId);
-      }
-      draggedId = null;
+      showToast('Planilha exportada com sucesso!');
     }
 
     function openAtividadeModal(id = null) {
@@ -1051,8 +983,6 @@
         document.getElementById('modalTitle').innerText = 'Nova Atividade';
         document.getElementById('editId').value = '';
         document.getElementById('ativDesenhista').value = 'A definir';
-        document.getElementById('ativAnalise').value = '';
-        document.getElementById('ativSolicitante').value = '';
         tempChecklist = [];
         btnExcluir.classList.add('hidden');
       }
@@ -1063,14 +993,36 @@
     }
 
     function closeAtividadeModal() {
-      const modal = document.getElementById('atividadeModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      document.getElementById('atividadeModal').classList.add('hidden');
+      document.getElementById('atividadeModal').classList.remove('flex');
     }
 
     async function saveAtividade(e) {
       e.preventDefault();
       const id = document.getElementById('editId').value;
+      const osVal = document.getElementById('ativOs').value.trim();
+      const dtInicio = document.getElementById('ativInicio').value;
+      const dtFim = document.getElementById('ativFim').value;
+      const statusVal = document.getElementById('ativStatus').value;
+      const followupVal = document.getElementById('ativFollowup').value.trim();
+
+      // Validação rigorosa de O.S. (Item 7)
+      if (osVal && osVal.length < 11) {
+        showToast('A O.S. deve conter exatamente 9 dígitos no formato 000.000.000.', 'error');
+        return;
+      }
+
+      // Validação de Data Fim anterior à Data Início (Item 7)
+      if (dtInicio && dtFim && dtFim < dtInicio) {
+        showToast('A Data Fim não pode ser anterior à Data Início.', 'error');
+        return;
+      }
+
+      // Validação de Follow-up obrigatório para Paralisado (Item 7)
+      if (statusVal === 'Paralisado' && !followupVal) {
+        showToast('O campo Follow-up é obrigatório quando o status é Paralisado.', 'error');
+        return;
+      }
       
       const payload = {
         projeto_id: document.getElementById('ativProjeto').value,
@@ -1083,37 +1035,34 @@
         corte_dobra: document.getElementById('procDobra').checked,
         usinagem: document.getElementById('procUsinagem').checked,
         desenhista: document.getElementById('ativDesenhista').value,
-        os: document.getElementById('ativOs').value || null,
+        os: osVal || null,
         analise: document.getElementById('ativAnalise').value || null,
-        status: document.getElementById('ativStatus').value,
-        data_inicio: document.getElementById('ativInicio').value || null,
-        data_fim: document.getElementById('ativFim').value || null,
-        followup: document.getElementById('ativFollowup').value
+        status: statusVal,
+        data_inicio: dtInicio || null,
+        data_fim: dtFim || null,
+        followup: followupVal || null
       };
 
       if (id) {
-        await sb.from('atividades_ed').update(payload).eq('id', id);
+        const { error } = await sb.from('atividades_ed').update(payload).eq('id', id);
+        if (error) { showToast('Erro ao atualizar: ' + error.message, 'error'); return; }
+
         await sb.from('atividade_checklists_ed').delete().eq('atividade_id', id);
         if (tempChecklist.length > 0) {
-          const checklistPayload = tempChecklist.map(c => ({
-            atividade_id: id,
-            descricao: c.descricao,
-            concluido: c.concluido
-          }));
+          const checklistPayload = tempChecklist.map(c => ({ atividade_id: id, descricao: c.descricao, concluido: c.concluido }));
           await sb.from('atividade_checklists_ed').insert(checklistPayload);
         }
       } else {
         const { data: novaAtiv, error } = await sb.from('atividades_ed').insert([payload]).select().single();
-        if (!error && novaAtiv && tempChecklist.length > 0) {
-          const checklistPayload = tempChecklist.map(c => ({
-            atividade_id: novaAtiv.id,
-            descricao: c.descricao,
-            concluido: c.concluido
-          }));
+        if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
+
+        if (novaAtiv && tempChecklist.length > 0) {
+          const checklistPayload = tempChecklist.map(c => ({ atividade_id: novaAtiv.id, descricao: c.descricao, concluido: c.concluido }));
           await sb.from('atividade_checklists_ed').insert(checklistPayload);
         }
       }
 
+      showToast('Atividade salva com sucesso!');
       closeAtividadeModal();
       carregarDadosDoBanco();
     }
@@ -1122,9 +1071,14 @@
       const id = document.getElementById('editId').value;
       if (!id || !confirm('Tem certeza que deseja excluir esta atividade?')) return;
       
-      await sb.from('atividades_ed').delete().eq('id', id);
-      closeAtividadeModal();
-      carregarDadosDoBanco();
+      const { error } = await sb.from('atividades_ed').delete().eq('id', id);
+      if (error) {
+        showToast('Erro ao excluir: ' + error.message, 'error');
+      } else {
+        showToast('Atividade excluída.');
+        closeAtividadeModal();
+        carregarDadosDoBanco();
+      }
     }
 
     function renderChecklist() {
@@ -1137,11 +1091,9 @@
         <li class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
           <label class="flex items-center gap-2.5 cursor-pointer flex-1 text-sm ${item.concluido ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}">
             <input type="checkbox" ${item.concluido ? 'checked' : ''} onchange="toggleChecklist(${idx})" class="w-4 h-4 text-blue-600 rounded">
-            ${item.descricao}
+            ${escapeHtml(item.descricao)}
           </label>
-          <button type="button" onclick="removeChecklist(${idx})" class="text-slate-400 hover:text-red-500 text-xs px-2">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          <button type="button" onclick="removeChecklist(${idx})" class="text-slate-400 hover:text-red-500 text-xs px-2"><i class="fa-solid fa-trash"></i></button>
         </li>
       `).join('');
     }
@@ -1155,27 +1107,17 @@
       renderChecklist();
     }
 
-    function toggleChecklist(idx) {
-      tempChecklist[idx].concluido = !tempChecklist[idx].concluido;
-      renderChecklist();
-    }
-
-    function removeChecklist(idx) {
-      tempChecklist.splice(idx, 1);
-      renderChecklist();
-    }
+    function toggleChecklist(idx) { tempChecklist[idx].concluido = !tempChecklist[idx].concluido; renderChecklist(); }
+    function removeChecklist(idx) { tempChecklist.splice(idx, 1); renderChecklist(); }
 
     function aplicarPadraoEngenharia() {
       const padrao = ['Modelamento 3D', 'Desenho técnico', 'Envio para validação', 'Envio para corte e dobra'];
       padrao.forEach(desc => {
-        if (!tempChecklist.some(c => c.descricao === desc)) {
-          tempChecklist.push({ descricao: desc, concluido: false });
-        }
+        if (!tempChecklist.some(c => c.descricao === desc)) tempChecklist.push({ descricao: desc, concluido: false });
       });
       renderChecklist();
     }
 
-    // Gerenciamento de Projetos
     function openProjetoModal(id = null, nome = '', tipo = 'Projeto', os = '') {
       document.getElementById('editProjId').value = id || '';
       document.getElementById('projNome').value = nome;
@@ -1209,14 +1151,13 @@
       }
 
       if (error) {
-        alert('Erro ao salvar projeto: ' + error.message);
+        showToast('Erro ao salvar projeto: ' + error.message, 'error');
         return;
       }
 
+      showToast('Projeto salvo com sucesso!');
       closeProjetoModal();
-      if(!document.getElementById('gerenciarProjetosModal').classList.contains('hidden')) {
-        openGerenciarProjetosModal();
-      }
+      if(!document.getElementById('gerenciarProjetosModal').classList.contains('hidden')) openGerenciarProjetosModal();
       carregarDadosDoBanco();
     }
 
@@ -1228,16 +1169,12 @@
         container.innerHTML = projetos.map(p => `
           <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
             <div>
-              <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">${p.nome}</h4>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Tipo: ${p.tipo} ${p.os ? '• OS: ' + p.os : ''}</p>
+              <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">${escapeHtml(p.nome)}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Tipo: ${escapeHtml(p.tipo)} ${p.os ? '• OS: ' + escapeHtml(p.os) : ''}</p>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="editarProjetoDesdeLista('${p.id}')" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs px-2.5 py-1.5 rounded transition">
-                <i class="fa-solid fa-pen"></i> Editar
-              </button>
-              <button onclick="excluirProjeto('${p.id}')" class="bg-red-100 dark:bg-red-950/60 hover:bg-red-200 text-red-700 dark:text-red-300 text-xs px-2.5 py-1.5 rounded transition">
-                <i class="fa-solid fa-trash"></i> Excluir
-              </button>
+              <button onclick="editarProjetoDesdeLista('${p.id}')" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 text-xs px-2.5 py-1.5 rounded transition"><i class="fa-solid fa-pen"></i> Editar</button>
+              <button onclick="excluirProjeto('${p.id}')" class="bg-red-100 dark:bg-red-950/60 hover:bg-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded transition"><i class="fa-solid fa-trash"></i> Excluir</button>
             </div>
           </div>
         `).join('');
@@ -1259,19 +1196,17 @@
     }
 
     async function excluirProjeto(id) {
-      if (!confirm('Tem certeza que deseja excluir este projeto? As atividades vinculadas a ele também serão afetadas ou excluídas.')) return;
-      
+      if (!confirm('Tem certeza que deseja excluir este projeto?')) return;
       const { error } = await sb.from('projetos_ed').delete().eq('id', id);
       if (error) {
-        alert('Erro ao excluir projeto: ' + error.message);
+        showToast('Erro ao excluir projeto: ' + error.message, 'error');
         return;
       }
-
+      showToast('Projeto excluído.');
       openGerenciarProjetosModal();
       carregarDadosDoBanco();
     }
 
-    // Inicialização ao carregar a página
     carregarDadosDoBanco();
   </script>
 </body>
