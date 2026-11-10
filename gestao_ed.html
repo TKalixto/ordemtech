@@ -8,6 +8,38 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- MODAL: GERENCIAR STATUS (COLUNAS) -->
+  <div id="statusModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh]">
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-sliders text-blue-600"></i> Gerenciar Status</h2>
+        <button onclick="closeStatusModal()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <form onsubmit="addStatusColuna(event)" class="flex gap-2">
+          <input type="text" id="novoStatusNome" required placeholder="Nome do novo status..." class="flex-1 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <select id="novoStatusCor" class="border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="slate">Cinza</option>
+            <option value="blue">Azul</option>
+            <option value="amber">Amarelo</option>
+            <option value="red">Vermelho</option>
+            <option value="emerald">Verde</option>
+            <option value="purple">Roxo</option>
+          </select>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium shrink-0">Adicionar</button>
+        </form>
+
+        <ul id="statusListContainer" class="space-y-2"></ul>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <button type="button" onclick="resetStatusPadrao()" class="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline">Restaurar padrão</button>
+        <button type="button" onclick="closeStatusModal()" class="px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white rounded-lg">Concluir</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     tailwind.config = { darkMode: 'class' }
   </script>
@@ -20,40 +52,74 @@
     .dragging { opacity: 0.5; transform: scale(0.98); }
     .drag-over { background-color: #cbd5e1 !important; border: 2px dashed #64748b; }
     .dark .drag-over { background-color: #334155 !important; border: 2px dashed #94a3b8; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .toast-enter { animation: slideIn 0.25s ease-out forwards; }
   </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
-<!-- HEADER / BARRA SUPERIOR -->
-  <header class="bg-slate-900 dark:bg-slate-900 border-b border-slate-800 text-white px-6 py-3 shadow-md flex flex-wrap items-center justify-between gap-4 shrink-0">
-    <div class="flex items-center gap-3">
-      <!-- BOTÃO VOLTAR PARA O SITE PRINCIPAL -->
-      <a href="index.html" title="Voltar para o Gestão CIMA" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-lg transition text-sm flex items-center gap-1.5 border border-slate-700">
-        <i class="fa-solid fa-arrow-left"></i> Voltar
-      </a>
+<!-- TOAST CONTAINER -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-      <div class="bg-blue-600 p-2 rounded-lg">
-        <i class="fa-solid fa-industry text-xl"></i>
+<!-- HEADER / BARRA SUPERIOR -->
+  <header class="bg-slate-900 dark:bg-slate-900 border-b border-slate-800 text-white shadow-md shrink-0">
+    <!-- LINHA 1: IDENTIDADE E AÇÕES PRINCIPAIS -->
+    <div class="px-5 py-2.5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80">
+      <div class="flex items-center gap-3">
+        <a href="index.html" title="Voltar para o Gestão CIMA" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition text-xs font-medium flex items-center gap-1.5 border border-slate-700">
+          <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+
+        <div class="bg-blue-600 p-2 rounded-lg shrink-0">
+          <i class="fa-solid fa-industry text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold leading-tight">Gestão Escritório de Desenhos</h1>
+          <p class="text-[11px] text-slate-400">Kanban de Projetos</p>
+        </div>
       </div>
-      <div>
-        <h1 class="text-lg font-bold leading-tight">Gestão Escritório de Desenhos</h1>
-        <p class="text-xs text-slate-400">Kanban de Projetos</p>
+
+      <!-- BOTÕES DE AÇÃO, EXPORTAÇÃO E TEMA -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" aria-label="Alternar Tema" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg transition text-sm border border-slate-700/70">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+        <button onclick="exportarExcel()" title="Exportar para Excel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-excel"></i> Exportar
+        </button>
+        <button onclick="openStatusModal()" title="Gerenciar Status / Colunas" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-sliders"></i> Status
+        </button>
+        <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-folder-plus"></i> Novo Projeto
+        </button>
+        <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-plus"></i> Nova Atividade
+        </button>
       </div>
     </div>
 
-    <!-- FILTROS -->
-    <div class="flex flex-wrap items-center gap-2">
-      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+    <!-- LINHA 2: BARRA DE BUSCA E FILTROS -->
+    <div class="px-5 py-2 bg-slate-900/60 flex flex-wrap items-center gap-2">
+      <div class="relative flex-1 min-w-[200px] max-w-xs">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input type="text" id="filterBusca" oninput="renderBoard()" placeholder="Buscar título, OS ou projeto..." class="w-full bg-slate-800 border border-slate-700 text-xs rounded-lg pl-8 pr-3 py-1.5 text-slate-200 placeholder-slate-400 focus:outline-none focus:border-blue-500">
+      </div>
+
+      <select id="filterTipo" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos os Tipos</option>
         <option value="Projeto">Projeto</option>
         <option value="Demanda de fábrica">Demanda de fábrica</option>
       </select>
 
-      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[260px] truncate">
         <option value="">Todos os Projetos</option>
       </select>
 
-      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterDesenhista" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todos Desenhistas</option>
         <option value="A definir">A definir</option>
         <option value="Ana Karoline">Ana Karoline</option>
@@ -66,27 +132,15 @@
         <option value="Tienio Andrade">Tienio Andrade</option>
       </select>
 
-      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
         <option value="">Todas Prioridades</option>
         <option value="Alta">Alta</option>
         <option value="Média">Média</option>
         <option value="Baixa">Baixa</option>
       </select>
-    </div>
 
-    <!-- BOTÕES DE AÇÃO, EXPORTAÇÃO E TEMA -->
-    <div class="flex items-center gap-2">
-      <button onclick="toggleDarkMode()" title="Alternar Tema" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-lg transition text-sm">
-        <i id="themeIcon" class="fa-solid fa-moon"></i>
-      </button>
-      <button onclick="exportarExcel()" title="Exportar para Excel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
-        <i class="fa-solid fa-file-excel"></i> Exportar
-      </button>
-      <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
-        <i class="fa-solid fa-folder-plus"></i> Novo Projeto
-      </button>
-      <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
-        <i class="fa-solid fa-plus"></i> Nova Atividade
+      <button type="button" onclick="limparFiltros()" title="Limpar filtros" class="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-1 ml-auto">
+        <i class="fa-solid fa-filter-circle-xmark"></i> Limpar
       </button>
     </div>
   </header>
@@ -97,12 +151,12 @@
   </main>
 
   <!-- MODAL: CADASTRAR / EDITAR ATIVIDADE -->
-  <div id="atividadeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div id="atividadeModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
       
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
         <h2 id="modalTitle" class="text-lg font-bold">Nova Atividade</h2>
-        <button onclick="closeAtividadeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+        <button onclick="closeAtividadeModal()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -222,7 +276,7 @@
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Follow-up / Observações</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Follow-up / Observações <span class="text-[11px] font-normal text-slate-400">(obrigatório se Paralisado)</span></label>
             <textarea id="ativFollowup" rows="2" placeholder="Registre o andamento, pendências ou histórico..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
           </div>
         </div>
@@ -250,23 +304,23 @@
       </form>
 
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-        <button type="button" id="btnExcluirAtiv" onclick="deleteAtividade()" class="hidden text-red-600 hover:text-red-700 text-sm font-semibold flex items-center gap-1">
+        <button type="button" id="btnExcluirAtiv" onclick="confirmDeleteAtividade()" class="hidden text-red-600 hover:text-red-700 text-sm font-semibold flex items-center gap-1">
           <i class="fa-solid fa-trash"></i> Excluir Atividade
         </button>
         <div class="flex gap-3 ml-auto">
           <button type="button" onclick="closeAtividadeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition">Cancelar</button>
-          <button type="submit" form="atividadeForm" class="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow transition">Salvar Atividade</button>
+          <button type="submit" form="atividadeForm" id="btnSalvarAtiv" class="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow transition">Salvar Atividade</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- MODAL: NOVO PROJETO -->
-  <div id="projetoModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div id="projetoModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
         <h2 class="text-lg font-bold">Novo Projeto</h2>
-        <button onclick="closeProjetoModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeProjetoModal()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="saveProjeto(event)" class="p-6 space-y-4">
         <div>
@@ -292,6 +346,41 @@
     </div>
   </div>
 
+  <!-- MODAL: MOTIVO DA PARALISAÇÃO -->
+  <div id="paralisadoModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div class="px-6 py-4 bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 flex justify-between items-center">
+        <h2 class="text-base font-bold text-red-700 dark:text-red-300 flex items-center gap-2">
+          <i class="fa-solid fa-circle-pause"></i> Motivo da Paralisação
+        </h2>
+        <button onclick="cancelarParalisado()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="confirmarParalisado(event)" class="p-6 space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-400">Informe o motivo pelo qual esta atividade está sendo movida para <strong>Paralisado</strong>:</p>
+        <textarea id="paralisadoMotivoInput" rows="3" required placeholder="Ex: Aguardando definição do solicitante / Falta de material..." class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="cancelarParalisado()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-5 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg">Confirmar Paralisação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAÇÃO GENÉRICA -->
+  <div id="confirmModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4">
+    <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+      <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
+        <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        <h3 class="text-base font-bold">Confirmar Exclusão</h3>
+      </div>
+      <p id="confirmMessage" class="text-sm text-slate-600 dark:text-slate-300">Tem certeza que deseja excluir esta atividade?</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
+        <button type="button" id="confirmActionBtn" class="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg">Excluir</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* =========================================================================
        1) CONFIGURAÇÃO DO SUPABASE
@@ -303,10 +392,54 @@
     let projetos = [];
     let atividades = [];
     let tempChecklist = [];
+    let originalChecklistIds = [];
+    let pendingParalisado = null; // { id, oldStatus }
 
-    // Gerenciamento de Tema Escuro / Claro
+    /* =========================================================================
+       UTILITÁRIOS DE SEGURANÇA (XSS), TOAST E TEMA
+       ========================================================================= */
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const styles = {
+        success: 'bg-emerald-600 text-white border-emerald-700',
+        error: 'bg-red-600 text-white border-red-700',
+        warning: 'bg-amber-500 text-slate-900 border-amber-600',
+        info: 'bg-slate-800 text-white border-slate-700'
+      };
+      const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-xmark',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast-enter pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border text-sm font-medium ${styles[type] || styles.info}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-base shrink-0"></i>
+        <span class="flex-1">${escapeHTML(message)}</span>
+        <button onclick="this.parentElement.remove()" class="opacity-75 hover:opacity-100 text-xs"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (toast.parentElement) toast.remove();
+      }, 4500);
+    }
+
     function initTheme() {
-      const isDark = localStorage.getItem('cima_dark_mode') === 'true';
+      const saved = localStorage.getItem('cima_dark_mode');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved !== null ? saved === 'true' : prefersDark;
       if (isDark) {
         document.documentElement.classList.add('dark');
         document.getElementById('themeIcon').className = 'fa-solid fa-sun';
@@ -324,14 +457,142 @@
 
     initTheme();
 
-    const COLUNAS = [
-      { id: 'Sem Programação', cor: 'border-slate-400', badge: 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
-      { id: 'Programado', cor: 'border-blue-500', badge: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
-      { id: 'Em andamento', cor: 'border-amber-500', badge: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
-      { id: 'Paralisado', cor: 'border-red-500', badge: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300' },
-      { id: 'Concluído', cor: 'border-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' },
-      { id: 'Cancelado', cor: 'border-zinc-500', badge: 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' }
+    // Fechar modais com ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAtividadeModal();
+        closeProjetoModal();
+        closeStatusModal();
+        closeConfirmModal();
+        if (!document.getElementById('paralisadoModal').classList.contains('hidden')) {
+          cancelarParalisado();
+        }
+      }
+    });
+
+    const CORES_STATUS = {
+      slate: { cor: 'border-slate-400', badge: 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
+      blue: { cor: 'border-blue-500', badge: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
+      amber: { cor: 'border-amber-500', badge: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
+      red: { cor: 'border-red-500', badge: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300' },
+      emerald: { cor: 'border-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' },
+      purple: { cor: 'border-purple-500', badge: 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' },
+      zinc: { cor: 'border-zinc-500', badge: 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' }
+    };
+
+    const COLUNAS_PADRAO = [
+      { id: 'Sem Programação', corKey: 'slate', ...CORES_STATUS.slate },
+      { id: 'Programado', corKey: 'blue', ...CORES_STATUS.blue },
+      { id: 'Em andamento', corKey: 'amber', ...CORES_STATUS.amber },
+      { id: 'Paralisado', corKey: 'red', ...CORES_STATUS.red },
+      { id: 'Concluído', corKey: 'emerald', ...CORES_STATUS.emerald },
+      { id: 'Cancelado', corKey: 'zinc', ...CORES_STATUS.zinc }
     ];
+
+    let COLUNAS = JSON.parse(localStorage.getItem('cima_kanban_colunas') || 'null') || JSON.parse(JSON.stringify(COLUNAS_PADRAO));
+
+    function salvarColunasLocal() {
+      localStorage.setItem('cima_kanban_colunas', JSON.stringify(COLUNAS));
+      populateStatusSelect();
+      renderBoard();
+    }
+
+    function populateStatusSelect() {
+      const sel = document.getElementById('ativStatus');
+      if (!sel) return;
+      const val = sel.value;
+      sel.innerHTML = COLUNAS.map(c => `<option value="${escapeHTML(c.id)}">${escapeHTML(c.id)}</option>`).join('');
+      if (COLUNAS.some(c => c.id === val)) sel.value = val;
+    }
+
+    function openStatusModal() {
+      renderStatusList();
+      const modal = document.getElementById('statusModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeStatusModal() {
+      const modal = document.getElementById('statusModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderStatusList() {
+      const ul = document.getElementById('statusListContainer');
+      ul.innerHTML = COLUNAS.map((col, idx) => `
+        <li class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
+          <span class="text-sm font-medium flex-1 truncate">${escapeHTML(col.id)}</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="editStatusColuna(${idx})" title="Editar nome" class="text-blue-600 hover:text-blue-500 px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-950/50">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" onclick="deleteStatusColuna(${idx})" title="Excluir status" class="text-red-500 hover:text-red-600 px-2 py-1 text-xs rounded hover:bg-red-50 dark:hover:bg-red-950/50">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function addStatusColuna(e) {
+      e.preventDefault();
+      const nome = document.getElementById('novoStatusNome').value.trim();
+      const corKey = document.getElementById('novoStatusCor').value;
+      if (!nome) return;
+      if (COLUNAS.some(c => c.id.toLowerCase() === nome.toLowerCase())) {
+        showToast('Já existe um status com esse nome.', 'warning');
+        return;
+      }
+      COLUNAS.push({ id: nome, corKey, ...(CORES_STATUS[corKey] || CORES_STATUS.slate) });
+      document.getElementById('novoStatusNome').value = '';
+      salvarColunasLocal();
+      renderStatusList();
+      showToast('Status adicionado!', 'success');
+    }
+
+    async function editStatusColuna(idx) {
+      const atual = COLUNAS[idx];
+      const novoNome = prompt('Novo nome para o status:', atual.id);
+      if (!novoNome || !novoNome.trim() || novoNome.trim() === atual.id) return;
+      const nomeLimpo = novoNome.trim();
+      if (COLUNAS.some((c, i) => i !== idx && c.id.toLowerCase() === nomeLimpo.toLowerCase())) {
+        showToast('Já existe um status com esse nome.', 'warning');
+        return;
+      }
+      const oldId = atual.id;
+      atual.id = nomeLimpo;
+      // Atualiza atividades que estavam nesse status no banco e na memória
+      atividades.forEach(a => { if (a.status === oldId) a.status = nomeLimpo; });
+      await sb.from('atividades_ed').update({ status: nomeLimpo }).eq('status', oldId);
+      salvarColunasLocal();
+      renderStatusList();
+      showToast('Status atualizado!', 'success');
+    }
+
+    function deleteStatusColuna(idx) {
+      const col = COLUNAS[idx];
+      if (COLUNAS.length <= 1) {
+        showToast('É necessário manter pelo menos 1 status.', 'warning');
+        return;
+      }
+      const emUso = atividades.some(a => a.status === col.id);
+      if (emUso) {
+        showToast('Não é possível excluir um status que possui atividades.', 'warning');
+        return;
+      }
+      COLUNAS.splice(idx, 1);
+      salvarColunasLocal();
+      renderStatusList();
+      showToast('Status removido.', 'info');
+    }
+
+    function resetStatusPadrao() {
+      COLUNAS = JSON.parse(JSON.stringify(COLUNAS_PADRAO));
+      salvarColunasLocal();
+      renderStatusList();
+      showToast('Status restaurados para o padrão.', 'info');
+    }
 
     function mascaraOS(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 9);
@@ -341,6 +602,12 @@
         v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
       }
       input.value = v;
+    }
+
+    function validarOS(osStr) {
+      if (!osStr) return true;
+      const digits = osStr.replace(/\D/g, '');
+      return digits.length === 9;
     }
 
     /* =========================================================================
@@ -364,6 +631,7 @@
         renderBoard();
       } catch (err) {
         console.error('Erro ao carregar dados do Supabase:', err.message);
+        showToast('Erro ao carregar dados do banco: ' + err.message, 'error');
       }
     }
 
@@ -376,13 +644,25 @@
       modalSelect.innerHTML = '';
 
       projetos.forEach(p => {
-        filterSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
-        modalSelect.innerHTML += `<option value="${p.id}">${p.nome} (${p.tipo})</option>`;
+        const label = `${escapeHTML(p.nome)} (${escapeHTML(p.tipo)})`;
+        filterSelect.innerHTML += `<option value="${escapeHTML(p.id)}">${label}</option>`;
+        modalSelect.innerHTML += `<option value="${escapeHTML(p.id)}">${label}</option>`;
       });
       filterSelect.value = currentFilter;
     }
 
+    
+    function limparFiltros() {
+      document.getElementById('filterBusca').value = '';
+      document.getElementById('filterTipo').value = '';
+      document.getElementById('filterProjeto').value = '';
+      document.getElementById('filterDesenhista').value = '';
+      document.getElementById('filterPrioridade').value = '';
+      renderBoard();
+    }
+
     function getAtividadesFiltradas() {
+      const fBusca = (document.getElementById('filterBusca').value || '').trim().toLowerCase();
       const fTipo = document.getElementById('filterTipo').value;
       const fProj = document.getElementById('filterProjeto').value;
       const fDes = document.getElementById('filterDesenhista').value;
@@ -390,12 +670,30 @@
 
       return atividades.filter(a => {
         const proj = projetos.find(p => p.id === a.projeto_id);
-        if (fTipo && proj && proj.tipo !== fTipo) return false;
+        if (fTipo) {
+          const tipoEfetivo = proj ? proj.tipo : a.tipo;
+          if (tipoEfetivo !== fTipo) return false;
+        }
         if (fProj && a.projeto_id !== fProj) return false;
         if (fDes && a.desenhista !== fDes) return false;
         if (fPrio && a.prioridade !== fPrio) return false;
+        if (fBusca) {
+          const matchTitulo = (a.titulo || '').toLowerCase().includes(fBusca);
+          const matchOs = (a.os || '').toLowerCase().includes(fBusca);
+          const matchProj = (proj ? proj.nome : '').toLowerCase().includes(fBusca);
+          if (!matchTitulo && !matchOs && !matchProj) return false;
+        }
         return true;
       });
+    }
+
+    function isDataVencida(dataFim, status) {
+      if (!dataFim || status === 'Concluído' || status === 'Cancelado') return false;
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const [y, m, d] = dataFim.split('-').map(Number);
+      const fim = new Date(y, m - 1, d);
+      return fim < hoje;
     }
 
     function renderBoard() {
@@ -415,7 +713,7 @@
 
         colEl.innerHTML = `
           <div class="p-3 flex justify-between items-center border-b border-slate-300/60 dark:border-slate-800">
-            <h2 class="font-bold text-sm text-slate-700 dark:text-slate-200">${col.id}</h2>
+            <h2 class="font-bold text-sm text-slate-700 dark:text-slate-200">${escapeHTML(col.id)}</h2>
             <span class="text-xs font-bold px-2 py-0.5 rounded-full ${col.badge}">${cardsColuna.length}</span>
           </div>
           <div class="p-2.5 space-y-2.5 overflow-y-auto kanban-scroll flex-1">
@@ -431,6 +729,7 @@
       const totalCheck = card.checklist ? card.checklist.length : 0;
       const doneCheck = card.checklist ? card.checklist.filter(c => c.concluido).length : 0;
       const pct = totalCheck > 0 ? Math.round((doneCheck / totalCheck) * 100) : 0;
+      const vencida = isDataVencida(card.data_fim, card.status);
 
       const prioColors = {
         'Alta': 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
@@ -439,30 +738,38 @@
       };
 
       const tipoBadge = proj && proj.tipo === 'Demanda de fábrica' 
-        ? '<span class="text-[10px] bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-medium border border-purple-200 dark:border-purple-900 ml-1">Demanda</span>' 
+        ? '<span class="text-[10px] bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-medium border border-purple-200 dark:border-purple-900 ml-1 shrink-0">Demanda</span>' 
         : '';
 
+      const borderClass = vencida
+        ? 'border-red-400 dark:border-red-700 ring-1 ring-red-400/40'
+        : 'border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500';
+
       return `
-        <div draggable="true" ondragstart="handleDragStart(event, '${card.id}')" ondragend="handleDragEnd(event)" onclick="openAtividadeModal('${card.id}')"
-             class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition cursor-pointer group">
+        <div draggable="true" tabindex="0"
+             ondragstart="handleDragStart(event, '${escapeHTML(card.id)}')"
+             ondragend="handleDragEnd(event)"
+             onclick="openAtividadeModal('${escapeHTML(card.id)}')"
+             onkeydown="if(event.key==='Enter'){openAtividadeModal('${escapeHTML(card.id)}')}"
+             class="bg-white dark:bg-slate-800 p-3.5 rounded-lg shadow-sm border ${borderClass} hover:shadow-md transition cursor-pointer group focus:outline-none focus:ring-2 focus:ring-blue-500">
           
           <div class="flex justify-between items-start gap-2 mb-1.5">
             <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded truncate max-w-[180px]">
-              ${proj ? proj.nome : 'Sem Projeto'}
+              ${proj ? escapeHTML(proj.nome) : 'Sem Projeto'}
             </span>
             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${prioColors[card.prioridade] || ''}">
-              ${card.prioridade}
+              ${escapeHTML(card.prioridade)}
             </span>
           </div>
 
           <div class="flex items-center gap-1 mb-1">
             <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              ${card.titulo} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${card.quantidade})</span>
+              ${escapeHTML(card.titulo)} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(x${escapeHTML(card.quantidade)})</span>
             </h3>
             ${tipoBadge}
           </div>
 
-          ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${card.os}</p>` : '<div class="mb-2"></div>'}
+          ${card.os ? `<p class="text-[11px] text-slate-400 dark:text-slate-400 font-mono mb-2">OS: ${escapeHTML(card.os)}</p>` : '<div class="mb-2"></div>'}
 
           <div class="flex flex-wrap gap-1 mb-3">
             ${card.corte_laser ? '<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium border border-slate-200 dark:border-slate-600">Laser</span>' : ''}
@@ -483,11 +790,17 @@
           ` : ''}
 
           <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-            <span class="flex items-center gap-1 font-medium">
-              <i class="fa-solid fa-user-pen text-slate-400"></i> ${card.desenhista || 'A definir'}
+            <span class="flex items-center gap-1 font-medium truncate max-w-[140px]">
+              <i class="fa-solid fa-user-pen text-slate-400"></i> ${escapeHTML(card.desenhista || 'A definir')}
             </span>
-            ${card.data_fim ? `<span class="text-[11px]"><i class="fa-regular fa-clock"></i> ${card.data_fim.split('-').reverse().join('/')}</span>` : ''}
+            ${card.data_fim ? `
+              <span class="text-[11px] flex items-center gap-1 ${vencida ? 'text-red-600 dark:text-red-400 font-bold' : ''}" title="${vencida ? 'Prazo vencido!' : 'Data Fim'}">
+                <i class="fa-regular ${vencida ? 'fa-calendar-xmark' : 'fa-clock'}"></i> ${escapeHTML(card.data_fim.split('-').reverse().join('/'))}
+              </span>
+            ` : ''}
           </div>
+
+
         </div>
       `;
     }
@@ -498,7 +811,7 @@
     function exportarExcel() {
       const filtradas = getAtividadesFiltradas();
       if (filtradas.length === 0) {
-        alert("Não há atividades para exportar com os filtros atuais.");
+        showToast("Não há atividades para exportar com os filtros atuais.", "warning");
         return;
       }
 
@@ -532,8 +845,12 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Kanban_Engenharia");
       XLSX.writeFile(wb, `Gestao_Desenhos_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast("Planilha exportada com sucesso!", "success");
     }
 
+    /* =========================================================================
+       4) DRAG & DROP E MUDANÇA RÁPIDA DE STATUS COM ROLLBACK
+       ========================================================================= */
     let draggedId = null;
     function handleDragStart(e, id) {
       draggedId = id;
@@ -548,16 +865,90 @@
       e.preventDefault();
       colEl.classList.remove('drag-over');
       if (!draggedId) return;
-      
-      const idx = atividades.findIndex(a => a.id === draggedId);
-      if (idx > -1) {
-        atividades[idx].status = novoStatus;
-        renderBoard();
-        await sb.from('atividades_ed').update({ status: novoStatus }).eq('id', draggedId);
-      }
+      const id = draggedId;
       draggedId = null;
+      await moverAtividadeStatus(id, novoStatus);
     }
 
+    async function quickChangeStatus(id, novoStatus) {
+      await moverAtividadeStatus(id, novoStatus);
+    }
+
+    async function moverAtividadeStatus(id, novoStatus) {
+      const idx = atividades.findIndex(a => a.id === id);
+      if (idx === -1) return;
+      const oldStatus = atividades[idx].status;
+      if (oldStatus === novoStatus) return;
+
+      // Se mover para Paralisado, exige motivo
+      if (novoStatus === 'Paralisado') {
+        pendingParalisado = { id, oldStatus };
+        document.getElementById('paralisadoMotivoInput').value = atividades[idx].followup || '';
+        const modal = document.getElementById('paralisadoModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.getElementById('paralisadoMotivoInput').focus();
+        return;
+      }
+
+      atividades[idx].status = novoStatus;
+      renderBoard();
+
+      const { error } = await sb.from('atividades_ed').update({ status: novoStatus }).eq('id', id);
+      if (error) {
+        atividades[idx].status = oldStatus;
+        renderBoard();
+        showToast('Erro ao mover atividade: ' + error.message, 'error');
+      } else {
+        showToast(`Status alterado para "${novoStatus}"`, 'success');
+      }
+    }
+
+    function cancelarParalisado() {
+      pendingParalisado = null;
+      const modal = document.getElementById('paralisadoModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      renderBoard();
+    }
+
+    async function confirmarParalisado(e) {
+      e.preventDefault();
+      if (!pendingParalisado) return;
+      const motivo = document.getElementById('paralisadoMotivoInput').value.trim();
+      if (!motivo) {
+        showToast('Informe o motivo da paralisação.', 'warning');
+        return;
+      }
+
+      const { id, oldStatus } = pendingParalisado;
+      const idx = atividades.findIndex(a => a.id === id);
+      if (idx === -1) return;
+
+      const oldFollowup = atividades[idx].followup;
+      atividades[idx].status = 'Paralisado';
+      atividades[idx].followup = motivo;
+
+      const modal = document.getElementById('paralisadoModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingParalisado = null;
+      renderBoard();
+
+      const { error } = await sb.from('atividades_ed').update({ status: 'Paralisado', followup: motivo }).eq('id', id);
+      if (error) {
+        atividades[idx].status = oldStatus;
+        atividades[idx].followup = oldFollowup;
+        renderBoard();
+        showToast('Erro ao paralisar atividade: ' + error.message, 'error');
+      } else {
+        showToast('Atividade marcada como Paralisada.', 'info');
+      }
+    }
+
+    /* =========================================================================
+       5) MODAL DE ATIVIDADE (CRIAR, EDITAR, EXCLUIR)
+       ========================================================================= */
     function openAtividadeModal(id = null) {
       const modal = document.getElementById('atividadeModal');
       const form = document.getElementById('atividadeForm');
@@ -566,6 +957,7 @@
 
       if (id) {
         const a = atividades.find(item => item.id === id);
+        if (!a) return;
         document.getElementById('modalTitle').innerText = 'Editar Atividade';
         document.getElementById('editId').value = a.id;
         document.getElementById('ativProjeto').value = a.projeto_id;
@@ -585,12 +977,14 @@
         document.getElementById('ativFim').value = a.data_fim || '';
         document.getElementById('ativFollowup').value = a.followup || '';
         tempChecklist = JSON.parse(JSON.stringify(a.checklist || []));
+        originalChecklistIds = tempChecklist.filter(c => c.id).map(c => c.id);
         btnExcluir.classList.remove('hidden');
       } else {
         document.getElementById('modalTitle').innerText = 'Nova Atividade';
         document.getElementById('editId').value = '';
         document.getElementById('ativDesenhista').value = 'A definir';
         tempChecklist = [];
+        originalChecklistIds = [];
         btnExcluir.classList.add('hidden');
       }
 
@@ -608,62 +1002,138 @@
     async function saveAtividade(e) {
       e.preventDefault();
       const id = document.getElementById('editId').value;
-      
-      const payload = {
-        projeto_id: document.getElementById('ativProjeto').value,
-        titulo: document.getElementById('ativTitulo').value,
-        quantidade: parseInt(document.getElementById('ativQtd').value) || 1,
-        solicitante: document.getElementById('ativSolicitante').value,
-        tipo: document.getElementById('ativTipo').value,
-        prioridade: document.getElementById('ativPrioridade').value,
-        corte_laser: document.getElementById('procLaser').checked,
-        corte_dobra: document.getElementById('procDobra').checked,
-        usinagem: document.getElementById('procUsinagem').checked,
-        desenhista: document.getElementById('ativDesenhista').value,
-        os: document.getElementById('ativOs').value || null,
-        analise: document.getElementById('ativAnalise').value,
-        status: document.getElementById('ativStatus').value,
-        data_inicio: document.getElementById('ativInicio').value || null,
-        data_fim: document.getElementById('ativFim').value || null,
-        followup: document.getElementById('ativFollowup').value
-      };
+      const osVal = document.getElementById('ativOs').value.trim();
+      const dataInicio = document.getElementById('ativInicio').value || null;
+      const dataFim = document.getElementById('ativFim').value || null;
+      const status = document.getElementById('ativStatus').value;
+      const followup = document.getElementById('ativFollowup').value.trim();
 
-      if (id) {
-        await sb.from('atividades_ed').update(payload).eq('id', id);
-        await sb.from('atividade_checklists_ed').delete().eq('atividade_id', id);
-        if (tempChecklist.length > 0) {
-          const checklistPayload = tempChecklist.map(c => ({
-            atividade_id: id,
-            descricao: c.descricao,
-            concluido: c.concluido
-          }));
-          await sb.from('atividade_checklists_ed').insert(checklistPayload);
-        }
-      } else {
-        const { data: novaAtiv, error } = await sb.from('atividades_ed').insert([payload]).select().single();
-        if (!error && novaAtiv && tempChecklist.length > 0) {
-          const checklistPayload = tempChecklist.map(c => ({
-            atividade_id: novaAtiv.id,
-            descricao: c.descricao,
-            concluido: c.concluido
-          }));
-          await sb.from('atividade_checklists_ed').insert(checklistPayload);
-        }
+      // Validações
+      if (!validarOS(osVal)) {
+        showToast('A O.S. deve conter exatamente 9 dígitos (000.000.000).', 'warning');
+        return;
+      }
+      if (dataInicio && dataFim && dataFim < dataInicio) {
+        showToast('A Data Fim não pode ser anterior à Data Início.', 'warning');
+        return;
+      }
+      if (status === 'Paralisado' && !followup) {
+        showToast('Preencha o campo Follow-up informando o motivo da paralisação.', 'warning');
+        document.getElementById('ativFollowup').focus();
+        return;
       }
 
-      closeAtividadeModal();
-      carregarDadosDoBanco();
+      const btnSalvar = document.getElementById('btnSalvarAtiv');
+      btnSalvar.disabled = true;
+      btnSalvar.innerText = 'Salvando...';
+
+      try {
+        const payload = {
+          projeto_id: document.getElementById('ativProjeto').value,
+          titulo: document.getElementById('ativTitulo').value.trim(),
+          quantidade: parseInt(document.getElementById('ativQtd').value) || 1,
+          solicitante: document.getElementById('ativSolicitante').value.trim(),
+          tipo: document.getElementById('ativTipo').value,
+          prioridade: document.getElementById('ativPrioridade').value,
+          corte_laser: document.getElementById('procLaser').checked,
+          corte_dobra: document.getElementById('procDobra').checked,
+          usinagem: document.getElementById('procUsinagem').checked,
+          desenhista: document.getElementById('ativDesenhista').value,
+          os: osVal || null,
+          analise: document.getElementById('ativAnalise').value.trim(),
+          status,
+          data_inicio: dataInicio,
+          data_fim: dataFim,
+          followup
+        };
+
+        if (id) {
+          const { error: upError } = await sb.from('atividades_ed').update(payload).eq('id', id);
+          if (upError) throw upError;
+
+          // Atualiza checklist de forma segura (sem apagar antes de salvar os novos)
+          const atuaisComId = tempChecklist.filter(c => c.id);
+          const novosSemId = tempChecklist.filter(c => !c.id);
+          const idsMantidos = atuaisComId.map(c => c.id);
+          const idsRemovidos = originalChecklistIds.filter(origId => !idsMantidos.includes(origId));
+
+          for (const item of atuaisComId) {
+            const { error: chkUpErr } = await sb.from('atividade_checklists_ed')
+              .update({ descricao: item.descricao, concluido: item.concluido })
+              .eq('id', item.id);
+            if (chkUpErr) throw chkUpErr;
+          }
+
+          if (novosSemId.length > 0) {
+            const { error: chkInsErr } = await sb.from('atividade_checklists_ed').insert(
+              novosSemId.map(c => ({ atividade_id: id, descricao: c.descricao, concluido: c.concluido }))
+            );
+            if (chkInsErr) throw chkInsErr;
+          }
+
+          if (idsRemovidos.length > 0) {
+            const { error: chkDelErr } = await sb.from('atividade_checklists_ed').delete().in('id', idsRemovidos);
+            if (chkDelErr) throw chkDelErr;
+          }
+
+          showToast('Atividade atualizada com sucesso!', 'success');
+        } else {
+          const { data: novaAtiv, error: insError } = await sb.from('atividades_ed').insert([payload]).select().single();
+          if (insError) throw insError;
+
+          if (novaAtiv && tempChecklist.length > 0) {
+            const { error: chkErr } = await sb.from('atividade_checklists_ed').insert(
+              tempChecklist.map(c => ({ atividade_id: novaAtiv.id, descricao: c.descricao, concluido: c.concluido }))
+            );
+            if (chkErr) throw chkErr;
+          }
+          showToast('Atividade criada com sucesso!', 'success');
+        }
+
+        closeAtividadeModal();
+        await populateStatusSelect();
+    carregarDadosDoBanco();
+      } catch (err) {
+        console.error('Erro ao salvar atividade:', err);
+        showToast('Erro ao salvar: ' + err.message, 'error');
+      } finally {
+        btnSalvar.disabled = false;
+        btnSalvar.innerText = 'Salvar Atividade';
+      }
     }
 
-    async function deleteAtividade() {
+    function confirmDeleteAtividade() {
       const id = document.getElementById('editId').value;
-      if (!id || !confirm('Tem certeza que deseja excluir esta atividade?')) return;
-      
-      await sb.from('atividades_ed').delete().eq('id', id);
-      closeAtividadeModal();
-      carregarDadosDoBanco();
+      if (!id) return;
+      document.getElementById('confirmMessage').innerText = 'Tem certeza que deseja excluir esta atividade? Esta ação não pode ser desfeita.';
+      document.getElementById('confirmActionBtn').onclick = () => deleteAtividade(id);
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
     }
 
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirmModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function deleteAtividade(id) {
+      closeConfirmModal();
+      const { error } = await sb.from('atividades_ed').delete().eq('id', id);
+      if (error) {
+        showToast('Erro ao excluir atividade: ' + error.message, 'error');
+        return;
+      }
+      showToast('Atividade excluída.', 'info');
+      closeAtividadeModal();
+      populateStatusSelect();
+    carregarDadosDoBanco();
+    }
+
+    /* =========================================================================
+       6) CHECKLIST
+       ========================================================================= */
     function renderChecklist() {
       const ul = document.getElementById('checklistContainer');
       if (tempChecklist.length === 0) {
@@ -674,9 +1144,9 @@
         <li class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
           <label class="flex items-center gap-2.5 cursor-pointer flex-1 text-sm ${item.concluido ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}">
             <input type="checkbox" ${item.concluido ? 'checked' : ''} onchange="toggleChecklist(${idx})" class="w-4 h-4 text-blue-600 rounded">
-            ${item.descricao}
+            ${escapeHTML(item.descricao)}
           </label>
-          <button type="button" onclick="removeChecklist(${idx})" class="text-slate-400 hover:text-red-500 text-xs px-2">
+          <button type="button" onclick="removeChecklist(${idx})" aria-label="Remover etapa" class="text-slate-400 hover:text-red-500 text-xs px-2">
             <i class="fa-solid fa-trash"></i>
           </button>
         </li>
@@ -712,6 +1182,9 @@
       renderChecklist();
     }
 
+    /* =========================================================================
+       7) MODAL DE PROJETO
+       ========================================================================= */
     function openProjetoModal() {
       document.getElementById('projNome').value = '';
       document.getElementById('projOs').value = '';
@@ -731,6 +1204,11 @@
       const tipo = document.getElementById('projTipo').value;
       const os = document.getElementById('projOs').value.trim();
       if (!nome) return;
+
+      if (!validarOS(os)) {
+        showToast('A O.S. deve conter exatamente 9 dígitos (000.000.000).', 'warning');
+        return;
+      }
       
       const { error } = await sb.from('projetos_ed').insert([{
         nome,
@@ -739,15 +1217,19 @@
       }]);
 
       if (error) {
-        alert('Erro ao criar projeto: ' + error.message);
+        showToast('Erro ao criar projeto: ' + error.message, 'error');
         return;
       }
 
+      showToast('Projeto criado com sucesso!', 'success');
       closeProjetoModal();
-      carregarDadosDoBanco();
+        closeStatusModal();
+      populateStatusSelect();
+    carregarDadosDoBanco();
     }
 
     // Inicialização ao carregar a página
+    populateStatusSelect();
     carregarDadosDoBanco();
   </script>
 </body>
