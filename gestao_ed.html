@@ -75,8 +75,8 @@
         <button onclick="openStatusModal()" title="Gerenciar Status / Colunas" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
           <i class="fa-solid fa-sliders"></i> Status
         </button>
-        <button onclick="openProjetoModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
-          <i class="fa-solid fa-folder-plus"></i> Novo Projeto
+        <button onclick="openProjetosManagerModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-folder-open"></i> Projetos / OS
         </button>
         <button onclick="openAtividadeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
           <i class="fa-solid fa-plus"></i> Nova Atividade
@@ -437,17 +437,51 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVO PROJETO -->
-  <div id="projetoModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <!-- MODAL: GERENCIADOR DE PROJETOS / OS (LISTAGEM IGUAL À IMAGEM) -->
+  <div id="projetosManagerModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+      
+      <!-- Cabeçalho Principal -->
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 dark:text-white">Projetos / OS</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Gerencie as ordens de serviço e projetos disponíveis.</p>
+        </div>
+        <button onclick="closeProjetosManagerModal()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sub-cabeçalho com botão + Novo -->
+      <div class="px-6 py-4 flex justify-between items-center border-b border-slate-100 dark:border-slate-800/60">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Projetos / OS cadastrados</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Lista disponível para a escolha dos solicitantes.</p>
+        </div>
+        <button onclick="openProjetoModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-plus"></i> Novo
+        </button>
+      </div>
+
+      <!-- Lista de Projetos -->
+      <div id="projetosListContainer" class="p-6 overflow-y-auto space-y-2.5 flex-1 bg-slate-50/50 dark:bg-slate-950">
+        <!-- Preenchido via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CRIAR / EDITAR PROJETO -->
+  <div id="projetoModal" role="dialog" aria-modal="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[55] p-4">
     <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-        <h2 class="text-lg font-bold">Novo Projeto</h2>
+        <h2 id="projModalTitle" class="text-lg font-bold">Novo Projeto</h2>
         <button onclick="closeProjetoModal()" aria-label="Fechar modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="saveProjeto(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editProjId">
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nome do Projeto *</label>
-          <input type="text" id="projNome" required placeholder="Ex: Proj. 01 - Pintura Base" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" id="projNome" required placeholder="Ex: Esteira Transportadora Fab7 - Fab8" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
@@ -458,11 +492,11 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">OS (000.000.000)</label>
-          <input type="text" id="projOs" maxlength="11" oninput="mascaraOS(this)" placeholder="705.000.001" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" id="projOs" maxlength="11" oninput="mascaraOS(this)" placeholder="704.698.253" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeProjetoModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
-          <button type="submit" class="px-5 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg">Criar Projeto</button>
+          <button type="submit" id="btnSalvarProj" class="px-5 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg">Salvar Projeto</button>
         </div>
       </form>
     </div>
@@ -547,10 +581,10 @@
     let atividades = [];
     let solicitantes = [];
     let tempChecklist = [];
-    let currentTab = 'desenho'; // 'desenho' | 'oficina' 
+    let currentTab = 'desenho'; // 'desenho' | 'oficina' | 'dashboard'
     let originalChecklistIds = [];
     let originalChecklistMap = {};
-    let pendingParalisado = null; // { id, oldStatus }
+    let pendingParalisado = null;
 
     /* =========================================================================
        UTILITÁRIOS DE SEGURANÇA (XSS), TOAST E TEMA
@@ -618,6 +652,7 @@
       if (e.key === 'Escape') {
         closeAtividadeModal();
         closeProjetoModal();
+        closeProjetosManagerModal();
         closeStatusModal();
         closeConfirmModal();
         if (!document.getElementById('paralisadoModal').classList.contains('hidden')) {
@@ -761,7 +796,6 @@
 
       filterSel.innerHTML = '<option value="">Todos Solicitantes</option>';
       
-      // Select da modal com opção especial no final para adicionar novo
       ativSel.innerHTML = `
         <option value="">Selecione o solicitante...</option>
         <option value="__NOVO__" class="font-bold text-blue-600 dark:text-blue-400">+ Adicionar Novo Solicitante...</option>
@@ -780,7 +814,7 @@
 
     function verificarNovoSolicitanteSelect(selectEl) {
       if (selectEl.value === '__NOVO__') {
-        selectEl.value = ''; // Reseta temporariamente
+        selectEl.value = '';
         promptNovoSolicitante();
       }
     }
@@ -805,7 +839,6 @@
       solicitantes.sort((a, b) => a.nome.localeCompare(b.nome));
       populateSolicitanteSelects();
       
-      // Seleciona automaticamente o recém-criado na modal
       document.getElementById('ativSolicitante').value = nomeLimpo;
       showToast('Solicitante cadastrado com sucesso!', 'success');
     }
@@ -869,11 +902,182 @@
       projetos.forEach(p => {
         const label = `${escapeHTML(p.nome)} (${escapeHTML(p.tipo)})`;
         filterSelect.innerHTML += `<option value="${escapeHTML(p.id)}">${label}</option>`;
-        modalSelect.innerHTML += `<option value="${escapeHTML(p.id)}">${label}</option>`;
+        if (p.ativo !== false) {
+          modalSelect.innerHTML += `<option value="${escapeHTML(p.id)}">${label}</option>`;
+        }
       });
       filterSelect.value = currentFilter;
     }
 
+    /* =========================================================================
+       GERENCIADOR DE PROJETOS / OS (EDITAR, DESATIVAR, EXCLUIR)
+       ========================================================================= */
+    function openProjetosManagerModal() {
+      renderProjetosManagerList();
+      const modal = document.getElementById('projetosManagerModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeProjetosManagerModal() {
+      const modal = document.getElementById('projetosManagerModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderProjetosManagerList() {
+      const container = document.getElementById('projetosListContainer');
+      if (projetos.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Nenhum projeto cadastrado.</p>';
+        return;
+      }
+
+      container.innerHTML = projetos.map(p => {
+        const isAtivo = p.ativo !== false;
+        const tituloLinha = p.os 
+          ? `<span class="font-bold text-slate-900 dark:text-white">OS ${escapeHTML(p.os)}</span> <span class="text-slate-400 mx-1">—</span> <span class="text-slate-700 dark:text-slate-300">${escapeHTML(p.nome)}</span>`
+          : `<span class="font-bold text-slate-900 dark:text-white">${escapeHTML(p.nome)}</span>`;
+        
+        const statusTexto = isAtivo
+          ? `<span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Disponível para o solicitante</span>`
+          : `<span class="text-xs font-medium text-slate-400 dark:text-slate-500">Desativado (oculto para novos lançamentos)</span>`;
+
+        return `
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900/90 px-4 py-3.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm ${!isAtivo ? 'opacity-65' : ''}">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm truncate">${tituloLinha}</div>
+              <div class="mt-0.5 flex items-center gap-2">
+                ${statusTexto}
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">${escapeHTML(p.tipo || 'Projeto')}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button type="button" onclick="openProjetoModal('${escapeHTML(p.id)}')" class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                Editar
+              </button>
+              <button type="button" onclick="toggleProjetoAtivo('${escapeHTML(p.id)}')" class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                ${isAtivo ? 'Desativar' : 'Ativar'}
+              </button>
+              <button type="button" onclick="confirmDeleteProjeto('${escapeHTML(p.id)}')" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-600 hover:bg-red-500 text-white transition">
+                Excluir
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openProjetoModal(id = null) {
+      document.getElementById('editProjId').value = id || '';
+      if (id) {
+        const p = projetos.find(item => item.id === id);
+        if (!p) return;
+        document.getElementById('projModalTitle').innerText = 'Editar Projeto / OS';
+        document.getElementById('projNome').value = p.nome || '';
+        document.getElementById('projTipo').value = p.tipo || 'Projeto';
+        document.getElementById('projOs').value = p.os || '';
+      } else {
+        document.getElementById('projModalTitle').innerText = 'Novo Projeto / OS';
+        document.getElementById('projNome').value = '';
+        document.getElementById('projOs').value = '';
+        document.getElementById('projTipo').value = 'Projeto';
+      }
+      document.getElementById('projetoModal').classList.remove('hidden');
+      document.getElementById('projetoModal').classList.add('flex');
+    }
+    
+    function closeProjetoModal() {
+      document.getElementById('projetoModal').classList.add('hidden');
+      document.getElementById('projetoModal').classList.remove('flex');
+    }
+
+    async function saveProjeto(e) {
+      e.preventDefault();
+      const id = document.getElementById('editProjId').value;
+      const nome = document.getElementById('projNome').value.trim();
+      const tipo = document.getElementById('projTipo').value;
+      const os = document.getElementById('projOs').value.trim();
+      if (!nome) return;
+
+      if (!validarOS(os)) {
+        showToast('A O.S. deve conter exatamente 9 dígitos (000.000.000).', 'warning');
+        return;
+      }
+
+      const payload = { nome, tipo, os: os || null };
+
+      if (id) {
+        const { error } = await sb.from('projetos_ed').update(payload).eq('id', id);
+        if (error) {
+          showToast('Erro ao atualizar projeto: ' + error.message, 'error');
+          return;
+        }
+        const idx = projetos.findIndex(p => p.id === id);
+        if (idx > -1) projetos[idx] = { ...projetos[idx], ...payload };
+        showToast('Projeto atualizado com sucesso!', 'success');
+      } else {
+        const { data, error } = await sb.from('projetos_ed').insert([{ ...payload, ativo: true }]).select().single();
+        if (error) {
+          showToast('Erro ao criar projeto: ' + error.message, 'error');
+          return;
+        }
+        if (data) projetos.unshift(data);
+        showToast('Projeto criado com sucesso!', 'success');
+      }
+
+      closeProjetoModal();
+      populateProjectSelects();
+      renderProjetosManagerList();
+      renderBoard();
+    }
+
+    async function toggleProjetoAtivo(id) {
+      const idx = projetos.findIndex(p => p.id === id);
+      if (idx === -1) return;
+      const novoAtivo = projetos[idx].ativo === false ? true : false;
+
+      const { error } = await sb.from('projetos_ed').update({ ativo: novoAtivo }).eq('id', id);
+      if (error) {
+        showToast('Erro ao alterar status do projeto: ' + error.message, 'error');
+        return;
+      }
+
+      projetos[idx].ativo = novoAtivo;
+      populateProjectSelects();
+      renderProjetosManagerList();
+      showToast(novoAtivo ? 'Projeto ativado!' : 'Projeto desativado!', 'info');
+    }
+
+    function confirmDeleteProjeto(id) {
+      const emUso = atividades.some(a => a.projeto_id === id);
+      if (emUso) {
+        showToast('Este projeto possui atividades vinculadas. Desative-o ou exclua as atividades antes.', 'warning');
+        return;
+      }
+      document.getElementById('confirmMessage').innerText = 'Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.';
+      document.getElementById('confirmActionBtn').onclick = () => deleteProjeto(id);
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    async function deleteProjeto(id) {
+      closeConfirmModal();
+      const { error } = await sb.from('projetos_ed').delete().eq('id', id);
+      if (error) {
+        showToast('Erro ao excluir projeto: ' + error.message, 'error');
+        return;
+      }
+      projetos = projetos.filter(p => p.id !== id);
+      populateProjectSelects();
+      renderProjetosManagerList();
+      renderBoard();
+      showToast('Projeto excluído.', 'info');
+    }
+
+    /* =========================================================================
+       FILTROS, KANBAN E DASHBOARD
+       ========================================================================= */
     function limparFiltros() {
       document.getElementById('filterBusca').value = '';
       document.getElementById('filterTipo').value = '';
@@ -1708,47 +1912,6 @@
         }
       });
       renderChecklist();
-    }
-
-    function openProjetoModal() {
-      document.getElementById('projNome').value = '';
-      document.getElementById('projOs').value = '';
-      document.getElementById('projTipo').value = 'Projeto';
-      document.getElementById('projetoModal').classList.remove('hidden');
-      document.getElementById('projetoModal').classList.add('flex');
-    }
-    
-    function closeProjetoModal() {
-      document.getElementById('projetoModal').classList.add('hidden');
-      document.getElementById('projetoModal').classList.remove('flex');
-    }
-
-    async function saveProjeto(e) {
-      e.preventDefault();
-      const nome = document.getElementById('projNome').value.trim();
-      const tipo = document.getElementById('projTipo').value;
-      const os = document.getElementById('projOs').value.trim();
-      if (!nome) return;
-
-      if (!validarOS(os)) {
-        showToast('A O.S. deve conter exatamente 9 dígitos (000.000.000).', 'warning');
-        return;
-      }
-      
-      const { error } = await sb.from('projetos_ed').insert([{
-        nome,
-        tipo,
-        os: os || null
-      }]);
-
-      if (error) {
-        showToast('Erro ao criar projeto: ' + error.message, 'error');
-        return;
-      }
-
-      showToast('Projeto criado com sucesso!', 'success');
-      closeProjetoModal();
-      carregarDadosDoBanco();
     }
 
     populateStatusSelect();
