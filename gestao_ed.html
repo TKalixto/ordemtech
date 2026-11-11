@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão de Atividades - Kanban</title>
+  <title>Gestão Escritório de Desenhos - Kanban de Projetos</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -97,7 +97,7 @@
         <option value="Demanda de fábrica">Demanda de fábrica</option>
       </select>
 
-      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[260px] truncate">
+      <select id="filterProjeto" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[220px] truncate">
         <option value="">Todos os Projetos</option>
       </select>
 
@@ -114,11 +114,8 @@
         <option value="Tienio Andrade">Tienio Andrade</option>
       </select>
 
-      <select id="filterPrioridade" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
-        <option value="">Todas Prioridades</option>
-        <option value="Alta">Alta</option>
-        <option value="Média">Média</option>
-        <option value="Baixa">Baixa</option>
+      <select id="filterSolicitante" onchange="renderBoard()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[200px] truncate">
+        <option value="">Todos Solicitantes</option>
       </select>
 
       <button type="button" onclick="limparFiltros()" title="Limpar filtros" class="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-1 ml-auto">
@@ -207,19 +204,19 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-gears text-amber-500"></i> Demanda por Processo
+          <i class="fa-solid fa-user-tie text-blue-500"></i> Atividades por Solicitante
         </h3>
         <div class="h-56">
-          <canvas id="chartProcessos"></canvas>
+          <canvas id="chartSolicitante"></canvas>
         </div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-flag text-rose-500"></i> Distribuição por Prioridade
+          <i class="fa-solid fa-gears text-amber-500"></i> Demanda por Processo
         </h3>
         <div class="h-56">
-          <canvas id="chartPrioridade"></canvas>
+          <canvas id="chartProcessos"></canvas>
         </div>
       </div>
 
@@ -290,8 +287,15 @@
             </div>
 
             <div class="md:col-span-4">
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Solicitante</label>
-              <input type="text" id="ativSolicitante" placeholder="Nome do solicitante" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between items-center">
+                <span>Solicitante</span>
+                <button type="button" onclick="promptNovoSolicitante()" class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-normal">
+                  <i class="fa-solid fa-plus"></i> Novo Solicitante
+                </button>
+              </label>
+              <select id="ativSolicitante" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" onchange="verificarNovoSolicitanteSelect(this)">
+                <option value="">Selecione o solicitante...</option>
+              </select>
             </div>
             <div class="md:col-span-4">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo</label>
@@ -523,7 +527,7 @@
         <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
         <h3 class="text-base font-bold">Confirmar Exclusão</h3>
       </div>
-      <p id="confirmMessage" class="text-sm text-slate-600 dark:text-slate-300">Tem certeza que deseja excluir esta atividade?</p>
+      <p id="confirmMessage" class="text-sm text-slate-600 dark:text-slate-300">Tem certeza que deseja excluir este item?</p>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
         <button type="button" id="confirmActionBtn" class="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg">Excluir</button>
@@ -541,6 +545,7 @@
 
     let projetos = [];
     let atividades = [];
+    let solicitantes = [];
     let tempChecklist = [];
     let currentTab = 'desenho'; // 'desenho' | 'oficina' 
     let originalChecklistIds = [];
@@ -609,7 +614,6 @@
 
     initTheme();
 
-    // Fechar modais com ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeAtividadeModal();
@@ -714,7 +718,6 @@
       }
       const oldId = atual.id;
       atual.id = nomeLimpo;
-      // Atualiza atividades que estavam nesse status no banco e na memória
       atividades.forEach(a => { if (a.status === oldId) a.status = nomeLimpo; });
       await sb.from('atividades_ed').update({ status: nomeLimpo }).eq('status', oldId);
       salvarColunasLocal();
@@ -746,6 +749,67 @@
       showToast('Status restaurados para o padrão.', 'info');
     }
 
+    /* =========================================================================
+       GERENCIAMENTO INTEGRADO DE SOLICITANTES NO SELECT
+       ========================================================================= */
+    function populateSolicitanteSelects() {
+      const filterSel = document.getElementById('filterSolicitante');
+      const ativSel = document.getElementById('ativSolicitante');
+      
+      const currentFilterVal = filterSel.value;
+      const currentAtivVal = ativSel.value;
+
+      filterSel.innerHTML = '<option value="">Todos Solicitantes</option>';
+      
+      // Select da modal com opção especial no final para adicionar novo
+      ativSel.innerHTML = `
+        <option value="">Selecione o solicitante...</option>
+        <option value="__NOVO__" class="font-bold text-blue-600 dark:text-blue-400">+ Adicionar Novo Solicitante...</option>
+        <option disabled>------------------------</option>
+      `;
+
+      solicitantes.forEach(s => {
+        const esc = escapeHTML(s.nome);
+        filterSel.innerHTML += `<option value="${esc}">${esc}</option>`;
+        ativSel.innerHTML += `<option value="${esc}">${esc}</option>`;
+      });
+
+      filterSel.value = currentFilterVal;
+      ativSel.value = currentAtivVal;
+    }
+
+    function verificarNovoSolicitanteSelect(selectEl) {
+      if (selectEl.value === '__NOVO__') {
+        selectEl.value = ''; // Reseta temporariamente
+        promptNovoSolicitante();
+      }
+    }
+
+    async function promptNovoSolicitante() {
+      const nomeNovo = prompt('Digite o nome do novo solicitante (padronizado):');
+      if (!nomeNovo || !nomeNovo.trim()) return;
+      const nomeLimpo = nomeNovo.trim();
+
+      if (solicitantes.some(s => s.nome.toLowerCase() === nomeLimpo.toLowerCase())) {
+        showToast('Já existe um solicitante com este nome.', 'warning');
+        return;
+      }
+
+      const { data, error } = await sb.from('solicitantes_ed').insert([{ nome: nomeLimpo }]).select().single();
+      if (error) {
+        showToast('Erro ao cadastrar solicitante: ' + error.message, 'error');
+        return;
+      }
+
+      solicitantes.push(data);
+      solicitantes.sort((a, b) => a.nome.localeCompare(b.nome));
+      populateSolicitanteSelects();
+      
+      // Seleciona automaticamente o recém-criado na modal
+      document.getElementById('ativSolicitante').value = nomeLimpo;
+      showToast('Solicitante cadastrado com sucesso!', 'success');
+    }
+
     function mascaraOS(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 9);
       if (v.length > 6) {
@@ -767,6 +831,13 @@
        ========================================================================= */
     async function carregarDadosDoBanco() {
       try {
+        const { data: solData, error: solError } = await sb.from('solicitantes_ed').select('*').order('nome', { ascending: true });
+        if (solError && solError.code !== '42P01') {
+          console.warn('Tabela solicitantes_ed pode não existir ainda:', solError.message);
+        }
+        solicitantes = solData || [];
+        populateSolicitanteSelects();
+
         const { data: projData, error: projError } = await sb.from('projetos_ed').select('*').order('created_at', { ascending: false });
         if (projError) throw projError;
         projetos = projData || [];
@@ -803,13 +874,12 @@
       filterSelect.value = currentFilter;
     }
 
-    
     function limparFiltros() {
       document.getElementById('filterBusca').value = '';
       document.getElementById('filterTipo').value = '';
       document.getElementById('filterProjeto').value = '';
       document.getElementById('filterDesenhista').value = '';
-      document.getElementById('filterPrioridade').value = '';
+      document.getElementById('filterSolicitante').value = '';
       renderBoard();
     }
 
@@ -818,7 +888,7 @@
       const fTipo = document.getElementById('filterTipo').value;
       const fProj = document.getElementById('filterProjeto').value;
       const fDes = document.getElementById('filterDesenhista').value;
-      const fPrio = document.getElementById('filterPrioridade').value;
+      const fSol = document.getElementById('filterSolicitante').value;
 
       return atividades.filter(a => {
         const proj = projetos.find(p => p.id === a.projeto_id);
@@ -828,7 +898,7 @@
         }
         if (fProj && a.projeto_id !== fProj) return false;
         if (fDes && a.desenhista !== fDes) return false;
-        if (fPrio && a.prioridade !== fPrio) return false;
+        if (fSol && a.solicitante !== fSol) return false;
         if (currentTab === 'oficina') {
           if (!a.corte_laser && !a.corte_dobra && !a.usinagem) return false;
         }
@@ -916,11 +986,9 @@
       const textColor = isDark ? '#cbd5e1' : '#475569';
       const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.2)';
 
-      // Destruir gráficos anteriores
       Object.values(chartInstances).forEach(c => c.destroy());
       chartInstances = {};
 
-      // 1. Gráfico Status: Desenho vs Oficina
       const labelsStatus = COLUNAS.map(c => c.id);
       const dataDesenho = labelsStatus.map(st => filtradas.filter(a => a.status === st).length);
       const dataOficina = labelsStatus.map(st => naOficina.filter(a => (a.status_oficina || 'Sem Programação') === st).length);
@@ -944,7 +1012,6 @@
         }
       });
 
-      // 2. Gráfico por Desenhista
       const desenhistasMap = {};
       filtradas.forEach(a => {
         const d = a.desenhista || 'A definir';
@@ -970,7 +1037,31 @@
         }
       });
 
-      // 3. Gráfico por Processo
+      const solicitanteMap = {};
+      filtradas.forEach(a => {
+        const s = a.solicitante || 'Não informado';
+        solicitanteMap[s] = (solicitanteMap[s] || 0) + 1;
+      });
+      const solLabels = Object.keys(solicitanteMap);
+      const solData = Object.values(solicitanteMap);
+
+      chartInstances.solicitante = new Chart(document.getElementById('chartSolicitante'), {
+        type: 'bar',
+        data: {
+          labels: solLabels,
+          datasets: [{ label: 'Atividades', data: solData, backgroundColor: '#0ea5e9', borderRadius: 4 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { display: false } }
+          }
+        }
+      });
+
       const procCounts = [
         filtradas.filter(a => a.corte_laser).length,
         filtradas.filter(a => a.corte_dobra).length,
@@ -988,25 +1079,6 @@
         }
       });
 
-      // 4. Gráfico por Prioridade
-      const prioCounts = [
-        filtradas.filter(a => a.prioridade === 'Alta').length,
-        filtradas.filter(a => a.prioridade === 'Média').length,
-        filtradas.filter(a => a.prioridade === 'Baixa').length
-      ];
-      chartInstances.prioridade = new Chart(document.getElementById('chartPrioridade'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Alta', 'Média', 'Baixa'],
-          datasets: [{ data: prioCounts, backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { color: textColor } } }
-        }
-      });
-
-      // 5. Pontos de Atenção
       const alertasEl = document.getElementById('dashAlertas');
       const itensAlerta = [...new Set([...paralisados, ...vencidos])];
       if (itensAlerta.length === 0) {
@@ -1026,7 +1098,6 @@
         }).join('');
       }
 
-      // 6. Tabela Resumo por Projeto
       const tbody = document.getElementById('dashTabelaProjetos');
       if (projetos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-4 text-center text-slate-400">Nenhum projeto cadastrado.</td></tr>';
@@ -1168,15 +1239,10 @@
               </span>
             ` : ''}
           </div>
-
-
         </div>
       `;
     }
 
-    /* =========================================================================
-       3) EXPORTAR PARA EXCEL (SHEETJS)
-       ========================================================================= */
     function exportarExcel() {
       const filtradas = getAtividadesFiltradas();
       if (filtradas.length === 0) {
@@ -1217,9 +1283,6 @@
       showToast("Planilha exportada com sucesso!", "success");
     }
 
-    /* =========================================================================
-       4) DRAG & DROP E MUDANÇA RÁPIDA DE STATUS COM ROLLBACK
-       ========================================================================= */
     let draggedId = null;
     function handleDragStart(e, id) {
       draggedId = id;
@@ -1239,10 +1302,6 @@
       await moverAtividadeStatus(id, novoStatus);
     }
 
-    async function quickChangeStatus(id, novoStatus) {
-      await moverAtividadeStatus(id, novoStatus);
-    }
-
     async function moverAtividadeStatus(id, novoStatus) {
       const idx = atividades.findIndex(a => a.id === id);
       if (idx === -1) return;
@@ -1250,7 +1309,6 @@
       const oldStatus = atividades[idx][campoStatus] || 'Sem Programação';
       if (oldStatus === novoStatus) return;
 
-      // Se mover para Paralisado, exige motivo
       if (novoStatus === 'Paralisado') {
         pendingParalisado = { id, oldStatus, campoStatus };
         document.getElementById('paralisadoMotivoInput').value = atividades[idx].followup || '';
@@ -1317,9 +1375,6 @@
       }
     }
 
-    /* =========================================================================
-       5) MODAL DE ATIVIDADE (CRIAR, EDITAR, EXCLUIR)
-       ========================================================================= */
     function openAtividadeModal(id = null) {
       const modal = document.getElementById('atividadeModal');
       const form = document.getElementById('atividadeForm');
@@ -1391,7 +1446,6 @@
       const status = document.getElementById('ativStatus').value;
       const followup = document.getElementById('ativFollowup').value.trim();
 
-      // Validações
       if (!validarOS(osVal)) {
         showToast('A O.S. deve conter exatamente 9 dígitos (000.000.000).', 'warning');
         return;
@@ -1416,7 +1470,7 @@
           projeto_id: document.getElementById('ativProjeto').value,
           titulo: document.getElementById('ativTitulo').value.trim(),
           quantidade: parseInt(document.getElementById('ativQtd').value) || 1,
-          solicitante: document.getElementById('ativSolicitante').value.trim(),
+          solicitante: document.getElementById('ativSolicitante').value,
           tipo: document.getElementById('ativTipo').value,
           prioridade: document.getElementById('ativPrioridade').value,
           corte_laser: document.getElementById('procLaser').checked,
@@ -1437,10 +1491,8 @@
           const idsMantidos = atuaisComId.map(c => c.id);
           const idsRemovidos = originalChecklistIds.filter(origId => !idsMantidos.includes(origId));
 
-          // Atualiza índice de ordem antes de comparar
           tempChecklist.forEach((c, idx) => { c.ordem = idx; });
 
-          // Só atualiza itens do checklist que realmente foram modificados
           const itensModificados = atuaisComId.filter(item => {
             const orig = originalChecklistMap[item.id];
             return !orig ||
@@ -1451,7 +1503,6 @@
               orig.ordem !== item.ordem;
           });
 
-          // Executa tudo em paralelo para máxima velocidade
           const promises = [
             sb.from('atividades_ed').update(payload).eq('id', id)
           ];
@@ -1499,7 +1550,6 @@
           const firstError = results.find(r => r && r.error);
           if (firstError) throw firstError.error;
 
-          // Atualiza apenas o card na memória local (sem recarregar o banco todo)
           const idx = atividades.findIndex(a => a.id === id);
           if (idx > -1) {
             const outrosSetores = (atividades[idx].checklist || []).filter(c => (c.setor || 'desenho') !== currentTab);
@@ -1579,9 +1629,6 @@
       renderBoard();
     }
 
-    /* =========================================================================
-       6) CHECKLIST
-       ========================================================================= */
     function renderChecklist() {
       const ul = document.getElementById('checklistContainer');
       if (tempChecklist.length === 0) {
@@ -1663,9 +1710,6 @@
       renderChecklist();
     }
 
-    /* =========================================================================
-       7) MODAL DE PROJETO
-       ========================================================================= */
     function openProjetoModal() {
       document.getElementById('projNome').value = '';
       document.getElementById('projOs').value = '';
@@ -1704,12 +1748,9 @@
 
       showToast('Projeto criado com sucesso!', 'success');
       closeProjetoModal();
-        closeStatusModal();
-      populateStatusSelect();
-    carregarDadosDoBanco();
+      carregarDadosDoBanco();
     }
 
-    // Inicialização ao carregar a página
     populateStatusSelect();
     carregarDadosDoBanco();
   </script>
