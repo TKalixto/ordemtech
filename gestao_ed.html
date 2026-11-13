@@ -1915,7 +1915,9 @@
     }
 
     populateStatusSelect();
-    carregarDadosDoBanco();
+    carregarDadosDoBanco().then(()=>{
+      if(location.hash === '#projetos-os') openProjetosManagerModal();
+    });
   </script>
 </body>
 </html>
