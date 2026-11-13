@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão CIMA</title>
+<title>Gestão ED+Oficina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -186,7 +186,7 @@
   <header class="flex items-center justify-between px-3 sm:px-6 py-3.5 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
     <div class="flex items-center gap-2 min-w-0">
       <svg class="brand-top" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
+      <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão ED+Oficina</span>
       <span id="role-badge" class="ml-2 text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--line)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -413,8 +413,18 @@ let projectsCache = [];
    2) HELPERS GERAIS
    ========================================================================= */
 function $(id){ return document.getElementById(id); }
-function clearChannels(){ activeChannels.forEach(c => sb.removeChannel(c)); activeChannels = []; }
-function closeModal(id){ $(id).classList.add('hidden'); }
+function clearChannels(){ refreshView = null; activeChannels.forEach(c => sb.removeChannel(c)); activeChannels = []; }
+const dirtyForms = new Set();
+document.addEventListener('input', e=>{
+  const form = e.target.closest('form');
+  if(form && form.closest('.modal-backdrop')) dirtyForms.add(form);
+});
+window.addEventListener('beforeunload', e=>{
+  if([...dirtyForms].some(form=>form.isConnected && form.getClientRects().length)){
+    e.preventDefault(); e.returnValue = '';
+  }
+});
+function closeModal(id){ $(id).querySelectorAll('form').forEach(form=>dirtyForms.delete(form)); $(id).classList.add('hidden'); }
 function openModal(id){ $(id).classList.remove('hidden'); }
 document.querySelectorAll('[data-close-modal]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.closeModal));
@@ -457,7 +467,7 @@ function showError(id, error){
     <p class="text-sm font-medium" style="color:var(--red)">Não foi possível carregar os dados.</p>
     <p class="text-xs mt-1" style="color:var(--muted)">${escapeHtml((error && error.message) || '')}</p>
     <button type="button" class="retry-btn mt-3 px-3 py-1.5 rounded-lg border text-sm hover:bg-white/5" style="border-color:var(--line)">Tentar de novo</button></div>`;
-  el.querySelector('.retry-btn').onclick = () => location.reload();
+  el.querySelector('.retry-btn').onclick = () => refreshView?.();
 }
 function prazoTxt(o){
   if(!o.deadline) return '—';
@@ -472,7 +482,7 @@ function prazoTxt(o){
   return base;
 }
 function cardTitleHTML(o){
-  const piece = `${escapeHtml(o.pieceName)} <span class="text-xs font-normal" style="color:var(--muted)">(qtd ${o.quantity})</span>`;
+  const piece = `${escapeHtml(o.pieceName)} <span class="text-xs font-normal" style="color:var(--muted)">(qtd ${escapeHtml(o.quantity)})</span>`;
   if(!o.osNumber) return piece;
   const head = `OS ${escapeHtml(o.osNumber)}${o.project ? ' — ' + escapeHtml(o.project) : ''}`;
   return `${head}<span class="block text-xs font-normal mt-0.5" style="color:var(--muted)">${piece}</span>`;
@@ -520,7 +530,7 @@ function normalizeOrder(row){
     currentStepIndex: row.current_step_index,
     currentMachine: row.current_machine,
     osNumber: row.os_number, project: row.project, material: row.material, urgent: !!row.urgent, queueOrder: row.queue_order,
-    items: Array.isArray(row.items) ? row.items : [],
+    items: Array.isArray(row.items) ? row.items.filter(Boolean).map(it => ({...it, quantity: Number(it.quantity) || 0})) : [],
     createdAt: row.created_at,
     routing: (row.order_routing || []).slice().sort((a,b)=> a.step_index - b.step_index)
       .map(r => ({ id:r.id, machine:r.machine, status:r.status, startedAt:r.started_at, finishedAt:r.finished_at })),
@@ -540,7 +550,7 @@ function receiptOf(o){ return (o.history || []).find(h => h.action === 'recebime
 function receiptHTML(o){
   if(o.status !== 'concluido') return '';
   const r = receiptOf(o);
-  return r ? `<p class="text-sm font-medium" style="color:var(--green)">✔ Recebimento confirmado por ${r.byName} em ${fmtDateTime(r.at)}</p>`
+  return r ? `<p class="text-sm font-medium" style="color:var(--green)">✔ Recebimento confirmado por ${escapeHtml(r.byName)} em ${fmtDateTime(r.at)}</p>`
            : `<p class="text-sm font-medium" style="color:var(--amber)">Aguardando confirmação de recebimento pelo solicitante.</p>`;
 }
 function statsOf(orders){
@@ -571,7 +581,7 @@ function itemsListHTML(o){
   const items = (o.items && o.items.length) ? o.items : [];
   if(items.length <= 1) return '';
   return `<div class="mt-3 space-y-1.5 pl-3 border-l-2" style="border-color:var(--line)">` +
-    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)" class="font-medium">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${it.quantity}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
+    items.map((it, i) => `<p class="text-xs" style="color:var(--muted)">Peça ${i + 1}: <span style="color:var(--text)" class="font-medium">${escapeHtml(it.name || '(sem nome)')}</span> — qtd ${escapeHtml(it.quantity)}${it.material ? ` — ${escapeHtml(it.material)}` : ''}</p>`).join('') +
     `</div>`;
 }
 function metaLine(o, inCard){
@@ -640,7 +650,7 @@ function stepperHTML(order){
     return `<div class="flex items-center">
         <div class="flex flex-col items-center gap-1">
           <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="${circleStyle}">${i+1}</div>
-          <span class="text-xs text-center font-medium leading-tight max-w-[80px]" style="color:${current?'var(--text)':done?'var(--text)':'var(--muted)'}">${step.machine}</span>
+          <span class="text-xs text-center font-medium leading-tight max-w-[80px]" style="color:${current?'var(--text)':done?'var(--text)':'var(--muted)'}">${escapeHtml(step.machine)}</span>
         </div>
         ${line}
       </div>`;
@@ -653,21 +663,29 @@ function historyHTML(order){
     <div class="flex gap-3 text-sm">
       <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:var(--amber)"></div>
       <div>
-        <p><span class="font-medium">${escapeHtml(h.byName)}</span> <span style="color:var(--muted)">(${roleLabel(h.byRole)})</span> — ${escapeHtml(h.detail)}</p>
+        <p><span class="font-medium">${escapeHtml(h.byName)}</span> <span style="color:var(--muted)">(${escapeHtml(roleLabel(h.byRole))})</span> — ${escapeHtml(h.detail)}</p>
         <p class="text-xs mt-0.5" style="color:var(--muted)">${fmtDateTime(h.at)}</p>
       </div>
     </div>`).join('') + `</div>`;
 }
 
+function allowedAttachmentURL(value){
+  try {
+    const url = new URL(value);
+    if(url.origin === new URL(SUPABASE_URL).origin && !url.username && !url.password &&
+       url.pathname.startsWith('/storage/v1/object/public/attachments/')) return url.href;
+  } catch {}
+  return '';
+}
 function attachmentsHTML(order){
   if(!order.attachments || order.attachments.length === 0) return '<p class="text-sm" style="color:var(--muted)">Nenhum anexo.</p>';
-  return `<ul class="space-y-2">` + order.attachments.map(a => `
+  return `<ul class="space-y-2">` + order.attachments.map(a => !allowedAttachmentURL(a.url) ? `<li>${escapeHtml(a.name)} · Link de arquivo inválido</li>` : `
     <li class="text-sm flex items-center justify-between card px-3.5 py-2.5">
       <span class="flex items-center truncate">${isImage(a) ? `<img src="${escapeHtml(a.url)}" loading="lazy" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" onerror="this.remove()" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:zoom-in;margin-right:10px" class="shrink-0 border border-white/10">` : ''}<span class="truncate">${isPhoto(a) ? '📷 Foto de conclusão —' : '📎'} ${escapeHtml(a.name)}</span> <span class="text-xs ml-2 shrink-0 hidden sm:inline" style="color:var(--muted)">— por ${escapeHtml(a.uploadedBy)}</span></span>
       <span class="flex items-center gap-2 shrink-0 ml-2">
         ${isImage(a) ? `<button type="button" data-img="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Ver</button>` : ''}
         ${/\.dxf$/i.test(a.name) ? `<button type="button" data-dxf="${escapeHtml(a.url)}" data-title="${escapeHtml(a.name)}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--blue);color:#fff">Prévia</button>` : ''}
-        <a href="${a.url}" target="_blank" class="text-xs px-2.5 py-1 rounded-md font-medium border" style="background:var(--surface-2);border-color:var(--line)">Baixar</a>
+        <a href="${escapeHtml(allowedAttachmentURL(a.url))}" rel="noopener noreferrer" target="_blank" class="text-xs px-2.5 py-1 rounded-md font-medium border" style="background:var(--surface-2);border-color:var(--line)">Baixar</a>
         ${canDeleteAttachment(order, a) ? `<button type="button" data-del-attach="${a.id}" data-attach-order="${order.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>` : ''}
       </span>
     </li>`).join('') + `</ul>`;
@@ -769,7 +787,7 @@ document.addEventListener('click', async (ev)=>{
     if(!data || data.length === 0) throw new Error('sem permissão para excluir.');
     const path = decodeURIComponent((data[0].url.split('/attachments/')[1] || ''));
     if(path) await sb.storage.from('attachments').remove([path]);
-    await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`));
+    await sb.from('order_history').insert(historyRow(btn.dataset.attachOrder, 'anexo_excluido', `Solicitante excluiu o anexo "${data[0].name}".`)).throwOnError();
     if(li) li.remove();
   }catch(ex){
     notify('Erro ao excluir anexo: ' + ex.message);
@@ -783,9 +801,9 @@ function openDetailModal(order){
     <div class="flex items-start justify-between gap-3">
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitado por ${escapeHtml(order.requesterName)} · Qtd: ${escapeHtml(order.quantity)} · Prazo: ${prazoTxt(order)}</p>
       </div>
-      <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
+      <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${escapeHtml(s.label)}</span>
     </div>
     ${metaLine(order)}${itemsListHTML(order)}
     <p class="text-sm leading-relaxed">${escapeHtml(order.description || '')}</p>
@@ -834,7 +852,11 @@ $('signup-form').addEventListener('submit', async (e)=>{
     const { data, error } = await sb.auth.signUp({ email, password });
     if(error) throw error;
     if(!data.user) throw new Error('Confirme seu e-mail e depois faça login.');
-    await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
+    const profileResult = await sb.from('profiles').insert({ id: data.user.id, name, email, role: 'pendente' });
+    if(profileResult.error && profileResult.error.code !== '23505'){
+      throw new Error('Conta registrada. Confira a confirmação por e-mail e peça ao administrador para verificar o perfil antes de tentar outro cadastro.');
+    }
+    notify('Cadastro recebido. Aguarde a liberação do administrador.');
     e.target.reset();
   }catch(ex){
     err.textContent = 'Erro ao criar conta: ' + ex.message;
@@ -847,17 +869,21 @@ $('signup-form').addEventListener('submit', async (e)=>{
 $('logout-btn').addEventListener('click', ()=> sb.auth.signOut());
 $('pending-logout').addEventListener('click', ()=> sb.auth.signOut());
 
+let sessionVersion = 0;
 async function handleSession(session){
+  const version = ++sessionVersion;
   clearChannels();
   document.title = BASE_TITLE;
   if(!session){
     currentUser = null;
+    if(bellChannel){ sb.removeChannel(bellChannel); bellChannel = null; }
     $('app-shell').classList.add('hidden');
     $('pending-screen').classList.add('hidden');
     $('login-screen').classList.remove('hidden');
     return;
   }
   const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if(version !== sessionVersion) return;
   if(error || !profile){
     notify('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
     sb.auth.signOut();
@@ -867,7 +893,11 @@ async function handleSession(session){
 
   $('login-screen').classList.add('hidden');
   if(currentUser.role === 'pendente'){
+    $('app-shell').classList.add('hidden');
     $('pending-screen').classList.remove('hidden');
+    const pending = sb.channel('pending-' + profile.id)
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'profiles', filter:'id=eq.' + profile.id}, ()=>handleSession(session)).subscribe();
+    activeChannels.push(pending);
     return;
   }
   $('pending-screen').classList.add('hidden');
@@ -879,8 +909,11 @@ async function handleSession(session){
   routeToDashboard();
 }
 
-sb.auth.onAuthStateChange((_event, session)=> handleSession(session));
-sb.auth.getSession().then(({ data })=> handleSession(data.session));
+sb.auth.onAuthStateChange((event, session)=>{
+  if(session && currentUser?.id === session.user.id && currentUser.role !== 'pendente' &&
+     (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) return;
+  setTimeout(()=>handleSession(session), 0);
+});
 
 function routeToDashboard(){
   if(currentUser.role === 'solicitante') renderSolicitante();
@@ -889,17 +922,31 @@ function routeToDashboard(){
   else $('main-content').innerHTML = '<p>Perfil não reconhecido.</p>';
 }
 
+let refreshView = null;
 function liveRefresh(channelName, fetchFn){
-  fetchFn();
-  const channel = sb.channel(channelName)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_routing' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_attachments' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_history' }, fetchFn)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'almoxarifado' }, fetchFn)
-    .subscribe();
+  let busy = false, again = false;
+  async function refresh(){
+    if(refreshView !== refresh) return;
+    if(busy){ again = true; return; }
+    busy = true;
+    try { await fetchFn(); }
+    catch(error){ if(refreshView === refresh) notify('Falha ao atualizar: ' + error.message); }
+    finally {
+      busy = false;
+      if(again){ again = false; queueMicrotask(refresh); }
+    }
+  }
+  refreshView = refresh;
+  refresh();
+  const tables = channelName === 'admin-projetos' ? ['projects'] :
+    channelName === 'admin-usuarios' ? ['profiles'] : ['orders','order_routing','order_attachments','order_history'];
+  const channel = sb.channel(channelName);
+  for(const table of tables) channel.on('postgres_changes', {event:'*', schema:'public', table}, refresh);
+  channel.subscribe(status=>{ if(status === 'SUBSCRIBED') refresh(); });
   activeChannels.push(channel);
 }
+window.addEventListener('online', ()=>refreshView?.());
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshView?.(); });
 
 /* ============ Sino de notificação ============ */
 function goAdminTab(tab){
@@ -913,7 +960,7 @@ async function refreshBell(){
   const dot = $('bell-dot'), txt = count > 99 ? '99+' : String(count);
   if(count > 0){ dot.textContent = txt; dot.classList.remove('hidden'); }
   else dot.classList.add('hidden');
-  const nc = $('nav-count-fila');
+  const nc = $('nav-fila-count');
   if(nc){ nc.textContent = txt; nc.classList.toggle('hidden', !(count > 0)); }
   document.title = count > 0 ? `(${count}) ${BASE_TITLE}` : BASE_TITLE;
 }
@@ -988,13 +1035,13 @@ function renderSolicitante(container = $('main-content')){
     }
     list.innerHTML = orders.map(o=>{
       const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':'s.color'}" data-order-id="${o.id}">
+      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium text-base">${cardTitleHTML(o)}</p>
             <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${escapeHtml(s.label)}</span>
         </div>
         <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
@@ -1022,6 +1069,7 @@ $('new-order-form').addEventListener('submit', async (e)=>{
   err.classList.add('hidden');
   if($('order-deadline').value < new Date().toLocaleDateString('sv-SE')){ err.textContent = 'O prazo não pode ser uma data que já passou.'; err.classList.remove('hidden'); return; }
   btn.disabled = true; btn.textContent = 'Enviando...';
+  let createdOrder = null;
   try{
     const items = orderItemsEditor.getItems();
     if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
@@ -1044,21 +1092,26 @@ $('new-order-form').addEventListener('submit', async (e)=>{
     }).select().single();
     if(error) throw error;
 
-    await sb.from('order_history').insert(historyRow(order.id, 'criado', `Pedido criado com ${items.length} peça(s) e enviado para triagem do ADM.`));
+    createdOrder = order.id;
+    await sb.from('order_history').insert(historyRow(order.id, 'criado', `Pedido criado com ${items.length} peça(s) e enviado para triagem do ADM.`)).throwOnError();
 
     for(let i = 0; i < items.length; i++){
       if(items[i].file){
         const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
         const att = await uploadFile(order.id, items[i].file, 'itens', label);
-        await sb.from('order_attachments').insert(att);
+        await sb.from('order_attachments').insert(att).throwOnError();
       }
     }
     e.target.reset();
     orderItemsEditor.reset();
-    closeModal('new-order-modal');
+    closeModal('new-order-modal'); refreshView?.();
   }catch(ex){
     console.error(ex);
-    err.textContent = 'Erro ao enviar pedido: ' + ex.message;
+    if(createdOrder){
+      closeModal('new-order-modal');
+      notify('Pedido já criado. Confira os anexos em Meus Pedidos e use Editar para completar o envio. ' + ex.message);
+      refreshView?.();
+    } else err.textContent = 'Erro ao enviar pedido: ' + ex.message;
     err.classList.remove('hidden');
   }finally{
     btn.disabled = false; btn.textContent = 'Enviar para análise do ADM';
@@ -1117,7 +1170,7 @@ function renderAdmin(){
     <button type="button" id="sb-toggle" aria-label="Abrir menu">${sbIcon('menu')}</button>
     <div id="sb-backdrop"></div>
     <aside id="admin-sb" aria-label="Menu principal">
-      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão CIMA<small>Painel do ADM</small></span></div>
+      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão ED+Oficina<small>Painel do ADM</small></span></div>
       <nav class="sb-nav">${nav}</nav>
       <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
     </aside>
@@ -1138,7 +1191,9 @@ function renderAdmin(){
   };
 
   const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
+  const viewKey = 'cima:aba:' + currentUser.id;
   const go = tab => {
+    try { sessionStorage.setItem(viewKey, tab); } catch {}
     document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if(['graficos', 'resumo', 'relatorio'].includes(tab)) setGroup(true);
     sb.classList.remove('show'); $('sb-backdrop').classList.remove('show');
@@ -1149,7 +1204,8 @@ function renderAdmin(){
   grp.addEventListener('click', () => setGroup(!grp.classList.contains('open')));
   $('sb-toggle').addEventListener('click', () => { sb.classList.add('show'); $('sb-backdrop').classList.add('show'); });
   $('sb-backdrop').addEventListener('click', () => { sb.classList.remove('show'); $('sb-backdrop').classList.remove('show'); });
-  go('fila');
+  let saved; try { saved = sessionStorage.getItem(viewKey); } catch {}
+  go(Object.hasOwn(views,saved) ? saved : 'fila');
   refreshBell();
 }
 
@@ -1186,7 +1242,7 @@ function openTriagemModal(order){
     $('triagem-body').innerHTML = `
       <div>
         <h4 class="font-display font-600 text-lg">${escapeHtml(order.pieceName)}</h4>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${order.quantity} · Prazo: ${prazoTxt(order)}</p>
+        <p class="text-sm mt-0.5" style="color:var(--muted)">Solicitante: ${escapeHtml(order.requesterName)} · Qtd: ${escapeHtml(order.quantity)} · Prazo: ${prazoTxt(order)}</p>
         ${metaLine(order)}<p class="text-sm mt-2">${escapeHtml(order.description || '')}</p>${itemsListHTML(order)}
       </div>
       <div>
@@ -1204,10 +1260,35 @@ function openTriagemModal(order){
         </div>
         <div id="routing-list" class="space-y-2"></div>
       </div>
+      <fieldset class="card p-3 space-y-2"><legend>Consumo do almoxarifado</legend>
+        <p class="text-xs">Selecione o material e informe o consumo na unidade do estoque.</p>
+        <div id="consumos" class="space-y-2"></div>
+        <button type="button" id="add-consumo" class="border rounded px-2">Adicionar material</button>
+        <label><input type="checkbox" id="sem-consumo"> Pedido sem consumo de estoque</label>
+      </fieldset>
       <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="triagem-urgent" type="checkbox" ${order.urgent ? 'checked' : ''} style="width:16px;height:16px"> 🔥 Marcar como URGENTE (destaque na fila do operador)</label>
       <p id="triagem-error" class="text-sm hidden" style="color:var(--red)"></p>
       <button id="btn-aprovar" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Aprovar e Enviar para Produção</button>
     `;
+    const rows = $('consumos'), add = $('add-consumo'), none = $('sem-consumo');
+    let catalog = [];
+    const addRow = ()=>{
+      const row = document.createElement('div');
+      row.className = 'flex flex-wrap gap-2';
+      row.innerHTML = '<select aria-label="Material"></select><input type="number" step="any" min="0" placeholder="Consumo" aria-label="Consumo"><button type="button">Remover</button>';
+      row.querySelector('select').add(new Option('Escolha o material',''));
+      for(const m of catalog) row.querySelector('select').add(new Option(m.item_name + ' · saldo ' + m.quantity + ' ' + (m.unit || 'un'), m.id));
+      row.querySelector('button').onclick = ()=>row.remove();
+      rows.append(row);
+    };
+    add.disabled = true;
+    allOrderPages(()=>sb.from('almoxarifado').select('id,item_name,quantity,unit').order('item_name')).then(({data,error})=>{
+      if(!rows.isConnected) return;
+      if(error){ notify('Erro ao carregar estoque: ' + error.message); return; }
+      catalog = data; add.disabled = none.checked;
+    });
+    add.onclick = addRow;
+    none.onchange = ()=>{ rows.hidden = none.checked; add.disabled = none.checked || !catalog.length; };
     renderRoutingList();
     $('triagem-body').querySelectorAll('[data-add-machine]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ routing.push(btn.dataset.addMachine); renderRoutingList(); });
@@ -1217,23 +1298,24 @@ function openTriagemModal(order){
       if(routing.length === 0){ err.textContent = 'Defina ao menos uma máquina no roteiro.'; err.classList.remove('hidden'); return; }
       $('btn-aprovar').disabled = true; $('btn-aprovar').textContent = 'Enviando...';
       try{
-        await sb.from('orders').update({
-          status: 'em_producao', urgent: $('triagem-urgent').checked, current_step_index: 0, current_machine: routing[0], updated_at: new Date().toISOString()
-        }).eq('id', order.id);
-
-        const rows = routing.map((m,i)=> ({ order_id: order.id, step_index: i, machine: m, status: i===0 ? 'em_andamento' : 'pendente' }));
-        await sb.from('order_routing').insert(rows);
-
-        await sb.from('order_history').insert(historyRow(order.id, 'triagem', `Roteiro definido (${routing.join(' → ')}) e pedido enviado para produção.`));
-
-        // EXECUTA A BAIXA AUTOMÁTICA DOS ITENS NO ALMOXARIFADO (item 2 ajustado):
-        await darBaixaAlmoxarifadoNaTriagem(order);
-
+        const consumo = none.checked ? [] : Array.from(rows.children, row=>({
+          id:row.querySelector('select').value, qtd:Number(row.querySelector('input').value)
+        }));
+        if(!none.checked && !consumo.length) throw new Error('Informe o consumo ou marque pedido sem consumo.');
+        if(consumo.some(r=>!r.id || !Number.isFinite(r.qtd) || r.qtd<=0)) throw new Error('Escolha o material e informe uma quantidade positiva.');
         const file = $('triagem-file').files[0];
+        if(file && validateFile(file)) throw new Error(validateFile(file));
+        const {error} = await sb.rpc('cima_aprovar_triagem',{
+          p_pedido:String(order.id), p_roteiro:routing, p_urgente:$('triagem-urgent').checked, p_consumo:consumo
+        });
+        if(error) throw error;
         if(file){
-          const att = await uploadFile(order.id, file);
-          await sb.from('order_attachments').insert(att);
+          try {
+            const att = await uploadFile(order.id,file);
+            await sb.from('order_attachments').insert(att).throwOnError();
+          } catch(ex){ notify('Triagem aprovada. Anexo pendente: use Editar pedido para enviá-lo. ' + ex.message); }
         }
+        refreshView?.();
         closeModal('triagem-modal');
       }catch(ex){
         console.error(ex);
@@ -1263,33 +1345,6 @@ function openTriagemModal(order){
   openModal('triagem-modal');
 }
 
-// FUNÇÃO APERFEIÇOADA PARA DAR BAIXA NO ALMOXARIFADO DURANTE A TRIAGEM (Item 2 corrigido):
-async function darBaixaAlmoxarifadoNaTriagem(order){
-  try {
-    const items = (order.items && order.items.length) ? order.items : [{ quantity: order.quantity, material: order.material }];
-    
-    for (const item of items) {
-      const materialUsado = item.material || order.material;
-      const qtdNecessaria = Number(item.quantity) || 1;
-      if (!materialUsado) continue;
-
-      // Busca aproximada do nome do material no estoque
-      const termoBusca = materialUsado.split('=')[0].split('(')[0].trim();
-      const { data: stockItems, error: fetchErr } = await sb.from('almoxarifado').select('*').ilike('item_name', `%${termoBusca}%`);
-      
-      if (fetchErr || !stockItems || stockItems.length === 0) continue;
-
-      const itemEstoque = stockItems[0];
-      const novaQtd = Math.max(0, Number(itemEstoque.quantity) - qtdNecessaria);
-
-      await sb.from('almoxarifado').update({ quantity: novaQtd }).eq('id', itemEstoque.id);
-      await sb.from('order_history').insert(historyRow(order.id, 'baixa_almoxarifado', `Baixa de ${qtdNecessaria} ${itemEstoque.unit || 'un'} do item "${itemEstoque.item_name}" realizada no almoxarifado.`));
-    }
-  } catch (err) {
-    console.error("Erro ao processar baixa do almoxarifado:", err);
-  }
-}
-
 function renderAdminTodos(){
   clearChannels();
   const fld = 'px-3 py-2 text-sm';
@@ -1307,9 +1362,18 @@ function renderAdminTodos(){
     </div>
     <p id="f-count" class="text-xs mb-3 font-medium" style="color:var(--muted)"></p>
     <div id="todos-list" class="space-y-4"><div class="skel"></div><div class="skel"></div></div>`;
+  const filterKey = 'cima:filtros:' + currentUser.id;
+  const fields = ['f-q','f-status','f-from','f-to','f-urg'];
+  let saved = {};
+  try { saved = JSON.parse(sessionStorage.getItem(filterKey)) || {}; } catch {}
+  for(const id of fields){
+    if(id === 'f-urg') $(id).checked = saved[id] === true;
+    else $(id).value = saved[id] || '';
+  }
   let all = [];
   const draw = ()=>{
     const list = $('todos-list'); if(!list) return;
+    try { sessionStorage.setItem(filterKey, JSON.stringify(Object.fromEntries(fields.map(id=>[id,id==='f-urg' ? $(id).checked : $(id).value])))); } catch {}
     const cnt = { '': all.length, aguardando_analise: all.filter(o => o.status === 'aguardando_analise').length, em_producao: all.filter(o => o.status === 'em_producao').length,
       concluido: all.filter(o => o.status === 'concluido').length, atrasado: all.filter(isLate).length };
     $('f-chips').innerHTML = [['', 'Todos'], ['aguardando_analise', 'Aguardando análise'], ['em_producao', 'Em produção'], ['concluido', 'Concluídos'], ['atrasado', 'Atrasados']]
@@ -1336,7 +1400,7 @@ function renderAdminTodos(){
             <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
             ${metaLine(o, true)}
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.label}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${escapeHtml(s.label)}</span>
         </div>
         <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
@@ -1348,7 +1412,7 @@ function renderAdminTodos(){
   };
   ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
   liveRefresh('admin-todos', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false });
+    const { data, error } = await allOrderPages(()=>sb.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }));
     if(error){ showError('todos-list', error); return; }
     all = data.map(normalizeOrder); draw();
   });
@@ -1385,12 +1449,12 @@ function renderAdminProjetos(){
     list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
       const p = data.find(x=>x.id===b.dataset.toggleProject);
       const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
-      if(error) notify('Erro: ' + error.message);
+      if(error) notify('Erro: ' + error.message); else refreshView?.();
     }));
     list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
       if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados.')) return;
       const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
-      if(error) notify('Erro: ' + error.message);
+      if(error) notify('Erro: ' + error.message); else refreshView?.();
     }));
   });
 }
@@ -1416,7 +1480,7 @@ $('project-form').addEventListener('submit', async (e)=>{
     ? await sb.from('projects').update(payload).eq('id', editProjectTarget.id)
     : await sb.from('projects').insert(payload);
   if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); }
-  else closeModal('project-modal');
+  else { closeModal('project-modal'); refreshView?.(); }
   btn.disabled = false; btn.textContent = 'Salvar';
 });
 
@@ -1429,10 +1493,10 @@ function renderAdminUsuarios(){
     $('users-list').innerHTML = users.map(u=> `
       <div class="card p-4 flex items-center justify-between">
         <div>
-          <p class="font-medium text-sm">${u.name} <span class="text-xs" style="color:var(--muted)">(${u.email})</span></p>
+          <p class="font-medium text-sm">${escapeHtml(u.name)} <span class="text-xs" style="color:var(--muted)">(${escapeHtml(u.email)})</span></p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${roleLabel(u.role)}${(u.machines && u.machines.length) ? ' · '+u.machines.join(', ') : ''}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:${u.role==='pendente'?'var(--amber)22':'var(--surface-2)'};color:${u.role==='pendente'?'var(--amber)':'var(--muted)'}">${escapeHtml(roleLabel(u.role))}${(u.machines && u.machines.length) ? ' · '+escapeHtml(u.machines.join(', ')) : ''}</span>
           <button data-edit-user="${u.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
         </div>
       </div>`).join('');
@@ -1468,7 +1532,7 @@ function openEditUserModal(user){
     }
     const { error } = await sb.from('profiles').update({ role, machines }).eq('id', user.id);
     if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); return; }
-    closeModal('edit-user-modal');
+    closeModal('edit-user-modal'); refreshView?.();
   };
   openModal('edit-user-modal');
 }
@@ -1502,7 +1566,7 @@ function renderOperador(container = $('main-content')){
   function drawChips(){
     if(available.length < 2){ $('op-chips').innerHTML = ''; return; }
     const opts = ['todas', ...available];
-    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${m}" class="px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'rgba(59,130,246,0.16)':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${m==='todas'?'Todas':m}</button>`).join('');
+    $('op-chips').innerHTML = opts.map(m=>`<button data-chip="${escapeHtml(m)}" class="px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors" style="border-color:${filter===m?'var(--blue)':'var(--line)'};background:${filter===m?'rgba(59,130,246,0.16)':'transparent'};color:${filter===m?'var(--text)':'var(--muted)'}">${escapeHtml(m==='todas'?'Todas':m)}</button>`).join('');
     $('op-chips').querySelectorAll('[data-chip]').forEach(b=> b.addEventListener('click', ()=>{
       filter = b.dataset.chip; drawChips(); fetchOp();
     }));
@@ -1537,7 +1601,7 @@ function renderOperador(container = $('main-content')){
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: <span class="text-white font-medium">${o.currentMachine}</span> · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
+            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Máquina: <span class="text-white font-medium">${escapeHtml(o.currentMachine)}</span> · Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${step.status==='em_andamento'?'rgba(59,130,246,0.16)':'rgba(100,116,139,0.16)'};color:${step.status==='em_andamento'?'var(--blue)':'var(--slate)'}">
@@ -1550,7 +1614,7 @@ function renderOperador(container = $('main-content')){
             </div>
           </div>
         </div>
-        ${metaLine(o, true)}<p class="text-sm mt-2 leading-relaxed">${o.description || ''}</p>${itemsListHTML(o)}
+        ${metaLine(o, true)}<p class="text-sm mt-2 leading-relaxed">${escapeHtml(o.description || '')}</p>${itemsListHTML(o)}
         <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
         <div class="mt-3">${attachmentsHTML(o)}</div>
         <div class="mt-4 flex gap-2">
@@ -1709,7 +1773,7 @@ function openRoutingEditor(order){
       }
       const all = [...locked.map(s => s.machine), ...edit.map(s => s.machine)];
       chk(await sb.from('orders').update({ current_machine: all[cur], updated_at: new Date().toISOString() }).eq('id', order.id));
-      await sb.from('order_history').insert(historyRow(order.id, 'roteiro', `Roteiro alterado pelo ADM: ${all.join(' → ')}.`));
+      await sb.from('order_history').insert(historyRow(order.id, 'roteiro', `Roteiro alterado pelo ADM: ${all.join(' → ')}.`)).throwOnError();
       ov.remove();
     }catch(ex){ showErr(ex.message); }
   };
@@ -1760,15 +1824,15 @@ function openEditOrderModal(order){
       const { data, error } = await sb.from('orders').update({ ...v, updated_at: new Date().toISOString() }).eq('id', order.id).select();
       if(error) throw error;
       if(!data || data.length === 0) throw new Error('sem permissão para editar.');
-      await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
-          await sb.from('order_attachments').insert(att);
+          await sb.from('order_attachments').insert(att).throwOnError();
         }
       }
-      await sb.from('order_history').insert(historyRow(order.id, 'editado', `Pedido editado pelo ADM (${items.length} peça(s)).`));
+      await deleteAttachmentsByIds(eoItemsEditor.takeDeletes());
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', `Pedido editado pelo ADM (${items.length} peça(s)).`)).throwOnError();
       closeModal('edit-order-modal');
     }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
     finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
@@ -1814,15 +1878,15 @@ function openSolEditModal(order){
       const { data, error } = await sb.from('orders').update(v).eq('id', order.id).eq('status', 'aguardando_analise').select();
       if(error) throw error;
       if(!data || data.length === 0) throw new Error('não deu para salvar.');
-      await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
       for(let i = 0; i < items.length; i++){
         if(items[i].file){
           const label = items.length > 1 ? `Peça ${i + 1} - ${items[i].name} - ${items[i].file.name}` : items[i].file.name;
           const att = await uploadFile(order.id, items[i].file, 'itens', label);
-          await sb.from('order_attachments').insert(att);
+          await sb.from('order_attachments').insert(att).throwOnError();
         }
       }
-      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Solicitante editou o próprio pedido.'));
+      await deleteAttachmentsByIds(solItemsEditor.takeDeletes());
+      await sb.from('order_history').insert(historyRow(order.id, 'editado', 'Solicitante editou o próprio pedido.')).throwOnError();
       closeModal('sol-edit-order-modal');
     }catch(ex){ err.textContent = 'Erro: ' + ex.message; err.classList.remove('hidden'); }
     finally{ btn.disabled = false; btn.textContent = 'Salvar alterações'; }
@@ -1895,13 +1959,22 @@ function materialChartHTML(orders){
   return `<div class="card p-5 mb-6"><p class="text-xs uppercase tracking-wide font-medium mb-4" style="color:var(--muted)">Material mais utilizado (peças por material)</p>${bars}</div>`;
 }
 
+async function allOrderPages(buildQuery){
+  const data = [];
+  while(true){
+    const page = await buildQuery().order('id').range(data.length, data.length + 499);
+    if(page.error) return page;
+    if(!page.data.length) return { data, error:null };
+    data.push(...page.data);
+  }
+}
 function renderAdminResumo(){
   clearChannels();
   $('admin-tab-content').innerHTML = `<div id="resumo-stats"></div>
     <p class="text-xs uppercase tracking-wide font-medium mb-3" style="color:var(--muted)">Por solicitante</p>
     <div id="resumo-table" class="card overflow-x-auto"></div>`;
   liveRefresh('admin-resumo', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    const { data, error } = await allOrderPages(()=>sb.from('orders').select(ORDER_SELECT));
     if(error){ showError('resumo-table', error); return; }
     if(!$('resumo-stats')) return;
     const orders = data.map(normalizeOrder);
@@ -1912,7 +1985,7 @@ function renderAdminResumo(){
     orders.forEach(o => { (by[o.requesterId] = by[o.requesterId] || { name: o.requesterName, list: [] }).list.push(o); });
     const rows = Object.values(by).map(g => ({ name: g.name, s: statsOf(g.list), cut: g.list.reduce((a, o) => a + cutQtyOf(o), 0) })).sort((a, b) => b.s.total - a.s.total);
     const th = h => `<th class="text-left font-medium px-4 py-3 whitespace-nowrap" style="color:var(--muted)">${h}</th>`;
-    const td = (v, c) => `<td class="px-4 py-3 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${v}</td>`;
+    const td = (v, c) => `<td class="px-4 py-3 whitespace-nowrap" ${c ? `style="color:${c}"` : ''}>${escapeHtml(v)}</td>`;
     $('resumo-table').innerHTML = rows.length === 0 ? `<p class="p-8 text-center text-sm" style="color:var(--muted)">Nenhum pedido ainda.</p>` :
       `<table class="w-full text-sm"><thead><tr style="border-bottom:1px solid var(--line)">${['Solicitante', 'Pedidos', 'Aguardando', 'Em produção', 'Concluídos', 'Recebidos', 'Atrasados', 'Peças cortadas', 'Arquivos enviados', 'Fotos'].map(th).join('')}</tr></thead><tbody>` +
       rows.map(r => `<tr style="border-bottom:1px solid var(--line)">${td(r.name)}${td(r.s.total)}${td(r.s.aguardando)}${td(r.s.producao, 'var(--blue)')}${td(r.s.concluido, 'var(--green)')}${td(r.s.recebidos, 'var(--green)')}${td(r.s.atrasados, r.s.atrasados ? 'var(--red)' : '')}${td(r.cut, 'var(--green)')}${td(r.s.arquivos, 'var(--amber)')}${td(r.s.fotos)}</tr>`).join('') +
@@ -1962,7 +2035,7 @@ function renderAdminRelatorio(){
     if(!$('rep-requester') || !data) return;
     const names = [...new Set(data.map(r => r.requester_name))].sort();
     $('rep-requester').innerHTML = '<option value="">Todos os solicitantes</option>' +
-      names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n}</option>`).join('');
+      names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   });
 
   $('rep-btn').addEventListener('click', async ()=>{
@@ -1992,11 +2065,13 @@ function renderAdminRelatorio(){
 
 async function exportReport(from, to, requesterName, label){
   if(typeof XLSX === 'undefined') throw new Error('a biblioteca de Excel não carregou. Recarregue a página.');
-  let q = sb.from('orders').select(ORDER_SELECT)
+  const buildQuery = () => { let q = sb.from('orders').select(ORDER_SELECT)
     .gte('created_at', from.toISOString()).lt('created_at', new Date(to.getTime() + 1000).toISOString())
     .order('created_at', { ascending: true });
   if(requesterName) q = q.eq('requester_name', requesterName);
-  const { data, error } = await q;
+  return q;
+  };
+  const {data, error} = await allOrderPages(buildQuery);
   if(error) throw error;
   const orders = data.map(normalizeOrder);
   if(orders.length === 0) return 0;
@@ -2136,7 +2211,8 @@ function createItemsEditor(containerId){
 async function deleteAttachmentsByIds(ids){
   if(!ids.length) return;
   const { data, error } = await sb.from('order_attachments').delete().in('id', ids).select();
-  if(error || !data) return;
+  if(error) throw error;
+  if(!data || data.length !== ids.length) throw new Error('Exclusão de anexos incompleta. Confira o pedido.');
   const paths = data.map(a => decodeURIComponent((a.url.split('/attachments/')[1] || ''))).filter(Boolean);
   if(paths.length) await sb.storage.from('attachments').remove(paths);
 }
@@ -2153,7 +2229,7 @@ $('eo-add-item').addEventListener('click', ()=> eoItemsEditor.addBlank());
 async function toggleUrgent(o){
   const { data, error } = await sb.from('orders').update({ urgent: !o.urgent, updated_at: new Date().toISOString() }).eq('id', o.id).select();
   if(error || !data || !data.length){ notify('Erro ao alterar prioridade: ' + (error ? error.message : 'sem permissão')); return; }
-  await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.'));
+  await sb.from('order_history').insert(historyRow(o.id, 'prioridade', o.urgent ? 'Removeu a marcação de urgente.' : 'Marcou o pedido como URGENTE.')).throwOnError();
 }
 
 function barsHTML(rows, fmt = v => v){
@@ -2161,8 +2237,8 @@ function barsHTML(rows, fmt = v => v){
   return rows.map(r => {
     const tot = r.segs.reduce((a, s) => a + s.v, 0);
     return `<div class="flex items-center gap-3 mb-2.5">
-      <span class="w-24 sm:w-32 shrink-0 text-xs font-medium truncate" style="color:var(--muted)" title="${r.label}">${r.label}</span>
-      <div class="flex-1 flex h-5 rounded-md overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${s.name || ''} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
+      <span class="w-24 sm:w-32 shrink-0 text-xs font-medium truncate" style="color:var(--muted)" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span>
+      <div class="flex-1 flex h-5 rounded-md overflow-hidden" style="background:var(--surface-2)">${r.segs.map(s => `<div title="${escapeHtml(s.name || '')} ${fmt(s.v)}" style="width:${s.v / max * 100}%;background:${s.color}"></div>`).join('')}</div>
       <span class="w-20 text-xs text-right font-medium">${r.text !== undefined ? r.text : fmt(tot)}</span></div>`;
   }).join('');
 }
@@ -2170,7 +2246,7 @@ function renderAdminGraficos(){
   clearChannels();
   $('admin-tab-content').innerHTML = `<div id="gr" class="grid gap-4 lg:grid-cols-2"></div>`;
   liveRefresh('admin-graficos', async ()=>{
-    const { data, error } = await sb.from('orders').select(ORDER_SELECT);
+    const { data, error } = await allOrderPages(()=>sb.from('orders').select(ORDER_SELECT));
     if(error){ showError('gr', error); return; }
     if(!$('gr')) return;
     const orders = data.map(normalizeOrder);
