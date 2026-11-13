@@ -368,29 +368,6 @@
   </div>
 </div>
 
-<!-- ================= MODAL: PROJETO / OS ================= -->
-<div id="project-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
-  <div class="card w-full max-w-md">
-    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--line)">
-      <h3 class="font-display font-600 text-lg" id="project-modal-title">Novo Projeto / OS</h3>
-      <button data-close-modal="project-modal" class="text-sm hover:text-white" style="color:var(--muted)">Fechar ✕</button>
-    </div>
-    <form id="project-form" class="p-6 space-y-4">
-      <div>
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">O.S. (Ordem de Serviço)</label>
-        <input id="pm-os" required class="w-full mt-1 px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="text-xs uppercase tracking-wide font-medium" style="color:var(--muted)">Nome do Projeto</label>
-        <input id="pm-project" required class="w-full mt-1 px-3 py-2 text-sm">
-      </div>
-      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="pm-active" type="checkbox" checked style="width:16px;height:16px"> Disponível para o solicitante escolher</label>
-      <p id="project-modal-error" class="text-sm hidden" style="color:var(--red)"></p>
-      <button type="submit" id="project-modal-submit" class="w-full py-2.5 rounded-lg font-medium shadow-md transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">Salvar</button>
-    </form>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -975,18 +952,18 @@ $('bell-btn').addEventListener('click', ()=> goAdminTab('fila'));
 
 /* ============ Seletor de Projeto/OS ============ */
 async function loadProjects(){
-  const { data, error } = await sb.from('projects').select('*').eq('active', true).order('project_name');
-  if(error){ console.error(error); projectsCache = []; return []; }
-  projectsCache = data; return data;
+  const { data, error } = await allOrderPages(()=>sb.from('projetos_ed').select('id,os_number:os,project_name:nome').or('ativo.is.null,ativo.eq.true').order('nome'));
+  if(error){ notify('Erro ao consultar projetos: ' + error.message); projectsCache = []; return []; }
+  projectsCache = data.map(p=>({...p,id:String(p.id),os_number:p.os_number || ''})); return projectsCache;
 }
 function projectOptionsHTML(list, selectedValue){
-  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>OS ${escapeHtml(p.os_number)} — ${escapeHtml(p.project_name)}</option>`).join('');
+  const opts = list.map(p => `<option value="${p.id}" ${p.id===selectedValue?'selected':''}>${p.os_number ? 'OS ' + escapeHtml(p.os_number) + ' — ' : ''}${escapeHtml(p.project_name)}</option>`).join('');
   return `<option value="">Selecione a OS / Projeto...</option>${opts}<option value="__custom__" ${selectedValue==='__custom__'?'selected':''}>Outro (digitar manualmente)</option>`;
 }
 async function setupOpPicker({ selectId, manualId, osId, projectId, matchOs, matchProject }){
   const list = await loadProjects();
   const sel = $(selectId), manual = $(manualId), osEl = $(osId), projEl = $(projectId);
-  const match = (matchOs && matchProject) ? list.find(p => p.os_number === matchOs && p.project_name === matchProject) : null;
+  const match = matchProject ? list.find(p => p.os_number === (matchOs || '') && p.project_name === matchProject) : null;
   const initial = match ? match.id : ((matchOs || matchProject) ? '__custom__' : '');
   sel.innerHTML = projectOptionsHTML(list, initial);
   sel.value = initial;
@@ -1074,7 +1051,7 @@ $('new-order-form').addEventListener('submit', async (e)=>{
     const items = orderItemsEditor.getItems();
     if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
     if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-    if(!$('order-os').value.trim() || !$('order-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+    if((!$('order-os').value.trim() && $('order-op-select').value === '__custom__') || !$('order-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
     const pieceName = items.length === 1 ? items[0].name : ($('order-project').value.trim() || items[0].name);
     const totalQty = items.reduce((a, it) => a + it.quantity, 0);
     const material = items.length === 1 ? items[0].material : null;
@@ -1182,7 +1159,7 @@ function renderAdmin(){
     fila: renderAdminFila, 
     todos: renderAdminTodos, 
     usuarios: renderAdminUsuarios, 
-    projetos: renderAdminProjetos,
+    projetos: () => location.assign('gestao_ed.html#projetos-os'),
     graficos: renderAdminGraficos, 
     resumo: renderAdminResumo, 
     relatorio: renderAdminRelatorio,
@@ -1193,7 +1170,7 @@ function renderAdmin(){
   const setGroup = open => { grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open); };
   const viewKey = 'cima:aba:' + currentUser.id;
   const go = tab => {
-    try { sessionStorage.setItem(viewKey, tab); } catch {}
+    try { if(tab !== 'projetos') sessionStorage.setItem(viewKey, tab); } catch {}
     document.querySelectorAll('.admin-tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if(['graficos', 'resumo', 'relatorio'].includes(tab)) setGroup(true);
     sb.classList.remove('show'); $('sb-backdrop').classList.remove('show');
@@ -1205,7 +1182,7 @@ function renderAdmin(){
   $('sb-toggle').addEventListener('click', () => { sb.classList.add('show'); $('sb-backdrop').classList.add('show'); });
   $('sb-backdrop').addEventListener('click', () => { sb.classList.remove('show'); $('sb-backdrop').classList.remove('show'); });
   let saved; try { saved = sessionStorage.getItem(viewKey); } catch {}
-  go(Object.hasOwn(views,saved) ? saved : 'fila');
+  go(saved !== 'projetos' && Object.hasOwn(views,saved) ? saved : 'fila');
   refreshBell();
 }
 
@@ -1417,72 +1394,6 @@ function renderAdminTodos(){
     all = data.map(normalizeOrder); draw();
   });
 }
-
-function renderAdminProjetos(){
-  clearChannels();
-  $('admin-tab-content').innerHTML = `
-    <div class="flex items-center justify-between mb-4 gap-3">
-      <div><h2 class="font-display font-700 text-xl">Projetos / OS cadastrados</h2>
-        <p class="text-sm mt-0.5" style="color:var(--muted)">Lista disponível para a escolha dos solicitantes.</p></div>
-      <button id="btn-new-project" class="px-4 py-2.5 rounded-lg font-medium shrink-0 shadow transition-opacity hover:opacity-90" style="background:var(--blue);color:#fff">+ Novo</button>
-    </div>
-    <div id="projects-list" class="space-y-3"><div class="skel"></div><div class="skel"></div></div>`;
-  $('btn-new-project').addEventListener('click', ()=> openProjectModal(null));
-  liveRefresh('admin-projetos', async ()=>{
-    const { data, error } = await sb.from('projects').select('*').order('created_at', { ascending:false });
-    if(error){ showError('projects-list', error); return; }
-    const list = $('projects-list');
-    if(!data.length){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum projeto cadastrado ainda. Clique em "+ Novo".</div>`; return; }
-    list.innerHTML = data.map(p => `
-      <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p class="font-medium text-sm">OS ${escapeHtml(p.os_number)} <span style="color:var(--muted)">— ${escapeHtml(p.project_name)}</span></p>
-          <p class="text-xs mt-0.5" style="color:${p.active ? 'var(--green)' : 'var(--muted)'}">${p.active ? 'Disponível para o solicitante' : 'Inativo (oculto na lista)'}</p>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button data-edit-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">Editar</button>
-          <button data-toggle-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md border hover:bg-white/5" style="border-color:var(--line)">${p.active ? 'Desativar' : 'Ativar'}</button>
-          <button data-del-project="${p.id}" class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:var(--red);color:#fff">Excluir</button>
-        </div>
-      </div>`).join('');
-    list.querySelectorAll('[data-edit-project]').forEach(b => b.addEventListener('click', ()=> openProjectModal(data.find(p=>p.id===b.dataset.editProject))));
-    list.querySelectorAll('[data-toggle-project]').forEach(b => b.addEventListener('click', async ()=>{
-      const p = data.find(x=>x.id===b.dataset.toggleProject);
-      const { error } = await sb.from('projects').update({ active: !p.active }).eq('id', p.id);
-      if(error) notify('Erro: ' + error.message); else refreshView?.();
-    }));
-    list.querySelectorAll('[data-del-project]').forEach(b => b.addEventListener('click', async ()=>{
-      if(!await askConfirm('Excluir este projeto da lista?\n\nPedidos já criados não são afetados.')) return;
-      const { error } = await sb.from('projects').delete().eq('id', b.dataset.delProject);
-      if(error) notify('Erro: ' + error.message); else refreshView?.();
-    }));
-  });
-}
-
-let editProjectTarget = null;
-function openProjectModal(p){
-  editProjectTarget = p;
-  $('project-modal-title').textContent = p ? 'Editar Projeto / OS' : 'Novo Projeto / OS';
-  $('pm-os').value = p ? p.os_number : '';
-  $('pm-project').value = p ? p.project_name : '';
-  $('pm-active').checked = p ? p.active : true;
-  $('project-modal-error').classList.add('hidden');
-  openModal('project-modal');
-}
-$('project-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const err = $('project-modal-error'); err.classList.add('hidden');
-  const os_number = $('pm-os').value.trim(), project_name = $('pm-project').value.trim();
-  if(!os_number || !project_name){ err.textContent = 'Preencha a OS e o nome do projeto.'; err.classList.remove('hidden'); return; }
-  const btn = $('project-modal-submit'); btn.disabled = true; btn.textContent = 'Salvando...';
-  const payload = { os_number, project_name, active: $('pm-active').checked };
-  const { error } = editProjectTarget
-    ? await sb.from('projects').update(payload).eq('id', editProjectTarget.id)
-    : await sb.from('projects').insert(payload);
-  if(error){ err.textContent = 'Erro: ' + error.message; err.classList.remove('hidden'); }
-  else { closeModal('project-modal'); refreshView?.(); }
-  btn.disabled = false; btn.textContent = 'Salvar';
-});
 
 function renderAdminUsuarios(){
   clearChannels();
@@ -1810,7 +1721,7 @@ function openEditOrderModal(order){
       const items = eoItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      if(!$('eo-os').value.trim() || !$('eo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+      if((!$('eo-os').value.trim() && $('eo-op-select').value === '__custom__') || !$('eo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
       const pieceName = items.length === 1 ? items[0].name : ($('eo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
@@ -1863,7 +1774,7 @@ function openSolEditModal(order){
       const items = solItemsEditor.getItems();
       if(items.length === 0 || items.some(it => !it.name)) throw new Error('preencha o nome de todas as peças.');
       if(items.some(it => !it.material)) throw new Error('selecione o material de todas as peças.');
-      if(!$('seo-os').value.trim() || !$('seo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
+      if((!$('seo-os').value.trim() && $('seo-op-select').value === '__custom__') || !$('seo-project').value.trim()) throw new Error('selecione a OS/Projeto na lista, ou escolha "Outro" para digitar manualmente.');
       const pieceName = items.length === 1 ? items[0].name : ($('seo-project').value.trim() || items[0].name);
       const totalQty = items.reduce((a, it) => a + it.quantity, 0);
       const material = items.length === 1 ? items[0].material : null;
