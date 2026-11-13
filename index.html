@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão ED+Oficina</title>
+<title>Gestão CIMA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -186,7 +186,7 @@
   <header class="flex items-center justify-between px-3 sm:px-6 py-3.5 border-b gap-2" style="border-color:var(--line);background:var(--surface)">
     <div class="flex items-center gap-2 min-w-0">
       <svg class="brand-top" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 7" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7H21V13" stroke="#F2A93B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão ED+Oficina</span>
+      <span class="brand-top font-display font-700 tracking-tight" title="Centro de Inovação de Manufatura Avançada">Gestão CIMA</span>
       <span id="role-badge" class="ml-2 text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--line)"></span>
     </div>
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -1170,7 +1170,7 @@ function renderAdmin(){
     <button type="button" id="sb-toggle" aria-label="Abrir menu">${sbIcon('menu')}</button>
     <div id="sb-backdrop"></div>
     <aside id="admin-sb" aria-label="Menu principal">
-      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão ED+Oficina<small>Painel do ADM</small></span></div>
+      <div class="sb-logo"><span class="sb-mark">C</span><span>Gestão CIMA<small>Painel do ADM</small></span></div>
       <nav class="sb-nav">${nav}</nav>
       <div class="sb-foot"><span class="sb-avatar">${escapeHtml((currentUser.name || '?').charAt(0).toUpperCase())}</span><span>${escapeHtml(currentUser.name || '')}<small>Administrador</small></span></div>
     </aside>
@@ -1277,12 +1277,12 @@ function openTriagemModal(order){
       row.className = 'flex flex-wrap gap-2';
       row.innerHTML = '<select aria-label="Material"></select><input type="number" step="any" min="0" placeholder="Consumo" aria-label="Consumo"><button type="button">Remover</button>';
       row.querySelector('select').add(new Option('Escolha o material',''));
-      for(const m of catalog) row.querySelector('select').add(new Option(m.item_name + ' · saldo ' + m.quantity + ' ' + (m.unit || 'un'), m.id));
+      for(const m of catalog) row.querySelector('select').add(new Option(m.item_name + ' · saldo ' + m.quantity, m.id));
       row.querySelector('button').onclick = ()=>row.remove();
       rows.append(row);
     };
     add.disabled = true;
-    allOrderPages(()=>sb.from('almoxarifado').select('id,item_name,quantity,unit').order('item_name')).then(({data,error})=>{
+    allOrderPages(()=>sb.from('almoxarifado').select('id,item_name,quantity').order('item_name')).then(({data,error})=>{
       if(!rows.isConnected) return;
       if(error){ notify('Erro ao carregar estoque: ' + error.message); return; }
       catalog = data; add.disabled = none.checked;
