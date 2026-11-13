@@ -121,6 +121,20 @@
     #main-content:has(#admin-sb){padding-left:.75rem}
     body:has(#admin-sb) header{padding-left:3.5rem}
   }
+
+.request-card,.consumo-dialog{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:12px}
+.request-card summary{display:grid;grid-template-columns:minmax(10rem,2fr) minmax(5rem,.5fr) minmax(8rem,1fr) minmax(8rem,1fr) 1rem;gap:18px;align-items:center;cursor:pointer;padding:18px 20px}
+.request-card summary::-webkit-details-marker{display:none}
+.request-card small{display:block;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.04em;margin-bottom:5px}
+.request-card strong{font-size:14px}.request-heading strong{font-size:17px;overflow-wrap:anywhere}
+.request-status{justify-self:start;padding:4px 9px;border:1px solid currentColor;border-radius:20px;font-size:12px}
+.request-card[open] .request-arrow{transform:rotate(180deg)}.request-body{padding:18px 20px;border-top:1px solid var(--line)}
+.request-body section{margin:16px 0}.request-parts>div{display:grid;grid-template-columns:1fr 1.4fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.request-parts span,.consumo-dialog .history{color:var(--muted)}.request-action,.consumo-dialog button{padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+.consumo-dialog{margin:auto;width:min(480px,94vw);max-height:90vh;padding:22px}.consumo-dialog::backdrop{background:#0009}
+.consumo-dialog form,.consumo-dialog label{display:grid;gap:8px}.consumo-dialog form{gap:12px}.consumo-dialog h2{font-weight:700;font-size:20px}.consumo-dialog input,.consumo-dialog select{padding:8px}
+.consumo-dialog .history{white-space:pre-line;max-height:8em;overflow:auto;font-size:13px}.consumo-dialog [role=alert]{color:var(--red)}
+@media(max-width:700px){.request-card summary{grid-template-columns:1fr 1fr;gap:10px}.request-heading{grid-column:1/-1}.request-arrow{justify-self:end}.request-parts>div{grid-template-columns:1fr auto}.request-parts span{grid-column:1}}
 </style>
 </head>
 <body class="min-h-screen">
@@ -496,7 +510,7 @@ function historyRow(orderId, action, detail){
 
 function normalizeOrder(row){
   return {
-    id: row.id,
+    id: row.id, consumo: row.consumo_materiais,
     pieceName: (Array.isArray(row.items) && row.items.length > 1 && row.project) ? row.project : row.piece_name,
     description: row.description,
     quantity: row.quantity,
@@ -572,6 +586,69 @@ function lateFinal(o){
   return isLate(o);
 }
 function fmtMin(m){ return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; }
+const expandedOrders = new Set();
+function requestCard(o, mode){
+  const status = statusInfo(o);
+  const field = (label,value)=>`<div><small>${label}</small><strong>${escapeHtml(value || '—')}</strong></div>`;
+  const pieces = o.items.length ? o.items : [{name:o.pieceName,material:o.material,quantity:o.quantity}];
+  return `<details class="request-card" data-request="${escapeHtml(o.id)}" ${expandedOrders.has(String(o.id))?'open':''}>
+    <summary>
+      <div class="request-heading"><small>${escapeHtml(o.osNumber ? 'OS ' + o.osNumber : 'Solicitação')}</small><strong>${escapeHtml(o.project && o.project!=='-' ? o.project : pieces[0].name)}</strong></div>
+      ${field('Quantidade',o.quantity)}${field('Prazo',prazoTxt(o))}
+      <span class="request-status" style="color:${status.color}">${o.urgent?'Urgente · ':''}${escapeHtml(status.label)}</span>
+      <span class="request-arrow" aria-hidden="true">⌄</span></summary>
+    <div class="request-body">${field('Solicitante',o.requesterName)}
+    <section><small>Roteiro de produção</small>${stepperHTML(o)}</section>
+    <section><small>Peças solicitadas</small><div class="request-parts">${pieces.map(it=>`<div><b>${escapeHtml(it.name)}</b><span>${escapeHtml(it.material || '—')}</span><strong>${escapeHtml(it.quantity)} un.</strong></div>`).join('')}</div></section>
+    <button type="button" class="request-action" data-order-id="${escapeHtml(o.id)}">Ver detalhes e histórico</button>
+    ${mode==='adm' && ['em_producao','concluido'].includes(o.status)?`<button type="button" class="request-action" data-consumo="${escapeHtml(o.id)}">Ajustar consumo</button>`:''}
+    ${cardFooterHTML(o,mode)}</div></details>`;
+}
+function bindRequestCards(list){
+  list.querySelectorAll('details[data-request]').forEach(el=>el.addEventListener('toggle',()=>{
+    if(el.isConnected) expandedOrders[el.open?'add':'delete'](el.dataset.request);
+  }));
+}
+async function editConsumption(o){
+  const dialog = document.createElement('dialog');
+  dialog.className = 'consumo-dialog';
+  document.body.append(dialog);
+  dialog.innerHTML = '<form><h2>Ajustar consumo</h2><p class="context"></p><p class="history"></p><label>Material do estoque<select required></select></label><label>Total já retirado<input name="antes" type="number" min="0" step="any" required></label><p class="legacy"></p><label>Novo total consumido<input name="total" type="number" min="0" step="any" required></label><p class="effect" aria-live="polite"></p><label>Motivo do ajuste<input name="motivo" required placeholder="Ex.: teste de corte"></label><p role="alert"></p><div><button type="button">Fechar</button> <button type="submit" disabled>Salvar ajuste</button></div></form>';
+  const form=dialog.querySelector('form'), select=form.querySelector('select'), before=form.elements.antes, total=form.elements.total;
+  const save=form.querySelector('[type=submit]'), error=form.querySelector('[role=alert]');
+  form.querySelector('.context').textContent=[o.osNumber,o.project || o.pieceName].filter(Boolean).join(' · ');
+  const log=o.history.filter(h=>['baixa_almoxarifado','ajuste_consumo'].includes(h.action));
+  form.querySelector('.history').textContent=log.map(h=>h.detail).join('\n');
+  form.querySelector('[type=button]').onclick=()=>dialog.close();
+  dialog.onclose=()=>dialog.remove();
+  dialog.showModal();
+  const {data,error:loadError}=await allOrderPages(()=>sb.from('almoxarifado').select('id,item_name,quantity').order('item_name'));
+  if(!dialog.isConnected) return;
+  if(loadError){error.textContent=loadError.message;return;}
+  select.add(new Option('Escolha o material',''));
+  for(const m of data) select.add(new Option(m.item_name+' · saldo '+m.quantity+(o.consumo?.[m.id]>0?' · retirado '+o.consumo[m.id]:''),m.id));
+  const effect=()=>{
+    const delta=total.valueAsNumber-before.valueAsNumber;
+    form.querySelector('.effect').textContent=Number.isFinite(delta)?(delta>0?'Retirar do estoque: '+delta:delta<0?'Devolver ao estoque: '+(-delta):'Saldo sem alteração.'):'';
+  };
+  select.onchange=()=>{
+    const known=Object.hasOwn(o.consumo || {},select.value);
+    const legacy=(!o.consumo || o.consumo._legado) && !known;
+    before.readOnly=!legacy; before.value=legacy?'':(o.consumo?.[select.value] || 0);
+    total.value=before.value; effect(); save.disabled=!select.value;
+    form.querySelector('.legacy').textContent=legacy?'Pedido anterior ao controle por material. Confira o histórico acima e informe o total já retirado deste item (zero se for novo).':'';
+  };
+  before.oninput=total.oninput=effect;
+  form.onsubmit=async ev=>{
+    ev.preventDefault(); save.disabled=true; error.textContent='';
+    try{
+      const res=await sb.rpc('cima_ajustar_consumo',{p_pedido:String(o.id),p_material:select.value,p_anterior:before.valueAsNumber,p_total:total.valueAsNumber,p_motivo:form.elements.motivo.value,p_esperado:o.consumo ?? null});
+      if(res.error) throw res.error;
+      dialog.close(); notify('Consumo atualizado.'); refreshView?.();
+    }catch(e){error.textContent=e.message;save.disabled=false;}
+  };
+}
+
 function cardFooterHTML(o, mode){
   const rec = receiptOf(o);
   let right = '';
@@ -1010,20 +1087,8 @@ function renderSolicitante(container = $('main-content')){
       list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Você ainda não fez nenhum pedido. Clique em "+ Novo Pedido", escolha a OS/Projeto, informe as peças e anexe o desenho. O ADM faz a triagem e você acompanha cada etapa por aqui.</div>`;
       return;
     }
-    list.innerHTML = orders.map(o=>{
-      const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${late?'var(--red)':s.color}" data-order-id="${o.id}">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
-          </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${escapeHtml(s.label)}</span>
-        </div>
-        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
-        ${metaLine(o, true)}${itemsListHTML(o)}${miniTimelineHTML(o)}${cardFooterHTML(o, 'sol')}
-      </div>`;
-    }).join('');
+    list.innerHTML = orders.map(o=>requestCard(o,'sol')).join('');
+    bindRequestCards(list);
     list.querySelectorAll('[data-order-id]').forEach(el=>{
       el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId)));
     });
@@ -1368,23 +1433,11 @@ function renderAdminTodos(){
     });
     $('f-count').textContent = `${orders.length} de ${all.length} pedido(s)`;
     if(orders.length === 0){ list.innerHTML = `<div class="card p-10 text-center" style="color:var(--muted)">Nenhum pedido encontrado.</div>`; return; }
-    list.innerHTML = orders.map(o=>{
-      const s = statusInfo(o); const late = isLate(o);
-      return `<div class="card p-5 tag cursor-pointer" style="border-left-color:${o.urgent?'var(--amber)':late?'var(--red)':s.color}" data-order-id="${o.id}">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="font-medium text-base">${cardTitleHTML(o)}</p>
-            <p class="text-xs mt-1" style="color:${late?'var(--red)':'var(--muted)'}">Solicitante: ${escapeHtml(o.requesterName)} · ${late?'⚠ ':''}Prazo: ${prazoTxt(o)}</p>
-            ${metaLine(o, true)}
-          </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${escapeHtml(s.label)}</span>
-        </div>
-        <div class="mt-4 py-2 border-y border-white/5">${stepperHTML(o)}</div>
-        ${itemsListHTML(o)}${cardFooterHTML(o, 'adm')}
-      </div>`;
-    }).join('');
+    list.innerHTML = orders.map(o=>requestCard(o,'adm')).join('');
+    bindRequestCards(list);
     const by = (attr, fn)=> list.querySelectorAll(`[${attr}]`).forEach(b=> b.addEventListener('click', (ev)=>{ ev.stopPropagation(); fn(orders.find(o=>o.id===b.getAttribute(attr))); }));
     list.querySelectorAll('[data-order-id]').forEach(el=> el.addEventListener('click', ()=> openDetailModal(orders.find(o=>o.id===el.dataset.orderId))));
+    by('data-consumo', editConsumption);
     by('data-edit-order', openEditOrderModal); by('data-edit-routing', openRoutingEditor); by('data-del-order', deleteOrder); by('data-urgent', toggleUrgent);
   };
   ['f-q', 'f-status', 'f-from', 'f-to', 'f-urg'].forEach(id=> $(id).addEventListener('input', draw));
